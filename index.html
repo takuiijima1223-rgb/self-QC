@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>self-A QC管理アプリ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #f9fafb; color: #374151; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
+        .brand-pink { color: #f06292; } .brand-bg-pink { background-color: #f06292; }
+        .tab-active { border-bottom: 3px solid #f06292 !important; color: #f06292 !important; font-weight: 800 !important; }
+        
+        .check-btn { transition: all 0.2s ease; border: 2px solid #e5e7eb; border-radius: 12px; height: 48px; font-weight: 900; background-color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+        .check-btn:active { transform: scale(0.95); }
+        .check-btn.selected-good { background-color: #10b981 !important; color: white !important; border-color: #10b981 !important; }
+        .check-btn.selected-warn { background-color: #f59e0b !important; color: white !important; border-color: #f59e0b !important; }
+        .check-btn.selected-error { background-color: #ef4444 !important; color: white !important; border-color: #ef4444 !important; }
+        
+        .view-content { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .chart-scroll-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; background: white; padding: 10px; border-radius: 12px; }
+        .chart-inner-container { min-width: 2000px; height: 300px; }
+        
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+        .portal-card { cursor: pointer; transition: all 0.2s; border: 1px solid #f3f4f6; background-color: white; }
+        .portal-card:active { transform: scale(0.96); background-color: #f9fafb; }
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23D1D5DB'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2em; }
+        .office-card { transition: all 0.2s ease; border: 2px solid transparent; }
+        .office-card.active { border-color: #f06292; background-color: #fff5f8; }
+    </style>
+
+    <!-- 1. UI Control Script -->
+    <script>
+        window.hideMainLoader = () => {
+            const o = document.getElementById('loading-overlay');
+            if (o) { o.style.opacity = '0'; setTimeout(() => o.style.display = 'none', 500); }
+        };
+
+        window.initialOffices = [
+            { corp: "株式会社ハニービー", name: "ハニービー金沢駅東", type: "就労A型", area: "辰橋AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー泉が丘", type: "就労A型", area: "辰橋AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー神田", type: "就労A型", area: "辰橋AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー額新保", type: "就労A型", area: "辰橋AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー駅西新町", type: "就労A型", area: "辰橋AM", isFixed: true },
+            { corp: "株式会社Ties", name: "みらい", type: "就労A型", area: "辰橋AM", isFixed: true },
+            { corp: "株式会社オンステージ", name: "オンステージ三口新町", type: "就労A型", area: "辰橋AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー伊勢崎", type: "就労A型", area: "寺口AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー新潟", type: "就労A型", area: "寺口AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー新潟南", type: "就労A型", area: "寺口AM", isFixed: true },
+            { corp: "HELLOS", name: "HELLOS八王子東町", type: "就労A型", area: "寺口AM", isFixed: true },
+            { corp: "HELLOS", name: "HELLOS子安町", type: "就労A型", area: "寺口AM", isFixed: true },
+            { corp: "HELLOS", name: "HELLOS明神町", type: "就労A型", area: "寺口AM", isFixed: true },
+            { corp: "合同会社セブン", name: "セブン中桜塚", type: "就労A型", area: "甲部AM", isFixed: true },
+            { corp: "合同会社セブン", name: "セブン豊中市役所前", type: "就労A型", area: "甲部AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー松坂", type: "就労A型", area: "甲部AM", isFixed: true },
+            { corp: "株式会社ひふみの森", name: "ひふみの森", type: "就労A型", area: "甲部AM", isFixed: true },
+            { corp: "株式会社オリエンスカンパニー", name: "ORIENS SHIMOGYO", type: "就労A型", area: "甲部AM", isFixed: true },
+            { corp: "HELLOS", name: "HELLOS多賀城", type: "就労A型", area: "若林AM", isFixed: true },
+            { corp: "HELLOS", name: "HELLOS名取（A型）", type: "就労A型", area: "若林AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー山形", type: "就労A型", area: "若林AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー八戸", type: "就労A型", area: "若林AM", isFixed: true },
+            { corp: "株式会社しおり", name: "しおり黒部", type: "就労A型", area: "若林AM", isFixed: true },
+            { corp: "HELLOS", name: "HELLOS名取（B型）", type: "就労B型", area: "石川AM", isFixed: true },
+            { corp: "HELLOS", name: "HELLOS北仙台（B型）", type: "就労B型", area: "石川AM", isFixed: true },
+            { corp: "株式会社オンステージ", name: "オンステージ鶴間", type: "就労A型", area: "石川AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー環水公園前", type: "就労A型", area: "石川AM", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー小杉東", type: "就労A型", area: "小野統括", isFixed: true },
+            { corp: "株式会社ハニービー", name: "ハニービー渋川", type: "就労A型", area: "小野統括", isFixed: true },
+            { corp: "株式会社151A", name: "151A福光", type: "就労A型", area: "小野統括", isFixed: true },
+            { corp: "株式会社151A", name: "151A魚津", type: "就労A型", area: "小野統括", isFixed: true },
+            { corp: "株式会社Ties", name: "きずな", type: "就労A型", area: "小野統括", isFixed: true },
+            { corp: "株式会社Ties", name: "きぼう", type: "就労A型", area: "小野統括", isFixed: true },
+            { corp: "株式会社Ties", name: "ひかり", type: "就労A型", area: "小野統括", isFixed: true },
+            { corp: "self・A株式会社", name: "かほく", type: "就労A型", area: "小野統括", isFixed: true },
+            { corp: "HELLOS", name: "HELLOS北仙台（A型）", type: "就労A型", area: "中村AM", isFixed: true },
+            { corp: "株式会社グランメル", name: "アイステージ中浦和", type: "就労A型", area: "中村AM", isFixed: true },
+            { corp: "株式会社グランメル", name: "アイステージ川口", type: "就労A型", area: "中村AM", isFixed: true }
+        ];
+
+        window.appState = {
+            office: null, inputWeek: null, inputMonth: null, answers: {}, activeTab: 'home',
+            offices: [], history: {}, historyFull: {}, user: null, currentMode: 'staff',
+            selectedAM: "", analysisTarget: "all", weeksData: [], isLastWeekOfMonth: false
+        };
+
+        const staffCheckItems = [
+            { cat: "情報管理", items: [
+                {id:'q1_1', t:"PC・タブレットのロック離席", d:"退勤時にログアウト、または画面ロックされている。", r:"個人情報流出"},
+                {id:'q1_2', t:"クリアデスク（書類放置ゼロ）", d:"机の上に利用者名簿・記録・USB等が一切ない（鍵付きロッカーへ収納）。", r:"不正操作・情報紛失"}
+            ]},
+            { cat: "安全・防災", items: [
+                {id:'q2_1', t:"避難経路の確保", d:"玄関・廊下・非常口前に「段ボール」や「荷物」が置かれていない。", r:"信用失墜・逃げ遅れ"},
+                {id:'q2_2', t:"危険箇所の確認", d:"足に引っかかる配線コードがない。高い所に落下しそうな物がない。", r:"転倒・落下事故"}
+            ]},
+            { cat: "衛生(5S)", items: [
+                {id:'q3_1', t:"トイレ・洗面所の衛生", d:"便器・床に汚れがない。消耗品が補充されている。", r:"感染症リスク・苦情"},
+                {id:'q3_2', t:"玄関・共有部の整頓", d:"靴・スリッパ・傘が整列している。泥汚れやホコリが目立たない。", r:"印象悪化・転倒"},
+                {id:'q3_3', t:"作業エリア・備品", d:"床にゴミが落ちていない。文房具や作業道具が定位置に戻っている。", r:"紛失・ケガ"},
+                {id:'q3_4', t:"ゴミ・食周り", d:"ゴミ箱が溢れていない。食べ残しや飲みかけが放置されていない。", r:"悪臭・害虫発生"}
+            ]},
+            { cat: "戸締まり", items: [
+                {id:'q4_1', t:"施錠・火の元", d:"窓・勝手口・キャビネットの施錠確認。ポット・暖房等の電源オフ。", r:"盗難・侵入・火災"}
+            ]},
+            { cat: "準備", items: [
+                {id:'q5_1', t:"翌日の受入セット", d:"翌朝の空調設定、消毒液、検温器などが所定の位置にセットされている。", r:"朝のバタつき・遅れ"}
+            ]}
+        ];
+
+        const amCheckItems = [
+            { cat: "支援プロセス", items: [
+                {id:'am_1', t:"個別支援計画の期限", p:"全利用者の計画書ファイル", d:"全利用者の計画書が有効期限内であること", r:"報酬返還"},
+                {id:'am_2', t:"モニタリング実施", p:"モニタリング記録", d:"対象者全員に対し、面談・報告が完了していること", r:"指導是正"}
+            ]},
+            { cat: "労務・配置", items: [
+                {id:'am_4', t:"人員配置基準", p:"勤務実績表", d:"常勤換算等の基準を満たし、欠員がないこと", r:"報酬減算"}
+            ]},
+            { cat: "請求・整合性", items: [
+                {id:'am_3', t:"実績記録票と日報の整合", p:"サービス提供実績記録票", d:"提供時間と記録時間が完全に一致していること", r:"不正請求認定"}
+            ]},
+            { cat: "事故・リスク管理", items: [
+                {id:'am_5', t:"事故・ヒヤリハット", p:"報告書", d:"原因分析と再発防止策が記載されていること", r:"重大事故責任"}
+            ]},
+            { cat: "管理体制", items: [
+                {id:'am_6', t:"帳票管理", p:"ルール通りの書類整理", d:"必要な書類がすぐに取り出せる状態であること", r:"運営体制責任"}
+            ]}
+        ];
+
+        function safeUpdate(id, cb) {
+            const el = document.getElementById(id);
+            if (el) cb(el);
+        }
+
+        window.showGlobalToast = (m) => {
+            safeUpdate('toast-message', el => el.innerText = m);
+            const t = document.getElementById('success-toast');
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        };
+
+        window.switchTab = (id) => {
+            window.appState.activeTab = id;
+            ['home', 'input', 'dashboard', 'master'].forEach(v => {
+                safeUpdate('view-'+v, el => el.classList.add('hidden'));
+                safeUpdate('tab-'+v, el => el.classList.remove('tab-active', 'text-pink-500'));
+            });
+            
+            safeUpdate('view-'+id, el => el.classList.remove('hidden'));
+            safeUpdate('tab-'+id, el => el.classList.add('tab-active', 'text-pink-500'));
+            
+            if (id === 'home') {
+                safeUpdate('nav-tabs', e => e.classList.add('hidden'));
+                safeUpdate('office-selector', e => e.classList.add('hidden'));
+                safeUpdate('role-badge', e => e.classList.add('hidden'));
+                safeUpdate('current-office-display', e => e.innerText = "HOME");
+            } else {
+                safeUpdate('nav-tabs', e => e.classList.remove('hidden'));
+                safeUpdate('role-badge', e => {
+                    e.classList.remove('hidden');
+                    e.innerText = window.appState.currentMode.toUpperCase();
+                });
+                if (id === 'dashboard') {
+                    window.renderAnalysisFilters();
+                } else if (id === 'input' && !window.appState.office) {
+                    safeUpdate('office-selector', e => e.classList.remove('hidden'));
+                    safeUpdate('view-input', e => e.classList.add('hidden'));
+                    window.renderSelectors();
+                }
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.startInputMode = () => { window.appState.currentMode = 'staff'; window.appState.office = null; window.switchTab('input'); };
+        window.startAMCheckMode = () => { window.appState.currentMode = 'am'; window.appState.office = null; window.switchTab('input'); };
+        
+        window.handleAreaFilterChange = () => {
+            const af = document.getElementById('area-filter-pulldown');
+            const os = document.getElementById('office-pulldown');
+            if (!af || !os) return;
+            
+            const selA = af.value;
+            let filtered = window.appState.offices;
+            if (selA) filtered = filtered.filter(o => o.area === selA);
+            
+            os.innerHTML = '<option value="" disabled selected>- 事業所を選択 -</option>';
+            filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(o => {
+                const op = document.createElement('option');
+                op.value = o.name;
+                op.textContent = `【${o.corp}】 ${o.name}`;
+                os.appendChild(op);
+            });
+        };
+
+        window.handleOfficeSelect = () => {
+            const o = document.getElementById('office-pulldown')?.value;
+            const isAM = window.appState.currentMode === 'am';
+            const w = isAM ? null : document.getElementById('week-pulldown')?.value;
+            const m = isAM ? document.getElementById('month-pulldown')?.value : null;
+            
+            if (!o || (isAM && !m) || (!isAM && !w)) return window.showGlobalToast("未選択の項目があります");
+            
+            window.appState.office = o;
+            window.appState.inputWeek = w;
+            window.appState.inputMonth = m;
+            
+            if (!isAM) {
+                const wi = window.appState.weeksData.find(x => x.label === w);
+                window.appState.isLastWeekOfMonth = wi ? wi.isLastWeekOfMonth : false;
+            }
+            
+            safeUpdate('office-selector', e => e.classList.add('hidden'));
+            safeUpdate('view-input', e => e.classList.remove('hidden'));
+            safeUpdate('current-office-display', e => e.innerText = o + " (" + (isAM ? m : w) + ")");
+            
+            window.renderCheckForms();
+            window.updateProgressDisplay();
+        };
+
+        window.renderCheckForms = () => {
+            const c = document.getElementById('categories-container');
+            const isAM = window.appState.currentMode === 'am';
+            const isLW = !isAM && window.appState.isLastWeekOfMonth;
+            const items = isAM ? [...amCheckItems, ...staffCheckItems] : (isLW ? [...staffCheckItems, ...amCheckItems] : staffCheckItems);
+            
+            c.innerHTML = isLW ? `<div class="bg-indigo-50 p-4 rounded-xl text-indigo-700 text-xs font-bold mb-4">月末週のため月次項目が追加されています</div>` : '';
+            
+            items.forEach(g => {
+                const div = document.createElement('div');
+                div.className = "bg-white rounded-2xl shadow-sm border mb-4 overflow-hidden";
+                const isAmG = amCheckItems.includes(g);
+                
+                let html = `<div class="${isAmG?'bg-indigo-600':'bg-gray-800'} px-4 py-2 text-[10px] text-white font-black uppercase">${g.cat}</div>`;
+                
+                g.items.forEach(i => {
+                    html += `<div class="p-5 border-b last:border-0">
+                        <h4 class="font-black text-gray-800 mb-2">${i.t}</h4>
+                        <p class="text-xs text-gray-400 mb-4">${i.d}</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button onclick="window.setAnswer('${i.id}', 2)" id="btn-${i.id}-2" class="check-btn">○</button>
+                            <button onclick="window.setAnswer('${i.id}', 1)" id="btn-${i.id}-1" class="check-btn">△</button>
+                            <button onclick="window.setAnswer('${i.id}', 0)" id="btn-${i.id}-0" class="check-btn">×</button>
+                        </div>
+                    </div>`;
+                });
+                div.innerHTML = html;
+                c.appendChild(div);
+            });
+        };
+
+        window.setAnswer = (id, val) => {
+            window.appState.answers[id] = val;
+            [0,1,2].forEach(v => {
+                const btn = document.getElementById(`btn-${id}-${v}`);
+                if (btn) btn.className = "check-btn";
+            });
+            const b = document.getElementById(`btn-${id}-${val}`);
+            if (b) {
+                if(val===2) b.classList.add('selected-good');
+                else if(val===1) b.classList.add('selected-warn');
+                else b.classList.add('selected-error');
+            }
+            window.updateProgressDisplay();
+        };
+
+        window.updateProgressDisplay = () => {
+            const isAM = window.appState.currentMode === 'am';
+            const isLW = !isAM && window.appState.isLastWeekOfMonth;
+            const total = isAM || isLW ? 16 : 10;
+            const count = Object.keys(window.appState.answers).length;
+            const pct = Math.round((count/total)*100);
+            
+            safeUpdate('progress-text', e => e.innerText = pct+"%");
+            const b = document.getElementById('submit-btn');
+            if (b) {
+                if (pct===100) {
+                    b.disabled=false;
+                    b.className=`w-full py-4 ${isAM||isLW?'bg-indigo-600':'brand-bg-pink'} text-white rounded-xl font-black shadow-xl`;
+                } else {
+                    b.disabled=true;
+                    b.className="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black";
+                }
+            }
+        };
+
+        function generateWeeksData() {
+            const res = [];
+            let s = new Date(2026, 2, 30);
+            const e = new Date(2027, 3, 4);
+            let cm = 4, wn = 1;
+            
+            while (s < e) {
+                let end = new Date(s);
+                end.setDate(end.getDate()+6);
+                const sm = s.getMonth()+1;
+                let lm = (s.getFullYear()===2026 && sm===3) ? 4 : sm;
+                
+                if (lm !== cm) { cm = lm; wn = 1; }
+                
+                let ns = new Date(s);
+                ns.setDate(ns.getDate()+7);
+                const nsm = ns.getMonth()+1;
+                const isLW = lm !== ((ns.getFullYear()===2026 && nsm===3) ? 4 : nsm);
+                
+                res.push({
+                    label: lm+"月"+wn+"W ("+(sm+"/"+s.getDate()+"～"+(end.getMonth()+1)+"/"+end.getDate())+")",
+                    start: new Date(s), end: new Date(end), isLastWeekOfMonth: isLW
+                });
+                
+                s.setDate(s.getDate()+7);
+                wn++;
+            }
+            return res;
+        }
+        window.appState.weeksData = generateWeeksData();
+    </script>
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mb-4"></div>
+        <p class="text-xs font-bold text-gray-400">CONNECTING CLOUD...</p>
+    </div>
+
+    <header class="bg-white sticky top-0 z-50 border-b-2 border-pink-400 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-2 flex justify-between items-center">
+            <div class="flex items-center" onclick="window.switchTab('home')" style="cursor:pointer">
+                <svg width="42" height="42" viewBox="0 0 100 100" fill="none" class="mr-3">
+                    <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="#f06292"/>
+                    <circle cx="53" cy="38" r="14" fill="white"/>
+                    <path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/>
+                </svg>
+                <div>
+                    <h1 class="text-xl font-black">self-A</h1>
+                    <p id="current-office-display" class="text-[9px] font-bold text-gray-400">HOME</p>
+                </div>
+            </div>
+            <span id="role-badge" class="hidden text-[10px] px-2 py-1 bg-pink-50 text-pink-500 rounded-full font-black"></span>
+        </div>
+        <nav class="hidden flex border-t bg-white" id="nav-tabs">
+            <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 py-3 text-[11px] font-black uppercase">入力</button>
+            <button onclick="window.switchTab('dashboard')" id="tab-dashboard" class="flex-1 py-3 text-[11px] font-black uppercase border-l">分析</button>
+            <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 py-3 text-[11px] font-black uppercase border-l">マスタ</button>
+        </nav>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4">
+        <!-- view-home -->
+        <div id="view-home" class="view-content space-y-5 pt-4">
+            <div onclick="window.startInputMode()" class="portal-card p-6 rounded-2xl border-l-8 border-l-pink-400 flex items-center space-x-6">
+                <div class="w-16 h-16 brand-bg-pink rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-pen-to-square"></i></div>
+                <div><h3 class="font-black">事業所入力モード</h3><p class="text-[10px] text-gray-400">Weekly Check</p></div>
+            </div>
+            <div onclick="window.startAMCheckMode()" class="portal-card p-6 rounded-2xl border-l-8 border-l-indigo-600 flex items-center space-x-6">
+                <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-user-check"></i></div>
+                <div><h3 class="font-black">管理者確認モード</h3><p class="text-[10px] text-gray-400">AM Validation</p></div>
+            </div>
+            <div onclick="window.switchTab('dashboard')" class="portal-card p-6 rounded-2xl border-l-8 border-l-gray-700 flex items-center space-x-6">
+                <div class="w-16 h-16 bg-gray-700 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-chart-pie"></i></div>
+                <div><h3 class="font-black">管理者分析モード</h3><p class="text-[10px] text-gray-400">Data Analysis</p></div>
+            </div>
+            <div onclick="window.switchTab('master')" class="portal-card p-6 rounded-2xl border-l-8 border-l-orange-400 flex items-center space-x-6">
+                <div class="w-16 h-16 bg-orange-400 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-database"></i></div>
+                <div><h3 class="font-black">マスタ設定</h3><p class="text-[10px] text-gray-400">Settings</p></div>
+            </div>
+        </div>
+
+        <!-- office-selector -->
+        <div id="office-selector" class="hidden view-content bg-white p-8 rounded-3xl shadow-xl border">
+            <h2 class="text-xl font-black text-center mb-8">対象を選択してください</h2>
+            <div class="space-y-5">
+                <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 border-2 rounded-2xl font-bold bg-white">
+                    <option value="" selected disabled>対象エリアを選択...</option>
+                    <option value="石川AM">石川AM</option>
+                    <option value="寺口AM">寺口AM</option>
+                    <option value="甲部AM">甲部AM</option>
+                    <option value="若林AM">若林AM</option>
+                    <option value="辰橋AM">辰橋AM</option>
+                    <option value="中村AM">中村AM</option>
+                    <option value="小野統括">小野統括</option>
+                </select>
+                <select id="office-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
+                <div id="week-pulldown-section">
+                    <select id="week-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
+                </div>
+                <div id="month-pulldown-section" class="hidden">
+                    <select id="month-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
+                </div>
+                <button onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-xl uppercase">START CHECK</button>
+            </div>
+        </div>
+
+        <!-- view-input -->
+        <div id="view-input" class="hidden space-y-6 view-content">
+            <div class="bg-pink-50 p-5 rounded-2xl border">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-[10px] text-pink-500 font-black uppercase">Quality Control Sheet</p>
+                    <p id="progress-text" class="text-2xl font-black text-pink-600">0%</p>
+                </div>
+                <h2 class="font-black text-gray-800" id="input-view-header-title">チェックシート</h2>
+            </div>
+            <div id="categories-container"></div>
+            <button id="submit-btn" disabled onclick="window.submitData()" class="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black text-lg shadow-xl">クラウドへ送信</button>
+        </div>
+
+        <!-- view-dashboard -->
+        <div id="view-dashboard" class="hidden space-y-6 view-content">
+            <div class="bg-white p-6 rounded-2xl border shadow-sm">
+                <label class="text-[11px] font-black text-pink-500 uppercase">分析レイヤーを選択</label>
+                <select id="analysis-am-pulldown" onchange="window.renderAnalysisFilters()" class="w-full p-4 border-2 rounded-2xl bg-pink-50 font-black mt-3"></select>
+            </div>
+            <div id="analysis-target-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm space-y-5">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-black text-gray-400 uppercase">分析対象切替</h3>
+                    <span id="target-type-badge" class="text-[9px] px-2 py-0.5 rounded-full font-bold"></span>
+                </div>
+                <select id="analysis-office-pulldown" onchange="window.handleAnalysisTargetChange()" class="w-full p-4 border-2 rounded-2xl bg-white font-black"></select>
+                <div id="area-office-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+            </div>
+            <div id="analysis-stats-section" class="hidden grid grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-2xl border-l-4 border-pink-500 shadow-sm">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Target Score</p>
+                    <p class="text-3xl font-black"><span id="display-avg-score">--</span><span class="text-xs ml-1 text-gray-400">pt</span></p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm">
+                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Status</p>
+                    <p class="text-3xl font-black"><span id="display-input-rate">--</span><span class="text-xs ml-1 text-gray-400">%</span></p>
+                </div>
+            </div>
+            <div id="analysis-chart-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm">
+                <h3 class="font-black text-gray-700 flex items-center mb-6">
+                    <i class="fa-solid fa-chart-line mr-2 text-pink-500"></i>
+                    <span id="chart-title-text">QUALITY TREND</span>
+                </h3>
+                <div class="chart-scroll-wrapper">
+                    <div class="chart-inner-container"><canvas id="qcChart"></canvas></div>
+                </div>
+            </div>
+            <div id="auto-analysis-section" class="hidden bg-white p-6 rounded-2xl border-indigo-100 shadow-sm border mt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-robot mr-2 text-indigo-500"></i>自動分析レポート</h3>
+                    <span id="auto-analysis-title-badge" class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100"></span>
+                </div>
+                <select id="analysis-period-pulldown" onchange="window.renderAutoAnalysis()" class="w-full p-3 border rounded-lg bg-white font-bold text-xs mb-4">
+                    <option value="latest">最新のデータ</option>
+                    <option value="current_week">今週分のみ</option>
+                    <option value="last_1_month">直近1ヶ月分</option>
+                    <option value="all">全期間</option>
+                </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="auto-analysis-content"></div>
+            </div>
+        </div>
+
+        <!-- view-master -->
+        <div id="view-master" class="hidden space-y-6 view-content">
+            <div class="bg-white p-7 rounded-2xl border-t-4 border-orange-400 shadow-xl">
+                <h3 class="text-lg font-black mb-5">事業所の追加</h3>
+                <div class="space-y-4">
+                    <input type="text" id="new-office-name" placeholder="事業所名..." class="w-full p-4 border rounded-xl font-bold">
+                    <button onclick="window.addOffice()" class="w-full py-4 bg-orange-500 text-white rounded-xl font-black shadow-lg">追加する</button>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl border shadow-sm mt-6">
+                <div class="p-4 bg-gray-800 text-white flex justify-between items-center font-black text-xs">
+                    <span>拠点マスタ</span>
+                    <span id="office-count">0</span>
+                </div>
+                <div id="master-office-list" class="divide-y"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="success-toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border-l-4 border-pink-500">
+        <i class="fa-solid fa-check-circle text-pink-400 mr-3"></i>
+        <span id="toast-message" class="font-black text-sm uppercase">COMPLETE</span>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. Firebase & Data Sync Script             -->
+    <!-- ========================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ★★★ GitHub Pages 用設定（ここにFirebase情報を貼り付け） ★★★
+        // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+        let firebaseConfig;
+        if (typeof __firebase_config !== 'undefined') { 
+            // プレビュー環境用（このまま残してください）
+            firebaseConfig = JSON.parse(__firebase_config); 
+        } else {
+            // ★本番環境用：この中身を取得した情報に書き換えてください
+            firebaseConfig = {
+                apiKey: "AIzaSyBdbezD4xYpqPTy9XZMttHbLBt5cXe33G8",
+                authDomain: "self-qc.firebaseapp.com",
+                projectId: "self-qc",
+                storageBucket: "self-qc.firebasestorage.app",
+                messagingSenderId: "247849012338",
+                appId: "1:247849012338:web:833502cbdbe980a33046eb"
+            };
+        }
+        // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+
+        async function connectCloud() {
+            try {
+                const app = initializeApp(firebaseConfig); 
+                const auth = getAuth(app); 
+                const db = getFirestore(app);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'self-a-qc-manager-v1'; 
+                
+                window.db = db; 
+                window.appId = appId;
+                
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                onAuthStateChanged(auth, (user) => { 
+                    if (user && !window.appState.syncStarted) { 
+                        window.appState.user = user; 
+                        window.appState.syncStarted = true; 
+                        startSync(db, appId); 
+                    } 
+                });
+            } catch (e) { 
+                console.error(e); 
+                window.hideMainLoader(); 
+            }
+        }
+
+        function startSync(db, appId) {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'offices'), s => {
+                const fs = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+                const m = new Map(); 
+                window.initialOffices.forEach(o => m.set(o.name, o)); 
+                fs.forEach(o => m.set(o.name, o));
+                window.appState.offices = Array.from(m.values()); 
+                window.renderMasterList(); 
+                window.renderSelectors(); 
+                window.hideMainLoader();
+            }, e => window.hideMainLoader());
+            
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'qc_history'), s => {
+                window.appState.history = {}; 
+                window.appState.historyFull = {};
+                s.docs.forEach(d => { 
+                    const v = d.data(); 
+                    if (!window.appState.history[v.office]) { 
+                        window.appState.history[v.office] = {}; 
+                        window.appState.historyFull[v.office] = {}; 
+                    } 
+                    window.appState.history[v.office][v.week] = v.score; 
+                    window.appState.historyFull[v.office][v.week] = v; 
+                });
+                if (window.appState.activeTab === 'dashboard') { 
+                    window.updateStatsDisplay(); 
+                    window.renderQualityChart(); 
+                    window.renderOfficeQuickList(); 
+                    window.renderAutoAnalysis(); 
+                }
+            });
+        }
+
+        window.submitData = async () => {
+            const b = document.getElementById('submit-btn'); 
+            b.disabled = true; 
+            b.innerText = "同期中...";
+            
+            const isAM = window.appState.currentMode === 'am'; 
+            const isLW = !isAM && window.appState.isLastWeekOfMonth; 
+            const total = isAM || isLW ? 16 : 10;
+            
+            let sum = 0; 
+            Object.values(window.appState.answers).forEach(v => sum += v); 
+            const score = Math.round((sum/(total*2))*100);
+            
+            const target = isAM ? window.appState.inputMonth : window.appState.inputWeek; 
+            const docId = (window.appState.office + "_" + target).replace(/[/ ]/g, '_');
+            
+            try {
+                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', isAM ? 'am_qc_history' : 'qc_history', docId), { 
+                    office: window.appState.office, 
+                    score: score, 
+                    answers: window.appState.answers, 
+                    timestamp: new Date().toISOString(), 
+                    week: window.appState.inputWeek, 
+                    month: window.appState.inputMonth, 
+                    mode: window.appState.currentMode 
+                });
+                window.showGlobalToast("保存完了"); 
+                b.innerText = "完了"; 
+                b.className = "w-full py-4 bg-emerald-500 text-white rounded-xl font-black";
+            } catch (e) { 
+                window.showGlobalToast("エラー"); 
+                b.disabled = false; 
+            }
+        };
+
+        const amList = ["石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
+        
+        window.renderAnalysisFilters = () => {
+            const amS = document.getElementById('analysis-am-pulldown'); 
+            const tS = document.getElementById('analysis-office-pulldown'); 
+            if (!amS || !tS) return;
+            
+            if (amS.innerHTML === "") { 
+                amS.innerHTML = '<option value="" selected disabled>選択...</option><option value="works">ワークス事業部</option>'; 
+                amList.forEach(a => amS.innerHTML += `<option value="${a}">${a}</option>`); 
+            }
+            if (!amS.value) return; 
+            
+            safeUpdate('analysis-target-section', e => e.classList.remove('hidden')); 
+            safeUpdate('analysis-stats-section', e => e.classList.remove('hidden')); 
+            safeUpdate('analysis-chart-section', e => e.classList.remove('hidden'));
+            
+            tS.innerHTML = '<option value="all">統合データ</option><option value="compare">比較グラフ</option>';
+            if (amS.value === 'works') {
+                amList.forEach(a => tS.innerHTML += `<option value="am_${a}">${a}統合</option>`);
+            } else {
+                window.appState.offices.filter(o => o.area === amS.value).forEach(o => tS.innerHTML += `<option value="${o.name}">${o.name}</option>`);
+            }
+            window.updateStatsDisplay(); 
+            window.renderQualityChart(); 
+            window.renderOfficeQuickList(); 
+            window.renderAutoAnalysis();
+        };
+
+        window.renderQualityChart = () => {
+            const c = document.getElementById('qcChart'); 
+            if (!c || window.appState.activeTab !== 'dashboard') return; 
+            const ctx = c.getContext('2d'); 
+            if (window.qcInstance) window.qcInstance.destroy();
+            
+            const am = document.getElementById('analysis-am-pulldown').value; 
+            const target = document.getElementById('analysis-office-pulldown').value;
+            const labels = window.appState.weeksData.map(w => w.label); 
+            let ds = [];
+            
+            if (target === 'all') {
+                const data = labels.map(l => { 
+                    let s=0, count=0; 
+                    window.appState.offices.filter(o => am==='works'||o.area===am).forEach(o => { 
+                        if (window.appState.history[o.name]?.[l] !== undefined) { 
+                            s+=window.appState.history[o.name][l]; 
+                            count++; 
+                        } 
+                    }); 
+                    return count>0 ? Math.round(s/count) : null; 
+                });
+                ds.push({ data, borderColor: '#f06292', fill: true, tension: 0.3, spanGaps: true });
+            }
+            window.qcInstance = new Chart(ctx, { 
+                type: 'line', 
+                data: { labels, datasets: ds }, 
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } } 
+            });
+        };
+
+        window.renderSelectors = () => {
+            const ws = document.getElementById('week-pulldown'); 
+            if (ws.innerHTML === "") { 
+                window.appState.weeksData.forEach(w => { 
+                    const op = document.createElement('option'); 
+                    op.value = w.label; 
+                    op.textContent = w.label; 
+                    if (new Date() >= w.start && new Date() <= w.end) op.selected = true; 
+                    ws.appendChild(op); 
+                }); 
+            }
+            const ms = document.getElementById('month-pulldown'); 
+            if (ms.innerHTML === "") { 
+                [4,5,6,7,8,9,10,11,12,1,2,3].forEach(m => { 
+                    const op = document.createElement('option'); 
+                    op.value = `2026年${m}月度`; 
+                    op.textContent = `2026年${m}月度`; 
+                    ms.appendChild(op); 
+                }); 
+            }
+            const isAM = window.appState.currentMode === 'am'; 
+            safeUpdate('week-pulldown-section', e => e.style.display = isAM ? 'none' : 'block'); 
+            safeUpdate('month-pulldown-section', e => e.style.display = isAM ? 'block' : 'none');
+            window.handleAreaFilterChange();
+        };
+
+        window.renderMasterList = () => { 
+            safeUpdate('office-count', e => e.innerText = window.appState.offices.length); 
+            const l = document.getElementById('master-office-list'); 
+            l.innerHTML = ''; 
+            window.appState.offices.forEach(o => { 
+                const d = document.createElement('div'); 
+                d.className = "p-4 flex justify-between items-center"; 
+                d.innerHTML = `<div><p class="font-black text-sm">${o.name}</p><p class="text-[10px] text-gray-400">${o.area}</p></div>`; 
+                l.appendChild(d); 
+            }); 
+        };
+
+        connectCloud();
+        window.addEventListener('DOMContentLoaded', () => { 
+            setTimeout(window.hideMainLoader, 3000); 
+            window.switchTab('home'); 
+        });
+    </script>
+</body>
+</html>
