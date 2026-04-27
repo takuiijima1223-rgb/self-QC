@@ -32,9 +32,12 @@
         select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23D1D5DB'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2em; }
         .office-card { transition: all 0.2s ease; border: 2px solid transparent; }
         .office-card.active { border-color: #f06292; background-color: #fff5f8; }
+
+        .gap-bar-container { background-color: #f3f4f6; border-radius: 99px; height: 8px; overflow: hidden; position: relative; }
+        .gap-bar-staff { position: absolute; height: 100%; background-color: #f06292; }
+        .gap-bar-am { position: absolute; height: 100%; background-color: #4f46e5; top: 0; opacity: 0.5; }
     </style>
 
-    <!-- 1. UI Control Script -->
     <script>
         window.hideMainLoader = () => {
             const o = document.getElementById('loading-overlay');
@@ -84,8 +87,8 @@
 
         window.appState = {
             office: null, inputWeek: null, inputMonth: null, answers: {}, activeTab: 'home',
-            offices: [], history: {}, historyFull: {}, user: null, currentMode: 'staff',
-            selectedAM: "", analysisTarget: "all", weeksData: [], isLastWeekOfMonth: false
+            offices: [], history: {}, historyFull: {}, amHistory: {}, amHistoryFull: {}, user: null, currentMode: 'staff',
+            selectedAM: "", analysisTarget: "all", weeksData: [], monthsData: [], isLastWeekOfMonth: false, dataSource: 'staff'
         };
 
         const staffCheckItems = [
@@ -164,7 +167,7 @@
                     e.innerText = window.appState.currentMode.toUpperCase();
                 });
                 if (id === 'dashboard') {
-                    window.renderAnalysisFilters();
+                    setTimeout(() => window.renderAnalysisFilters(), 50);
                 } else if (id === 'input' && !window.appState.office) {
                     safeUpdate('office-selector', e => e.classList.remove('hidden'));
                     safeUpdate('view-input', e => e.classList.add('hidden'));
@@ -174,24 +177,20 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.startInputMode = () => { window.appState.currentMode = 'staff'; window.appState.office = null; window.switchTab('input'); };
-        window.startAMCheckMode = () => { window.appState.currentMode = 'am'; window.appState.office = null; window.switchTab('input'); };
+        window.startInputMode = () => { window.appState.currentMode = 'staff'; window.appState.office = null; window.appState.answers = {}; window.switchTab('input'); };
+        window.startAMCheckMode = () => { window.appState.currentMode = 'am'; window.appState.office = null; window.appState.answers = {}; window.switchTab('input'); };
         
         window.handleAreaFilterChange = () => {
             const af = document.getElementById('area-filter-pulldown');
             const os = document.getElementById('office-pulldown');
             if (!af || !os) return;
-            
             const selA = af.value;
             let filtered = window.appState.offices;
             if (selA) filtered = filtered.filter(o => o.area === selA);
-            
             os.innerHTML = '<option value="" disabled selected>- 事業所を選択 -</option>';
             filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(o => {
                 const op = document.createElement('option');
-                op.value = o.name;
-                op.textContent = `【${o.corp}】 ${o.name}`;
-                os.appendChild(op);
+                op.value = o.name; op.textContent = `【${o.corp}】 ${o.name}`; os.appendChild(op);
             });
         };
 
@@ -200,24 +199,17 @@
             const isAM = window.appState.currentMode === 'am';
             const w = isAM ? null : document.getElementById('week-pulldown')?.value;
             const m = isAM ? document.getElementById('month-pulldown')?.value : null;
-            
             if (!o || (isAM && !m) || (!isAM && !w)) return window.showGlobalToast("未選択の項目があります");
-            
-            window.appState.office = o;
-            window.appState.inputWeek = w;
-            window.appState.inputMonth = m;
-            
+            window.appState.office = o; window.appState.inputWeek = w; window.appState.inputMonth = m;
+            window.appState.answers = {};
             if (!isAM) {
                 const wi = window.appState.weeksData.find(x => x.label === w);
                 window.appState.isLastWeekOfMonth = wi ? wi.isLastWeekOfMonth : false;
             }
-            
             safeUpdate('office-selector', e => e.classList.add('hidden'));
             safeUpdate('view-input', e => e.classList.remove('hidden'));
             safeUpdate('current-office-display', e => e.innerText = o + " (" + (isAM ? m : w) + ")");
-            
-            window.renderCheckForms();
-            window.updateProgressDisplay();
+            window.renderCheckForms(); window.updateProgressDisplay();
         };
 
         window.renderCheckForms = () => {
@@ -225,485 +217,355 @@
             const isAM = window.appState.currentMode === 'am';
             const isLW = !isAM && window.appState.isLastWeekOfMonth;
             const items = isAM ? [...amCheckItems, ...staffCheckItems] : (isLW ? [...staffCheckItems, ...amCheckItems] : staffCheckItems);
-            
             c.innerHTML = isLW ? `<div class="bg-indigo-50 p-4 rounded-xl text-indigo-700 text-xs font-bold mb-4">月末週のため月次項目が追加されています</div>` : '';
-            
             items.forEach(g => {
-                const div = document.createElement('div');
-                div.className = "bg-white rounded-2xl shadow-sm border mb-4 overflow-hidden";
+                const div = document.createElement('div'); div.className = "bg-white rounded-2xl shadow-sm border mb-4 overflow-hidden";
                 const isAmG = amCheckItems.includes(g);
-                
                 let html = `<div class="${isAmG?'bg-indigo-600':'bg-gray-800'} px-4 py-2 text-[10px] text-white font-black uppercase">${g.cat}</div>`;
-                
                 g.items.forEach(i => {
-                    html += `<div class="p-5 border-b last:border-0">
-                        <h4 class="font-black text-gray-800 mb-2">${i.t}</h4>
-                        <p class="text-xs text-gray-400 mb-4">${i.d}</p>
-                        <div class="grid grid-cols-3 gap-3">
-                            <button onclick="window.setAnswer('${i.id}', 2)" id="btn-${i.id}-2" class="check-btn">○</button>
-                            <button onclick="window.setAnswer('${i.id}', 1)" id="btn-${i.id}-1" class="check-btn">△</button>
-                            <button onclick="window.setAnswer('${i.id}', 0)" id="btn-${i.id}-0" class="check-btn">×</button>
-                        </div>
-                    </div>`;
+                    html += `<div class="p-5 border-b last:border-0"><h4 class="font-black text-gray-800 mb-2">${i.t}</h4><p class="text-xs text-gray-400 mb-4">${i.d}</p><div class="grid grid-cols-3 gap-3">
+                        <button onclick="window.setAnswer('${i.id}', 2)" id="btn-${i.id}-2" class="check-btn">○</button>
+                        <button onclick="window.setAnswer('${i.id}', 1)" id="btn-${i.id}-1" class="check-btn">△</button>
+                        <button onclick="window.setAnswer('${i.id}', 0)" id="btn-${i.id}-0" class="check-btn">×</button>
+                    </div></div>`;
                 });
-                div.innerHTML = html;
-                c.appendChild(div);
+                div.innerHTML = html; c.appendChild(div);
             });
         };
 
         window.setAnswer = (id, val) => {
             window.appState.answers[id] = val;
-            [0,1,2].forEach(v => {
-                const btn = document.getElementById(`btn-${id}-${v}`);
-                if (btn) btn.className = "check-btn";
-            });
+            [0,1,2].forEach(v => { const btn = document.getElementById(`btn-${id}-${v}`); if (btn) btn.className = "check-btn"; });
             const b = document.getElementById(`btn-${id}-${val}`);
-            if (b) {
-                if(val===2) b.classList.add('selected-good');
-                else if(val===1) b.classList.add('selected-warn');
-                else b.classList.add('selected-error');
-            }
+            if (b) { if(val===2) b.classList.add('selected-good'); else if(val===1) b.classList.add('selected-warn'); else b.classList.add('selected-error'); }
             window.updateProgressDisplay();
         };
 
         window.updateProgressDisplay = () => {
-            const isAM = window.appState.currentMode === 'am';
-            const isLW = !isAM && window.appState.isLastWeekOfMonth;
-            const total = isAM || isLW ? 16 : 10;
-            const count = Object.keys(window.appState.answers).length;
-            const pct = Math.round((count/total)*100);
-            
+            const isAM = window.appState.currentMode === 'am'; const isLW = !isAM && window.appState.isLastWeekOfMonth;
+            const total = isAM || isLW ? 16 : 10; const count = Object.keys(window.appState.answers).length;
+            const pct = Math.min(100, Math.round((count/total)*100));
             safeUpdate('progress-text', e => e.innerText = pct+"%");
             const b = document.getElementById('submit-btn');
             if (b) {
-                if (pct===100) {
-                    b.disabled=false;
-                    b.className=`w-full py-4 ${isAM||isLW?'bg-indigo-600':'brand-bg-pink'} text-white rounded-xl font-black shadow-xl`;
-                } else {
-                    b.disabled=true;
-                    b.className="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black";
-                }
+                if (pct >= 100) { b.disabled=false; b.className=`w-full py-4 ${isAM||isLW?'bg-indigo-600':'brand-bg-pink'} text-white rounded-xl font-black shadow-xl`; b.innerText = "クラウドへ送信する"; }
+                else { b.disabled=true; b.className="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black"; b.innerText = "すべて入力してください"; }
             }
         };
 
         function generateWeeksData() {
-            const res = [];
-            let s = new Date(2026, 2, 30);
-            const e = new Date(2027, 3, 4);
-            let cm = 4, wn = 1;
-            
+            const res = []; let s = new Date(2026, 2, 30); const e = new Date(2027, 3, 4); let cm = 4, wn = 1;
             while (s < e) {
-                let end = new Date(s);
-                end.setDate(end.getDate()+6);
-                const sm = s.getMonth()+1;
+                let end = new Date(s); end.setDate(end.getDate()+6); const sm = s.getMonth()+1;
                 let lm = (s.getFullYear()===2026 && sm===3) ? 4 : sm;
-                
                 if (lm !== cm) { cm = lm; wn = 1; }
-                
-                let ns = new Date(s);
-                ns.setDate(ns.getDate()+7);
-                const nsm = ns.getMonth()+1;
+                let ns = new Date(s); ns.setDate(ns.getDate()+7); const nsm = ns.getMonth()+1;
                 const isLW = lm !== ((ns.getFullYear()===2026 && nsm===3) ? 4 : nsm);
-                
-                res.push({
-                    label: lm+"月"+wn+"W ("+(sm+"/"+s.getDate()+"～"+(end.getMonth()+1)+"/"+end.getDate())+")",
-                    start: new Date(s), end: new Date(end), isLastWeekOfMonth: isLW
-                });
-                
-                s.setDate(s.getDate()+7);
-                wn++;
+                let monthY = s.getFullYear(); if (lm === 1 || lm === 2 || lm === 3) monthY = 2027; else monthY = 2026;
+                const monthStr = `${monthY}年${lm}月度`;
+                res.push({ label: lm+"月"+wn+"W ("+(sm+"/"+s.getDate()+"～"+(end.getMonth()+1)+"/"+end.getDate())+")", start: new Date(s), end: new Date(end), isLastWeekOfMonth: isLW, monthStr: monthStr });
+                s.setDate(s.getDate()+7); wn++;
             }
             return res;
         }
         window.appState.weeksData = generateWeeksData();
+
+        function generateMonthsData() {
+            const months = [{ m: 4, y: 2026 }, { m: 5, y: 2026 }, { m: 6, y: 2026 }, { m: 7, y: 2026 }, { m: 8, y: 2026 }, { m: 9, y: 2026 }, { m: 10, y: 2026 }, { m: 11, y: 2026 }, { m: 12, y: 2026 }, { m: 1, y: 2027 }, { m: 2, y: 2027 }, { m: 3, y: 2027 }];
+            return months.map(item => `${item.y}年${item.m}月度`);
+        }
+        window.appState.monthsData = generateMonthsData();
     </script>
 </head>
 <body>
-    <div id="loading-overlay">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mb-4"></div>
-        <p class="text-xs font-bold text-gray-400">CONNECTING CLOUD...</p>
-    </div>
-
-    <header class="bg-white sticky top-0 z-50 border-b-2 border-pink-400 shadow-sm">
-        <div class="max-w-4xl mx-auto px-4 py-2 flex justify-between items-center">
-            <div class="flex items-center" onclick="window.switchTab('home')" style="cursor:pointer">
-                <svg width="42" height="42" viewBox="0 0 100 100" fill="none" class="mr-3">
-                    <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="#f06292"/>
-                    <circle cx="53" cy="38" r="14" fill="white"/>
-                    <path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/>
-                </svg>
-                <div>
-                    <h1 class="text-xl font-black">self-A</h1>
-                    <p id="current-office-display" class="text-[9px] font-bold text-gray-400">HOME</p>
-                </div>
-            </div>
-            <span id="role-badge" class="hidden text-[10px] px-2 py-1 bg-pink-50 text-pink-500 rounded-full font-black"></span>
-        </div>
-        <nav class="hidden flex border-t bg-white" id="nav-tabs">
-            <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 py-3 text-[11px] font-black uppercase">入力</button>
-            <button onclick="window.switchTab('dashboard')" id="tab-dashboard" class="flex-1 py-3 text-[11px] font-black uppercase border-l">分析</button>
-            <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 py-3 text-[11px] font-black uppercase border-l">マスタ</button>
-        </nav>
-    </header>
-
+    <div id="loading-overlay"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mb-4"></div><p class="text-xs font-bold text-gray-400">CONNECTING CLOUD...</p></div>
+    <header class="bg-white sticky top-0 z-50 border-b-2 border-pink-400 shadow-sm"><div class="max-w-4xl mx-auto px-4 py-2 flex justify-between items-center"><div class="flex items-center" onclick="window.switchTab('home')" style="cursor:pointer"><svg width="42" height="42" viewBox="0 0 100 100" fill="none" class="mr-3"><path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="#f06292"/><circle cx="53" cy="38" r="14" fill="white"/><path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/></svg><div><h1 class="text-xl font-black">self-A</h1><p id="current-office-display" class="text-[9px] font-bold text-gray-400">HOME</p></div></div><span id="role-badge" class="hidden text-[10px] px-2 py-1 bg-pink-50 text-pink-500 rounded-full font-black"></span></div><nav class="hidden flex border-t bg-white" id="nav-tabs"><button onclick="window.switchTab('input')" id="tab-input" class="flex-1 py-3 text-[11px] font-black uppercase">入力</button><button onclick="window.switchTab('dashboard')" id="tab-dashboard" class="flex-1 py-3 text-[11px] font-black uppercase border-l">分析</button><button onclick="window.switchTab('master')" id="tab-master" class="flex-1 py-3 text-[11px] font-black uppercase border-l">マスタ</button></nav></header>
     <main class="max-w-4xl mx-auto p-4">
-        <!-- view-home -->
-        <div id="view-home" class="view-content space-y-5 pt-4">
-            <div onclick="window.startInputMode()" class="portal-card p-6 rounded-2xl border-l-8 border-l-pink-400 flex items-center space-x-6">
-                <div class="w-16 h-16 brand-bg-pink rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-pen-to-square"></i></div>
-                <div><h3 class="font-black">事業所入力モード</h3><p class="text-[10px] text-gray-400">Weekly Check</p></div>
-            </div>
-            <div onclick="window.startAMCheckMode()" class="portal-card p-6 rounded-2xl border-l-8 border-l-indigo-600 flex items-center space-x-6">
-                <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-user-check"></i></div>
-                <div><h3 class="font-black">管理者確認モード</h3><p class="text-[10px] text-gray-400">AM Validation</p></div>
-            </div>
-            <div onclick="window.switchTab('dashboard')" class="portal-card p-6 rounded-2xl border-l-8 border-l-gray-700 flex items-center space-x-6">
-                <div class="w-16 h-16 bg-gray-700 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-chart-pie"></i></div>
-                <div><h3 class="font-black">管理者分析モード</h3><p class="text-[10px] text-gray-400">Data Analysis</p></div>
-            </div>
-            <div onclick="window.switchTab('master')" class="portal-card p-6 rounded-2xl border-l-8 border-l-orange-400 flex items-center space-x-6">
-                <div class="w-16 h-16 bg-orange-400 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-database"></i></div>
-                <div><h3 class="font-black">マスタ設定</h3><p class="text-[10px] text-gray-400">Settings</p></div>
-            </div>
-        </div>
-
-        <!-- office-selector -->
-        <div id="office-selector" class="hidden view-content bg-white p-8 rounded-3xl shadow-xl border">
-            <h2 class="text-xl font-black text-center mb-8">対象を選択してください</h2>
-            <div class="space-y-5">
-                <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 border-2 rounded-2xl font-bold bg-white">
-                    <option value="" selected disabled>対象エリアを選択...</option>
-                    <option value="石川AM">石川AM</option>
-                    <option value="寺口AM">寺口AM</option>
-                    <option value="甲部AM">甲部AM</option>
-                    <option value="若林AM">若林AM</option>
-                    <option value="辰橋AM">辰橋AM</option>
-                    <option value="中村AM">中村AM</option>
-                    <option value="小野統括">小野統括</option>
-                </select>
-                <select id="office-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
-                <div id="week-pulldown-section">
-                    <select id="week-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
-                </div>
-                <div id="month-pulldown-section" class="hidden">
-                    <select id="month-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
-                </div>
-                <button onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-xl uppercase">START CHECK</button>
-            </div>
-        </div>
-
-        <!-- view-input -->
-        <div id="view-input" class="hidden space-y-6 view-content">
-            <div class="bg-pink-50 p-5 rounded-2xl border">
-                <div class="flex justify-between items-start mb-2">
-                    <p class="text-[10px] text-pink-500 font-black uppercase">Quality Control Sheet</p>
-                    <p id="progress-text" class="text-2xl font-black text-pink-600">0%</p>
-                </div>
-                <h2 class="font-black text-gray-800" id="input-view-header-title">チェックシート</h2>
-            </div>
-            <div id="categories-container"></div>
-            <button id="submit-btn" disabled onclick="window.submitData()" class="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black text-lg shadow-xl">クラウドへ送信</button>
-        </div>
-
-        <!-- view-dashboard -->
+        <div id="view-home" class="view-content space-y-5 pt-4"><div onclick="window.startInputMode()" class="portal-card p-6 rounded-2xl border-l-8 border-l-pink-400 flex items-center space-x-6"><div class="w-16 h-16 brand-bg-pink rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-pen-to-square"></i></div><div><h3 class="font-black">事業所入力モード</h3><p class="text-[10px] text-gray-400">Weekly Check</p></div></div><div onclick="window.startAMCheckMode()" class="portal-card p-6 rounded-2xl border-l-8 border-l-indigo-600 flex items-center space-x-6"><div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-user-check"></i></div><div><h3 class="font-black">管理者確認モード</h3><p class="text-[10px] text-gray-400">AM Validation</p></div></div><div onclick="window.switchTab('dashboard')" class="portal-card p-6 rounded-2xl border-l-8 border-l-gray-700 flex items-center space-x-6"><div class="w-16 h-16 bg-gray-700 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-chart-pie"></i></div><div><h3 class="font-black">管理者分析モード</h3><p class="text-[10px] text-gray-400">Data Analysis</p></div></div><div onclick="window.switchTab('master')" class="portal-card p-6 rounded-2xl border-l-8 border-l-orange-400 flex items-center space-x-6"><div class="w-16 h-16 bg-orange-400 rounded-2xl flex items-center justify-center text-white text-3xl"><i class="fa-solid fa-database"></i></div><div><h3 class="font-black">マスタ設定</h3><p class="text-[10px] text-gray-400">Settings</p></div></div></div>
+        <div id="office-selector" class="hidden view-content bg-white p-8 rounded-3xl shadow-xl border"><h2 class="text-xl font-black text-center mb-8">対象を選択してください</h2><div class="space-y-5">
+            <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 border-2 rounded-2xl font-bold bg-white">
+                <option value="" selected disabled>対象エリアを選択...</option><option value="石川AM">石川AM</option><option value="寺口AM">寺口AM</option><option value="甲部AM">甲部AM</option><option value="若林AM">若林AM</option><option value="辰橋AM">辰橋AM</option><option value="中村AM">中村AM</option><option value="小野統括">小野統括</option>
+            </select>
+            <select id="office-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
+            <div id="week-pulldown-section"><select id="week-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select></div>
+            <div id="month-pulldown-section" class="hidden"><select id="month-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select></div>
+            <button onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-xl uppercase">START CHECK</button>
+        </div></div>
+        <div id="view-input" class="hidden space-y-6 view-content"><div class="bg-pink-50 p-5 rounded-2xl border"><div class="flex justify-between items-start mb-2"><p class="text-[10px] text-pink-500 font-black uppercase">Quality Control Sheet</p><p id="progress-text" class="text-2xl font-black text-pink-600">0%</p></div><h2 class="font-black text-gray-800" id="input-view-header-title">チェックシート</h2></div><div id="categories-container"></div><button id="submit-btn" disabled onclick="window.submitData()" class="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black text-lg shadow-xl">すべて入力してください</button></div>
         <div id="view-dashboard" class="hidden space-y-6 view-content">
-            <div class="bg-white p-6 rounded-2xl border shadow-sm">
-                <label class="text-[11px] font-black text-pink-500 uppercase">分析レイヤーを選択</label>
-                <select id="analysis-am-pulldown" onchange="window.renderAnalysisFilters()" class="w-full p-4 border-2 rounded-2xl bg-pink-50 font-black mt-3"></select>
+            <div class="bg-white p-2 rounded-2xl border shadow-sm mb-2 flex space-x-2">
+                <button id="btn-source-staff" onclick="window.setDataSource('staff')" class="flex-1 py-3 text-[11px] font-black rounded-xl bg-pink-500 text-white shadow-md transition-all">事業所 (Weekly)</button>
+                <button id="btn-source-am" onclick="window.setDataSource('am')" class="flex-1 py-3 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">管理者 (Monthly)</button>
+                <button id="btn-source-gap" onclick="window.setDataSource('gap')" class="flex-1 py-3 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">評価ギャップ比較</button>
             </div>
-            <div id="analysis-target-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm space-y-5">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xs font-black text-gray-400 uppercase">分析対象切替</h3>
-                    <span id="target-type-badge" class="text-[9px] px-2 py-0.5 rounded-full font-bold"></span>
-                </div>
-                <select id="analysis-office-pulldown" onchange="window.handleAnalysisTargetChange()" class="w-full p-4 border-2 rounded-2xl bg-white font-black"></select>
-                <div id="area-office-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
-            </div>
-            <div id="analysis-stats-section" class="hidden grid grid-cols-2 gap-4">
-                <div class="bg-white p-5 rounded-2xl border-l-4 border-pink-500 shadow-sm">
-                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Target Score</p>
-                    <p class="text-3xl font-black"><span id="display-avg-score">--</span><span class="text-xs ml-1 text-gray-400">pt</span></p>
-                </div>
-                <div class="bg-white p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm">
-                    <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Status</p>
-                    <p class="text-3xl font-black"><span id="display-input-rate">--</span><span class="text-xs ml-1 text-gray-400">%</span></p>
-                </div>
-            </div>
-            <div id="analysis-chart-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm">
-                <h3 class="font-black text-gray-700 flex items-center mb-6">
-                    <i class="fa-solid fa-chart-line mr-2 text-pink-500"></i>
-                    <span id="chart-title-text">QUALITY TREND</span>
-                </h3>
-                <div class="chart-scroll-wrapper">
-                    <div class="chart-inner-container"><canvas id="qcChart"></canvas></div>
-                </div>
-            </div>
-            <div id="auto-analysis-section" class="hidden bg-white p-6 rounded-2xl border-indigo-100 shadow-sm border mt-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-robot mr-2 text-indigo-500"></i>自動分析レポート</h3>
-                    <span id="auto-analysis-title-badge" class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100"></span>
-                </div>
-                <select id="analysis-period-pulldown" onchange="window.renderAutoAnalysis()" class="w-full p-3 border rounded-lg bg-white font-bold text-xs mb-4">
-                    <option value="latest">最新のデータ</option>
-                    <option value="current_week">今週分のみ</option>
-                    <option value="last_1_month">直近1ヶ月分</option>
-                    <option value="all">全期間</option>
-                </select>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="auto-analysis-content"></div>
+            <div class="bg-white p-6 rounded-2xl border shadow-sm"><label class="text-[11px] font-black text-pink-500 uppercase">分析レイヤーを選択</label><select id="analysis-am-pulldown" onchange="window.renderAnalysisFilters()" class="w-full p-4 border-2 rounded-2xl bg-pink-50 font-black mt-3"></select></div>
+            <div id="analysis-target-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm space-y-5"><div class="flex justify-between items-center"><h3 class="text-xs font-black text-gray-400 uppercase">分析対象切替</h3><span id="target-type-badge" class="text-[9px] px-2 py-0.5 rounded-full font-bold"></span></div><select id="analysis-office-pulldown" onchange="window.handleAnalysisTargetChange()" class="w-full p-4 border-2 rounded-2xl bg-white font-black"></select><div id="area-office-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div></div>
+            <div id="analysis-stats-section" class="hidden grid grid-cols-2 gap-4"><div class="bg-white p-5 rounded-2xl border-l-4 border-pink-500 shadow-sm"><p class="text-[10px] font-black text-gray-400 uppercase mb-1">Target Score</p><p class="text-3xl font-black"><span id="display-avg-score">--</span><span class="text-xs ml-1 text-gray-400">pt</span></p></div><div class="bg-white p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm"><p class="text-[10px] font-black text-gray-400 uppercase mb-1">Status</p><p class="text-3xl font-black"><span id="display-input-rate">--</span><span class="text-xs ml-1 text-gray-400">%</span></p></div></div>
+            <div id="analysis-chart-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm"><h3 class="font-black text-gray-700 flex items-center mb-6"><i class="fa-solid fa-chart-line mr-2 text-pink-500"></i><span id="chart-title-text">QUALITY TREND</span></h3><div class="chart-scroll-wrapper"><div class="chart-inner-container"><canvas id="qcChart"></canvas></div></div></div>
+            <div id="auto-analysis-section" class="hidden bg-white p-6 rounded-2xl border-indigo-100 shadow-sm border mt-6"><div class="flex justify-between items-center mb-4"><h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-robot mr-2 text-indigo-500"></i>自動分析レポート</h3><span id="auto-analysis-title-badge" class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100"></span></div><select id="analysis-period-pulldown" onchange="window.renderAutoAnalysis()" class="w-full p-3 border rounded-lg bg-white font-bold text-xs mb-4"><option value="latest">最新のデータ</option><option value="current_week">今週分のみ</option><option value="last_1_month">直近1ヶ月分</option><option value="all">全期間</option></select><div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="auto-analysis-content"></div></div>
+            <div id="gap-items-breakdown-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
+                <h3 class="font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-list-check mr-2 text-orange-500"></i>項目別ギャップ詳細</h3>
+                <div id="gap-items-content" class="space-y-2"></div>
             </div>
         </div>
-
-        <!-- view-master -->
-        <div id="view-master" class="hidden space-y-6 view-content">
-            <div class="bg-white p-7 rounded-2xl border-t-4 border-orange-400 shadow-xl">
-                <h3 class="text-lg font-black mb-5">事業所の追加</h3>
-                <div class="space-y-4">
-                    <input type="text" id="new-office-name" placeholder="事業所名..." class="w-full p-4 border rounded-xl font-bold">
-                    <button onclick="window.addOffice()" class="w-full py-4 bg-orange-500 text-white rounded-xl font-black shadow-lg">追加する</button>
-                </div>
-            </div>
-            <div class="bg-white rounded-2xl border shadow-sm mt-6">
-                <div class="p-4 bg-gray-800 text-white flex justify-between items-center font-black text-xs">
-                    <span>拠点マスタ</span>
-                    <span id="office-count">0</span>
-                </div>
-                <div id="master-office-list" class="divide-y"></div>
-            </div>
-        </div>
+        <div id="view-master" class="hidden space-y-6 view-content"><div class="bg-white p-7 rounded-2xl border-t-4 border-orange-400 shadow-xl"><h3 class="text-lg font-black mb-5">事業所の追加</h3><div class="space-y-4"><input type="text" id="new-office-name" placeholder="事業所名..." class="w-full p-4 border rounded-xl font-bold"><button onclick="window.addOffice()" class="w-full py-4 bg-orange-500 text-white rounded-xl font-black shadow-lg">追加する</button></div></div><div class="bg-white rounded-2xl border shadow-sm mt-6"><div class="p-4 bg-gray-800 text-white flex justify-between items-center font-black text-xs"><span>拠点マスタ</span><span id="office-count">0</span></div><div id="master-office-list" class="divide-y"></div></div></div>
     </main>
+    <div id="success-toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border-l-4 border-pink-500"><i class="fa-solid fa-check-circle text-pink-400 mr-3"></i><span id="toast-message" class="font-black text-sm uppercase">COMPLETE</span></div>
 
-    <div id="success-toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border-l-4 border-pink-500">
-        <i class="fa-solid fa-check-circle text-pink-400 mr-3"></i>
-        <span id="toast-message" class="font-black text-sm uppercase">COMPLETE</span>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- 2. Firebase & Data Sync Script             -->
-    <!-- ========================================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // ★★★ GitHub Pages 用設定（ここにFirebase情報を貼り付け） ★★★
-        // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
-        let firebaseConfig;
-        if (typeof __firebase_config !== 'undefined') { 
-            // プレビュー環境用（このまま残してください）
-            firebaseConfig = JSON.parse(__firebase_config); 
-        } else {
-            // ★本番環境用：この中身を取得した情報に書き換えてください
-            firebaseConfig = {
-                apiKey: "AIzaSyBdbezD4xYpqPTy9XZMttHbLBt5cXe33G8",
-                authDomain: "self-qc.firebaseapp.com",
-                projectId: "self-qc",
-                storageBucket: "self-qc.firebasestorage.app",
-                messagingSenderId: "247849012338",
-                appId: "1:247849012338:web:833502cbdbe980a33046eb"
-            };
+        // Firebase設定。外部設定がない場合のみデフォルト値を使う
+        let firebaseConfig = {
+            apiKey: "AIzaSyBdbezD4xYpqPTy9XZMttHbLBt5cXe33G8",
+            authDomain: "self-qc.firebaseapp.com",
+            projectId: "self-qc",
+            storageBucket: "self-qc.firebasestorage.app",
+            messagingSenderId: "247849012338",
+            appId: "1:247849012338:web:833502cbdbe980a33046eb"
+        };
+        
+        // 環境変数からの上書き
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
         }
-        // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
         async function connectCloud() {
             try {
-                const app = initializeApp(firebaseConfig); 
-                const auth = getAuth(app); 
-                const db = getFirestore(app);
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'self-a-qc-manager-v1'; 
+                const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'self-a-qc-manager-v1';
+                window.db = db; window.appId = appId;
                 
-                window.db = db; 
-                window.appId = appId;
-                
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                // Canvas内部のプロジェクト設定を使っている場合のみカスタムトークンを使用
+                if (typeof __firebase_config !== 'undefined' && typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
                     await signInAnonymously(auth);
                 }
-                
-                onAuthStateChanged(auth, (user) => { 
-                    if (user && !window.appState.syncStarted) { 
-                        window.appState.user = user; 
-                        window.appState.syncStarted = true; 
-                        startSync(db, appId); 
-                    } 
-                });
-            } catch (e) { 
-                console.error(e); 
-                window.hideMainLoader(); 
-            }
+                onAuthStateChanged(auth, (user) => { if (user && !window.appState.syncStarted) { window.appState.user = user; window.appState.syncStarted = true; startSync(db, appId); } });
+            } catch (e) { console.error(e); window.hideMainLoader(); }
         }
 
         function startSync(db, appId) {
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'offices'), s => {
-                const fs = s.docs.map(d => ({ id: d.id, ...d.data() })); 
-                const m = new Map(); 
-                window.initialOffices.forEach(o => m.set(o.name, o)); 
-                fs.forEach(o => m.set(o.name, o));
-                window.appState.offices = Array.from(m.values()); 
-                window.renderMasterList(); 
-                window.renderSelectors(); 
-                window.hideMainLoader();
+                const m = new Map(); window.initialOffices.forEach(o => m.set(o.name, o)); s.docs.map(d => ({id:d.id, ...d.data()})).forEach(o => m.set(o.name, o));
+                window.appState.offices = Array.from(m.values()); window.renderMasterList(); window.renderSelectors(); window.hideMainLoader();
             }, e => window.hideMainLoader());
             
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'qc_history'), s => {
-                window.appState.history = {}; 
-                window.appState.historyFull = {};
-                s.docs.forEach(d => { 
-                    const v = d.data(); 
-                    if (!window.appState.history[v.office]) { 
-                        window.appState.history[v.office] = {}; 
-                        window.appState.historyFull[v.office] = {}; 
-                    } 
-                    window.appState.history[v.office][v.week] = v.score; 
-                    window.appState.historyFull[v.office][v.week] = v; 
-                });
-                if (window.appState.activeTab === 'dashboard') { 
-                    window.updateStatsDisplay(); 
-                    window.renderQualityChart(); 
-                    window.renderOfficeQuickList(); 
-                    window.renderAutoAnalysis(); 
-                }
+                window.appState.history = {}; window.appState.historyFull = {};
+                s.docs.forEach(d => { const v = d.data(); if (!window.appState.history[v.office]) { window.appState.history[v.office] = {}; window.appState.historyFull[v.office] = {}; } window.appState.history[v.office][v.week] = v.score; window.appState.historyFull[v.office][v.week] = v; });
+                if (window.appState.activeTab === 'dashboard') { window.updateStatsDisplay(); window.renderQualityChart(); window.renderOfficeQuickList(); window.renderAutoAnalysis(); }
+            });
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'am_qc_history'), s => {
+                window.appState.amHistory = {}; window.appState.amHistoryFull = {};
+                s.docs.forEach(d => { const v = d.data(); if (!window.appState.amHistory[v.office]) { window.appState.amHistory[v.office] = {}; window.appState.amHistoryFull[v.office] = {}; } const l = v.month || v.week; window.appState.amHistory[v.office][l] = v.score; window.appState.amHistoryFull[v.office][l] = v; });
+                if (window.appState.activeTab === 'dashboard') { window.updateStatsDisplay(); window.renderQualityChart(); window.renderOfficeQuickList(); window.renderAutoAnalysis(); }
             });
         }
 
         window.submitData = async () => {
-            const b = document.getElementById('submit-btn'); 
-            b.disabled = true; 
-            b.innerText = "同期中...";
-            
-            const isAM = window.appState.currentMode === 'am'; 
-            const isLW = !isAM && window.appState.isLastWeekOfMonth; 
-            const total = isAM || isLW ? 16 : 10;
-            
-            let sum = 0; 
-            Object.values(window.appState.answers).forEach(v => sum += v); 
-            const score = Math.round((sum/(total*2))*100);
-            
-            const target = isAM ? window.appState.inputMonth : window.appState.inputWeek; 
-            const docId = (window.appState.office + "_" + target).replace(/[/ ]/g, '_');
-            
+            const b = document.getElementById('submit-btn'); b.disabled = true; b.innerText = "同期中...";
+            const isAM = window.appState.currentMode === 'am'; const isLW = !isAM && window.appState.isLastWeekOfMonth;
+            const total = isAM || isLW ? 16 : 10; let sum = 0; Object.values(window.appState.answers).forEach(v => sum += v);
+            const score = Math.round((sum/(total*2))*100); const t = isAM ? window.appState.inputMonth : window.appState.inputWeek;
+            const docId = (window.appState.office + "_" + t).replace(/[/ ]/g, '_');
             try {
-                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', isAM ? 'am_qc_history' : 'qc_history', docId), { 
-                    office: window.appState.office, 
-                    score: score, 
-                    answers: window.appState.answers, 
-                    timestamp: new Date().toISOString(), 
-                    week: window.appState.inputWeek, 
-                    month: window.appState.inputMonth, 
-                    mode: window.appState.currentMode 
-                });
-                window.showGlobalToast("保存完了"); 
-                b.innerText = "完了"; 
-                b.className = "w-full py-4 bg-emerald-500 text-white rounded-xl font-black";
-            } catch (e) { 
-                window.showGlobalToast("エラー"); 
-                b.disabled = false; 
-            }
+                await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', isAM ? 'am_qc_history' : 'qc_history', docId), { office: window.appState.office, score: score, answers: window.appState.answers, timestamp: new Date().toISOString(), week: window.appState.inputWeek, month: window.appState.inputMonth, mode: window.appState.currentMode });
+                window.showGlobalToast("保存完了"); b.innerText = "完了"; b.className = "w-full py-4 bg-emerald-500 text-white rounded-xl font-black";
+            } catch (e) { window.showGlobalToast("保存失敗"); b.disabled = false; b.innerText = "クラウドへ送信"; }
         };
 
         const amList = ["石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
-        
+
         window.renderAnalysisFilters = () => {
-            const amS = document.getElementById('analysis-am-pulldown'); 
-            const tS = document.getElementById('analysis-office-pulldown'); 
-            if (!amS || !tS) return;
-            
-            if (amS.innerHTML === "") { 
-                amS.innerHTML = '<option value="" selected disabled>選択...</option><option value="works">ワークス事業部</option>'; 
-                amList.forEach(a => amS.innerHTML += `<option value="${a}">${a}</option>`); 
-            }
-            if (!amS.value) return; 
-            
-            safeUpdate('analysis-target-section', e => e.classList.remove('hidden')); 
-            safeUpdate('analysis-stats-section', e => e.classList.remove('hidden')); 
-            safeUpdate('analysis-chart-section', e => e.classList.remove('hidden'));
-            
-            tS.innerHTML = '<option value="all">統合データ</option><option value="compare">比較グラフ</option>';
-            if (amS.value === 'works') {
-                amList.forEach(a => tS.innerHTML += `<option value="am_${a}">${a}統合</option>`);
-            } else {
-                window.appState.offices.filter(o => o.area === amS.value).forEach(o => tS.innerHTML += `<option value="${o.name}">${o.name}</option>`);
-            }
-            window.updateStatsDisplay(); 
-            window.renderQualityChart(); 
-            window.renderOfficeQuickList(); 
-            window.renderAutoAnalysis();
+            const amS = document.getElementById('analysis-am-pulldown'); const tS = document.getElementById('analysis-office-pulldown'); if (!amS || !tS) return;
+            if (amS.innerHTML === "") { amS.innerHTML = '<option value="works">ワークス事業部（全体）</option>'; amList.forEach(a => amS.innerHTML += `<option value="${a}">${a}</option>`); amS.value = 'works'; }
+            window.appState.selectedAM = amS.value;
+            safeUpdate('analysis-target-section', e => e.classList.remove('hidden')); safeUpdate('analysis-stats-section', e => e.classList.remove('hidden')); safeUpdate('analysis-chart-section', e => e.classList.remove('hidden')); safeUpdate('auto-analysis-section', e => e.classList.remove('hidden'));
+            const prev = tS.value; tS.innerHTML = '<option value="all">統合データ</option><option value="compare">比較グラフ</option>';
+            if (amS.value === 'works') amList.forEach(a => tS.innerHTML += `<option value="am_${a}">${a}統合</option>`);
+            else window.appState.offices.filter(o => o.area === amS.value).forEach(o => tS.innerHTML += `<option value="${o.name}">${o.name}</option>`);
+            tS.value = [...tS.options].some(o => o.value === prev) ? prev : 'all';
+            window.appState.analysisTarget = tS.value;
+            window.updateStatsDisplay(); window.renderQualityChart(); window.renderOfficeQuickList(); window.renderAutoAnalysis();
+        };
+
+        window.handleAnalysisTargetChange = () => { window.appState.analysisTarget = document.getElementById('analysis-office-pulldown')?.value || 'all'; window.updateStatsDisplay(); window.renderQualityChart(); window.renderOfficeQuickList(); window.renderAutoAnalysis(); };
+        
+        window.setDataSource = (s) => { 
+            window.appState.dataSource = s; 
+            ['staff', 'am', 'gap'].forEach(x => { const b = document.getElementById('btn-source-' + x); if(b) b.className = x === s ? "flex-1 py-3 text-[11px] font-black rounded-xl bg-pink-500 text-white shadow-md transition-all" : "flex-1 py-3 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all"; });
+            safeUpdate('gap-items-breakdown-section', el => s === 'gap' ? el.classList.remove('hidden') : el.classList.add('hidden'));
+            window.updateStatsDisplay(); window.renderQualityChart(); window.renderOfficeQuickList(); window.renderAutoAnalysis(); 
+        };
+
+        window.updateStatsDisplay = () => {
+            const am = window.appState.selectedAM; const target = window.appState.analysisTarget; if (!am || window.appState.activeTab !== 'dashboard') return;
+            const scoreEl = document.getElementById('display-avg-score'); const rateEl = document.getElementById('display-input-rate'); const badge = document.getElementById('target-type-badge');
+            if (!scoreEl || !rateEl || !badge) return;
+            let targetOffices = am === 'works' ? (target === 'all' || target === 'compare' ? window.appState.offices : window.appState.offices.filter(o => o.area === target.replace('am_', ''))) : (target === 'all' || target === 'compare' ? window.appState.offices.filter(o => o.area === am) : window.appState.offices.filter(o => o.name === target));
+            badge.innerText = am === 'works' ? (target === 'all' ? "WORKS INTEGRATED" : "AREA SPECIFIC") : (target === 'all' ? "AREA INTEGRATED" : "OFFICE SPECIFIC");
+            badge.className = target === 'all' || target === 'compare' ? "text-[9px] bg-gray-800 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter" : "text-[9px] bg-pink-500 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter";
+            const source = window.appState.dataSource || 'staff';
+            if (source === 'gap') { scoreEl.innerText = '--'; rateEl.innerText = '--'; return; }
+            const hist = source === 'am' ? window.appState.amHistory : window.appState.history;
+            const lbls = source === 'am' ? window.appState.monthsData.slice().reverse() : window.appState.weeksData.slice().reverse().map(w => w.label);
+            try {
+                let totalS = 0, count = 0;
+                targetOffices.forEach(o => { 
+                    const h = hist[o.name] || {}; let last = null;
+                    for (let l of lbls) { if (h[l] !== undefined && h[l] !== null) { last = h[l]; break; } }
+                    if (last !== null) { totalS += last; count++; }
+                });
+                scoreEl.innerText = count > 0 ? Math.round(totalS / count) : '--'; rateEl.innerText = targetOffices.length > 0 ? Math.round((count / targetOffices.length) * 100) : '0';
+            } catch (e) { scoreEl.innerText = '--'; rateEl.innerText = '--'; }
         };
 
         window.renderQualityChart = () => {
-            const c = document.getElementById('qcChart'); 
-            if (!c || window.appState.activeTab !== 'dashboard') return; 
-            const ctx = c.getContext('2d'); 
-            if (window.qcInstance) window.qcInstance.destroy();
+            const c = document.getElementById('qcChart'); if (!c || window.appState.activeTab !== 'dashboard') return;
+            const ctx = c.getContext('2d'); if (window.qcInstance) window.qcInstance.destroy();
+            const am = window.appState.selectedAM; const target = window.appState.analysisTarget; if (!am) return;
+            const source = window.appState.dataSource || 'staff'; const labels = source === 'staff' ? window.appState.weeksData.map(w => w.label) : window.appState.monthsData;
+            const colors = ['#f06292', '#4f46e5', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f97316', '#3b82f6'];
+            let datasets = [], showLegend = false;
+            let targetOffices = (am === 'works') ? (target === 'all' || target === 'compare' ? window.appState.offices : window.appState.offices.filter(o => o.area === target.replace('am_', ''))) : (target === 'all' || target === 'compare' ? window.appState.offices.filter(o => o.area === am) : window.appState.offices.filter(o => o.name === target));
             
-            const am = document.getElementById('analysis-am-pulldown').value; 
-            const target = document.getElementById('analysis-office-pulldown').value;
-            const labels = window.appState.weeksData.map(w => w.label); 
-            let ds = [];
-            
-            if (target === 'all') {
-                const data = labels.map(l => { 
-                    let s=0, count=0; 
-                    window.appState.offices.filter(o => am==='works'||o.area===am).forEach(o => { 
-                        if (window.appState.history[o.name]?.[l] !== undefined) { 
-                            s+=window.appState.history[o.name][l]; 
-                            count++; 
-                        } 
-                    }); 
-                    return count>0 ? Math.round(s/count) : null; 
-                });
-                ds.push({ data, borderColor: '#f06292', fill: true, tension: 0.3, spanGaps: true });
+            if (source === 'gap') {
+                const dataAM = labels.map(l => { let s=0, c=0; targetOffices.forEach(o => { const h = window.appState.amHistory[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; });
+                const dataStaff = labels.map(l => { let s=0, c=0; const weeks = window.appState.weeksData.filter(w => w.monthStr === l).map(w => w.label); targetOffices.forEach(o => { const h = window.appState.history[o.name] || {}; weeks.forEach(wl => { if (h[wl] !== undefined) { s+=h[wl]; c++; } }); }); return c>0 ? Math.round(s/c) : null; });
+                datasets.push({ label: '管理者評価(Monthly)', data: dataAM, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.05)', fill: true, tension: 0.3, borderWidth: 4, pointRadius: 4, spanGaps: true });
+                datasets.push({ label: '事業所自己評価(月平均)', data: dataStaff, borderColor: '#f06292', backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 3, borderDash: [5, 5], pointRadius: 4, pointBackgroundColor: '#fff', spanGaps: true });
+                showLegend = true; safeUpdate('chart-title-text', e => e.innerText = `自己評価 vs 管理者評価 ギャップ推移`);
+            } else {
+                const hToU = source === 'am' ? window.appState.amHistory : window.appState.history;
+                if (target === 'all' || target.startsWith('am_')) {
+                    const data = labels.map(l => { let s=0, c=0; targetOffices.forEach(o => { const h = hToU[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; });
+                    datasets.push({ label: '統合推移', data, borderColor: source === 'am' ? '#4f46e5' : '#f06292', backgroundColor: source === 'am' ? 'rgba(79, 70, 229, 0.05)' : 'rgba(240, 98, 146, 0.05)', fill: true, tension: 0.3, borderWidth: 4, pointRadius: 4, spanGaps: true });
+                } else if (target === 'compare') {
+                    let groups = am === 'works' ? amList.map(a => ({ name: a, offices: window.appState.offices.filter(o => o.area === a) })) : targetOffices.map(o => ({ name: o.name, offices: [o] }));
+                    groups.forEach((g, idx) => { const d = labels.map(l => { let s=0, c=0; g.offices.forEach(o => { const h = hToU[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; }); if (d.some(x => x !== null)) datasets.push({ label: g.name, data: d, borderColor: colors[idx % colors.length], fill: false, tension: 0.3, borderWidth: 3, pointRadius: 4, spanGaps: true }); });
+                    showLegend = true;
+                } else {
+                    const data = labels.map(l => { const h = hToU[target] || {}; return (h[l] !== undefined) ? h[l] : null; });
+                    datasets.push({ label: target, data, borderColor: source === 'am' ? '#4f46e5' : '#f06292', fill: true, tension: 0.3, borderWidth: 4, spanGaps: true });
+                }
             }
-            window.qcInstance = new Chart(ctx, { 
-                type: 'line', 
-                data: { labels, datasets: ds }, 
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } } 
+            window.qcInstance = new Chart(ctx, { type: 'line', data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: showLegend, position: 'bottom', labels: { boxWidth: 12, font: { size: 10, weight: 'bold' } } } } } });
+        };
+
+        window.renderOfficeQuickList = () => {
+            const grid = document.getElementById('area-office-grid'); const am = window.appState.selectedAM; if (!grid || !am) return; grid.innerHTML = '';
+            const createBtn = (id, label, sub) => { const d = document.createElement('div'); d.className = `office-card p-3 rounded-xl cursor-pointer text-center ${window.appState.analysisTarget === id ? 'active shadow-md' : 'bg-gray-50'}`; d.innerHTML = `<p class="text-[9px] font-black text-gray-400 uppercase">${sub}</p><p class="text-xs font-black">${label}</p>`; d.onclick = () => { window.appState.analysisTarget = id; document.getElementById('analysis-office-pulldown').value = id; window.updateStatsDisplay(); window.renderQualityChart(); window.renderOfficeQuickList(); window.renderAutoAnalysis(); }; return d; };
+            grid.appendChild(createBtn('all', 'ALL DATA', '統合')); grid.appendChild(createBtn('compare', 'COMPARE', '比較'));
+            const src = window.appState.dataSource || 'staff'; const hToU = src === 'am' ? window.appState.amHistory : window.appState.history; const lbls = src === 'am' ? window.appState.monthsData.slice().reverse() : window.appState.weeksData.slice().reverse().map(w => w.label);
+            const targets = am === 'works' ? amList.map(a => ({id:'am_'+a, name:a, offices: window.appState.offices.filter(o => o.area === a)})) : window.appState.offices.filter(o => o.area === am).map(o => ({id: o.name, name: o.name, offices: [o]}));
+            targets.forEach(t => {
+                let last = '--'; for (let l of lbls) { let s=0, c=0; t.offices.forEach(o => { if (hToU[o.name]?.[l] !== undefined) { s+=hToU[o.name][l]; c++; } }); if (c>0) { last = Math.round(s/c); break; } }
+                const d = document.createElement('div'); d.className = `office-card p-3 rounded-xl cursor-pointer ${window.appState.analysisTarget === t.id ? 'active shadow-md' : 'bg-white shadow-sm'}`;
+                d.innerHTML = `<div class="flex justify-between items-start mb-1"><span class="text-[8px] bg-gray-100 px-1 rounded font-bold">MODE</span><span class="text-[10px] font-black ${last>=80||last==='--'?'text-emerald-500':'text-pink-500'}">${last}${last!=='--'?'pt':''}</span></div><p class="text-[11px] font-black truncate">${t.name}</p>`;
+                d.onclick = () => { window.appState.analysisTarget = t.id; document.getElementById('analysis-office-pulldown').value = t.id; window.updateStatsDisplay(); window.renderQualityChart(); window.renderOfficeQuickList(); window.renderAutoAnalysis(); };
+                grid.appendChild(d);
             });
         };
 
+        window.renderAutoAnalysis = () => {
+            const section = document.getElementById('auto-analysis-section'); const content = document.getElementById('auto-analysis-content'); const period = document.getElementById('analysis-period-pulldown')?.value; if (!section || !content || !period) return;
+            const am = window.appState.selectedAM; if (!am) { section.classList.add('hidden'); return; }
+            section.classList.remove('hidden'); const source = window.appState.dataSource || 'staff'; const isGap = source === 'gap';
+            const targetOffices = am === 'works' ? window.appState.offices : window.appState.offices.filter(o => o.area === am);
+            
+            if (isGap) {
+                let gapStats = []; targetOffices.forEach(o => { let sS=0, sC=0, aS=0, aC=0; Object.values(window.appState.history[o.name] || {}).forEach(v => { sS+=v; sC++; }); Object.values(window.appState.amHistory[o.name] || {}).forEach(v => { aS+=v; aC++; }); if (sC>0 && aC>0) gapStats.push({ name: o.name, gap: Math.round(sS/sC) - Math.round(aS/aC), s: Math.round(sS/sC), a: Math.round(aS/aC) }); });
+                if (gapStats.length === 0) { content.innerHTML = '<div class="col-span-full text-center py-4 text-xs font-bold text-gray-400">データ不足</div>'; window.renderDetailedGapBreakdown([]); return; }
+                gapStats.sort((a,b) => b.gap - a.gap);
+                let html = `<div class="col-span-full bg-orange-50 p-4 rounded-xl border border-orange-100"><h4 class="text-xs font-black text-orange-700 mb-3"><i class="fa-solid fa-triangle-exclamation mr-1"></i>自己評価が甘い拠点（TOP3）</h4><div class="space-y-2">`;
+                gapStats.slice(0,3).forEach(item => html += `<div class="bg-white p-3 rounded-lg flex justify-between items-center shadow-sm border border-orange-50"><span class="text-xs font-black text-gray-800">${item.name}</span><span class="text-orange-500 font-black">+${item.gap}pt 乖離</span></div>`);
+                html += '</div></div>'; content.innerHTML = html;
+                window.renderDetailedGapBreakdown(targetOffices);
+                return;
+            }
+
+            const hFToU = source === 'am' ? window.appState.amHistoryFull : window.appState.historyFull;
+            const lbls = source === 'am' ? window.appState.monthsData.slice().reverse() : window.appState.weeksData.slice().reverse().map(w => w.label);
+            const itemDict = {}; staffCheckItems.concat(amCheckItems).forEach(c => c.items.forEach(i => itemDict[i.id] = i.t));
+            let stats = {}; let hasData = false;
+            targetOffices.forEach(o => {
+                const full = hFToU[o.name] || {}; let list = [];
+                if (period === 'latest') { for(let l of lbls) { if(full[l]?.answers) { list.push(full[l]); break; } } }
+                else if (period === 'all') { Object.values(full).forEach(d => { if(d?.answers) list.push(d); }); }
+                list.forEach(d => { hasData = true; Object.entries(d.answers).forEach(([qid, val]) => { if(!itemDict[qid]) return; if(!stats[qid]) stats[qid] = { sum: 0, count: 0 }; stats[qid].sum += val; stats[qid].count++; }); });
+            });
+            if (!hasData) { content.innerHTML = '<div class="col-span-full text-center py-4 text-xs text-gray-400">データなし</div>'; return; }
+            const res = Object.keys(stats).map(qid => ({ name: itemDict[qid], pct: Math.round((stats[qid].sum/(stats[qid].count*2))*100) })).sort((a,b) => b.pct - a.pct);
+            let html = `<div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100"><h4 class="text-xs font-black text-emerald-700 mb-3">強み項目</h4><div class="space-y-2">`;
+            res.slice(0,2).forEach(i => html += `<div class="bg-white p-2 rounded text-[10px] font-black flex justify-between shadow-sm"><span>${i.name}</span><span class="text-emerald-500">${i.pct}%</span></div>`);
+            html += `</div></div><div class="bg-red-50 p-4 rounded-xl border border-red-100"><h4 class="text-xs font-black text-red-700 mb-3">改善項目</h4><div class="space-y-2">`;
+            res.slice(-2).reverse().forEach(i => html += `<div class="bg-white p-2 rounded text-[10px] font-black flex justify-between shadow-sm"><span>${i.name}</span><span class="text-red-500">${i.pct}%</span></div>`);
+            html += '</div></div>'; content.innerHTML = html;
+        };
+
+        window.renderDetailedGapBreakdown = (targetOffices) => {
+            const container = document.getElementById('gap-items-content'); if (!container) return;
+            if (targetOffices.length === 0) { container.innerHTML = ''; return; }
+            const allItems = staffCheckItems.concat(amCheckItems);
+            let html = '';
+            
+            allItems.forEach(group => {
+                let groupHtml = `<div class="mb-4"><div class="border-b-2 border-gray-100 pb-1 mb-2"><h4 class="text-[10px] font-black text-gray-400 tracking-widest uppercase">${group.cat}</h4></div><div class="grid grid-cols-1 md:grid-cols-2 gap-2">`;
+                group.items.forEach(item => {
+                    let sSum = 0, sCount = 0, aSum = 0, aCount = 0;
+                    targetOffices.forEach(o => {
+                        Object.values(window.appState.historyFull[o.name] || {}).forEach(d => { if (d.answers[item.id] !== undefined) { sSum += d.answers[item.id]; sCount++; } });
+                        Object.values(window.appState.amHistoryFull[o.name] || {}).forEach(d => { if (d.answers[item.id] !== undefined) { aSum += d.answers[item.id]; aCount++; } });
+                    });
+                    const sAvg = sCount > 0 ? Math.round((sSum / (sCount * 2)) * 100) : null;
+                    const aAvg = aCount > 0 ? Math.round((aSum / (aCount * 2)) * 100) : null;
+                    const gap = (sAvg !== null && aAvg !== null) ? (sAvg - aAvg) : '--';
+                    const gapColor = gap > 20 ? 'text-red-500' : (gap < 0 ? 'text-indigo-500' : 'text-gray-400');
+                    
+                    groupHtml += `
+                        <div class="bg-white p-2.5 border rounded-lg shadow-sm flex flex-col justify-center">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-[11px] font-black text-gray-800 flex-1 truncate pr-2" title="${item.t}">${item.t}</span>
+                                <div class="text-right flex items-center bg-gray-50 px-1.5 py-0.5 rounded">
+                                    <span class="text-[8px] font-bold text-gray-400 mr-1">差:</span>
+                                    <span class="text-xs font-black ${gapColor}">${gap > 0 ? '+' : ''}${gap}${gap !== '--' ? '%' : ''}</span>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <div class="flex items-center text-[8px] font-bold">
+                                    <span class="w-12 text-pink-500">事業所</span>
+                                    <div class="flex-1 gap-bar-container" style="height: 6px;"><div class="gap-bar-staff" style="width: ${sAvg || 0}%"></div></div>
+                                    <span class="w-6 text-right ml-1">${sAvg !== null ? sAvg + '%' : '--'}</span>
+                                </div>
+                                <div class="flex items-center text-[8px] font-bold">
+                                    <span class="w-12 text-indigo-600">管理者</span>
+                                    <div class="flex-1 gap-bar-container" style="height: 6px;"><div class="gap-bar-am" style="width: ${aAvg || 0}%"></div></div>
+                                    <span class="w-6 text-right ml-1">${aAvg !== null ? aAvg + '%' : '--'}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                groupHtml += '</div></div>'; html += groupHtml;
+            });
+            container.innerHTML = html;
+        };
+
         window.renderSelectors = () => {
-            const ws = document.getElementById('week-pulldown'); 
-            if (ws.innerHTML === "") { 
-                window.appState.weeksData.forEach(w => { 
-                    const op = document.createElement('option'); 
-                    op.value = w.label; 
-                    op.textContent = w.label; 
-                    if (new Date() >= w.start && new Date() <= w.end) op.selected = true; 
-                    ws.appendChild(op); 
-                }); 
-            }
-            const ms = document.getElementById('month-pulldown'); 
-            if (ms.innerHTML === "") { 
-                [4,5,6,7,8,9,10,11,12,1,2,3].forEach(m => { 
-                    const op = document.createElement('option'); 
-                    op.value = `2026年${m}月度`; 
-                    op.textContent = `2026年${m}月度`; 
-                    ms.appendChild(op); 
-                }); 
-            }
-            const isAM = window.appState.currentMode === 'am'; 
-            safeUpdate('week-pulldown-section', e => e.style.display = isAM ? 'none' : 'block'); 
-            safeUpdate('month-pulldown-section', e => e.style.display = isAM ? 'block' : 'none');
+            const ws = document.getElementById('week-pulldown'); if (ws && ws.innerHTML === "") { window.appState.weeksData.forEach(w => { const op = document.createElement('option'); op.value = w.label; op.textContent = w.label; if (new Date() >= w.start && new Date() <= w.end) op.selected = true; ws.appendChild(op); }); }
+            const ms = document.getElementById('month-pulldown'); if (ms && ms.innerHTML === "") { window.appState.monthsData.forEach(m => { const op = document.createElement('option'); op.value = m; op.textContent = m; ms.appendChild(op); }); }
+            const isAM = window.appState.currentMode === 'am'; safeUpdate('week-pulldown-section', e => e.style.display = isAM ? 'none' : 'block'); safeUpdate('month-pulldown-section', e => e.style.display = isAM ? 'block' : 'none');
             window.handleAreaFilterChange();
         };
 
-        window.renderMasterList = () => { 
-            safeUpdate('office-count', e => e.innerText = window.appState.offices.length); 
-            const l = document.getElementById('master-office-list'); 
-            l.innerHTML = ''; 
-            window.appState.offices.forEach(o => { 
-                const d = document.createElement('div'); 
-                d.className = "p-4 flex justify-between items-center"; 
-                d.innerHTML = `<div><p class="font-black text-sm">${o.name}</p><p class="text-[10px] text-gray-400">${o.area}</p></div>`; 
-                l.appendChild(d); 
-            }); 
-        };
+        window.renderMasterList = () => { safeUpdate('office-count', e => e.innerText = window.appState.offices.length); const l = document.getElementById('master-office-list'); if(!l) return; l.innerHTML = ''; window.appState.offices.forEach(o => { const d = document.createElement('div'); d.className = "p-4 flex justify-between items-center"; d.innerHTML = `<div><p class="font-black text-sm">${o.name}</p><p class="text-[10px] text-gray-400">${o.area}</p></div>`; l.appendChild(d); }); };
 
         connectCloud();
-        window.addEventListener('DOMContentLoaded', () => { 
-            setTimeout(window.hideMainLoader, 3000); 
-            window.switchTab('home'); 
-        });
+        window.addEventListener('DOMContentLoaded', () => { setTimeout(window.hideMainLoader, 3000); window.switchTab('home'); });
     </script>
 </body>
 </html>
