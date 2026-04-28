@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -154,6 +154,27 @@
         {id:'am_imp_5',t:"利用者・来客対応",d:"【基準】来客に対し歓迎の姿勢が見え、利用者が職員に萎縮せず安心して話しかけられていること<br>【確認】接遇態度（ホスピタリティ）<br><span class='text-red-400 font-bold'>【リスク: 顧客離れ】相談支援事業所などからの評判が落ち、新規紹介がストップする</span>"}
       ]}
     ];
+
+    window.getAllCheckItemsOptions = (selectedId) => {
+        let html = '';
+        [...staffCheckItems, ...amCheckItems].forEach(cat => {
+            html += `<optgroup label="${cat.cat}">`;
+            cat.items.forEach(item => {
+                html += `<option value="${item.id}" ${selectedId === item.id ? 'selected' : ''}>${item.t}</option>`;
+            });
+            html += `</optgroup>`;
+        });
+        return html;
+    };
+
+    window.getCheckItemName = (id) => {
+        for (let cat of [...staffCheckItems, ...amCheckItems]) {
+            for (let item of cat.items) {
+                if (item.id === id) return item.t;
+            }
+        }
+        return '不明な項目';
+    };
 
     window.showGlobalToast = (msg) => { 
         sU('toast-message', el => el.innerText = msg); 
@@ -662,7 +683,9 @@
                 beforeImage: compressed,
                 comment: "",
                 deadline_date: "",
-                afterImages: []
+                afterImages: [],
+                responsibility: "office",
+                relatedItemId: ""
             });
         }
         window.renderIssues();
@@ -685,12 +708,22 @@
                 <div class="flex gap-3 bg-gray-50 p-3 rounded-xl border">
                     <div class="relative w-24 h-24 flex-shrink-0">
                         <img src="${issue.beforeImage}" class="rounded-lg w-full h-full object-cover shadow-sm border cursor-pointer hover:opacity-80 transition" onclick="window.openImageModal('${issue.beforeImage}')">
-                        <button class="absolute -top-2 -right-2 bg-gray-900 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-500 transition text-xs shadow" onclick="window.removeIssue(${idx})">
+                        <button class="absolute -top-2 -right-2 bg-gray-900 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-500 transition text-xs shadow z-10" onclick="window.removeIssue(${idx})">
                             <i class="fa-solid fa-times"></i>
                         </button>
                         <span class="absolute top-1 left-1 bg-red-500 text-white text-[10px] px-1.5 rounded font-black shadow z-10">指摘 ${numStr}</span>
                     </div>
-                    <div class="flex-1 flex flex-col gap-2">
+                    <div class="flex-1 flex flex-col gap-2 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <select onchange="window.updateIssueResponsibility(${idx}, this.value)" class="text-[10px] border rounded p-1 font-bold outline-none ${issue.responsibility === 'hq' ? 'text-indigo-700 border-indigo-300 bg-indigo-50' : 'text-pink-700 border-pink-300 bg-pink-50'}">
+                                <option value="office" ${issue.responsibility !== 'hq' ? 'selected' : ''}>事業所対応</option>
+                                <option value="hq" ${issue.responsibility === 'hq' ? 'selected' : ''}>本社対応</option>
+                            </select>
+                            <select onchange="window.updateIssueRelatedItem(${idx}, this.value)" class="text-[10px] border rounded p-1 bg-white text-gray-700 flex-1 w-0 truncate outline-none">
+                                <option value="">関連チェック項目なし (任意)</option>
+                                ${window.getAllCheckItemsOptions(issue.relatedItemId)}
+                            </select>
+                        </div>
                         <textarea class="w-full flex-1 border rounded-lg p-2 text-xs font-bold bg-white focus:border-emerald-500 outline-none resize-none" placeholder="指摘事項 ${numStr} の具体的な内容や改善コメント..." onchange="window.updateIssueComment(${idx}, this.value)">${issue.comment}</textarea>
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] font-bold text-red-500"><i class="fa-regular fa-calendar-check mr-1"></i>改善期限:</span>
@@ -718,6 +751,19 @@
     window.updateIssueDeadline = (idx, val) => {
         if (window.appState.issues[idx]) {
             window.appState.issues[idx].deadline_date = val;
+        }
+    };
+
+    window.updateIssueResponsibility = (idx, val) => {
+        if (window.appState.issues[idx]) {
+            window.appState.issues[idx].responsibility = val;
+            window.renderIssues();
+        }
+    };
+
+    window.updateIssueRelatedItem = (idx, val) => {
+        if (window.appState.issues[idx]) {
+            window.appState.issues[idx].relatedItemId = val;
         }
     };
 
@@ -857,7 +903,24 @@
           });
       }
 
-      const pct = Math.min(100, Math.round((count/total)*100));
+      let hqExcludedItems = new Set();
+      if (window.appState.currentMode === 'qc' && window.appState.issues) {
+          window.appState.issues.forEach(issue => {
+              if (issue.responsibility === 'hq' && issue.relatedItemId) {
+                  hqExcludedItems.add(issue.relatedItemId);
+              }
+          });
+      }
+      
+      // 本社対応として除外される項目は、未入力であっても進捗の分母から引くことで100%になりやすくする
+      hqExcludedItems.forEach(id => {
+          total -= 1;
+          if (window.appState.answers[id] !== undefined) {
+              count -= 1; // 既に入力されていればカウントから引く
+          }
+      });
+
+      const pct = Math.min(100, total > 0 ? Math.round((count/total)*100) : 100);
       
       sU('progress-text', e => e.innerText = pct+"%"); 
       const b = $('submit-btn');
@@ -1440,13 +1503,31 @@
       const isM = (st.currentMode === 'am' || st.currentMode === 'qc'); 
       const isLW = !isM && st.isLastWeekOfMonth;
       const items = isM || isLW ? [...amCheckItems, ...staffCheckItems] : staffCheckItems;
+      
       let total = items.reduce((sum, cat) => sum + cat.items.length, 0);
+      
+      let hqExcludedItems = new Set();
+      if (st.currentMode === 'qc' && st.issues) {
+          st.issues.forEach(issue => {
+              if (issue.responsibility === 'hq' && issue.relatedItemId) {
+                  hqExcludedItems.add(issue.relatedItemId);
+              }
+          });
+      }
       
       if (!isM) total += 4; // 事業所内チェックの配点分
       if (!isM && isLW) total += 4; 
 
+      hqExcludedItems.forEach(id => {
+          total -= 1;
+      });
+
       let sum = 0; 
-      Object.values(st.answers).forEach(v => sum += v); 
+      Object.entries(st.answers).forEach(([id, val]) => {
+          if (!hqExcludedItems.has(id)) {
+              sum += val;
+          }
+      }); 
       
       if (!isM) {
           ['entrance', 'workspace', 'interview', 'office'].forEach(k => {
@@ -1460,7 +1541,7 @@
           });
       }
 
-      let score = Math.round((sum/(total*2))*100);
+      let score = total > 0 ? Math.round((sum/(total*2))*100) : 100;
       
       let gpBonus = 0;
       if (st.currentMode === 'qc') {
@@ -1878,6 +1959,14 @@
                     const numStr = String.fromCharCode(0x2460 + idx) || `(${idx+1})`; 
                     const issueComment = issue.comment ? issue.comment.replace(/\n/g, '<br>') : '<span class="text-gray-300 italic text-xs">コメントなし</span>';
                     
+                    const respBadge = issue.responsibility === 'hq' 
+                        ? `<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black border border-indigo-200 ml-1">本社対応</span>`
+                        : `<span class="text-[9px] bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded font-black border border-pink-200 ml-1">事業所対応</span>`;
+
+                    const relatedItemText = issue.relatedItemId 
+                        ? `<span class="text-[9px] text-gray-500 ml-1"><i class="fa-solid fa-link mr-0.5"></i>関連: ${window.getCheckItemName(issue.relatedItemId)}</span>`
+                        : '';
+                    
                     let afterImagesHtml = '';
                     const aImgs = issue.afterImages || [];
                     if (aImgs.length > 0) hasAfterImages = true;
@@ -1969,11 +2058,15 @@
                             <div class="flex gap-3 mb-3">
                                 <div class="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 relative">
                                     <img src="${issue.beforeImage}" class="rounded-lg w-full h-full object-cover border shadow-sm cursor-pointer hover:opacity-80 transition" onclick="window.openImageModal('${issue.beforeImage}')">
-                                    <span class="absolute top-1 left-1 bg-red-500 text-white text-[10px] px-1.5 rounded font-black shadow">指摘 ${numStr}</span>
                                 </div>
-                                <div class="flex-1">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center flex-wrap gap-1 mb-1.5">
+                                        <span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded font-black shadow">指摘 ${numStr}</span>
+                                        ${respBadge}
+                                    </div>
+                                    ${relatedItemText ? `<div class="mb-1.5 truncate w-full">${relatedItemText}</div>` : ''}
                                     ${deadlineStr}
-                                    <div class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap">${issueComment}</div>
+                                    <div class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap mt-1">${issueComment}</div>
                                 </div>
                             </div>
                             <div class="pl-2 border-l-2 border-emerald-400 pt-1">
@@ -2554,6 +2647,15 @@
             const fullData = conf.f[o.name]?.[selectedPeriod];
             if (!fullData) return;
 
+            let hqExcludedItems = new Set();
+            if (fullData.issues) {
+                fullData.issues.forEach(issue => {
+                    if (issue.responsibility === 'hq' && issue.relatedItemId) {
+                        hqExcludedItems.add(issue.relatedItemId);
+                    }
+                });
+            }
+
             const dateStr = new Date(fullData.timestamp).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             const scoreColor = fullData.score >= 80 ? 'text-emerald-500' : (fullData.score >= 50 ? 'text-yellow-500' : 'text-red-500');
             
@@ -2564,7 +2666,10 @@
                 
                 let mark = '';
                 let markColor = '';
-                if (val === 2) { mark = '○'; markColor = 'text-emerald-500 bg-emerald-50 border-emerald-200'; }
+                if (hqExcludedItems.has(qid)) {
+                    mark = 'N/A';
+                    markColor = 'text-gray-500 bg-gray-100 border-gray-300';
+                } else if (val === 2) { mark = '○'; markColor = 'text-emerald-500 bg-emerald-50 border-emerald-200'; }
                 else if (val === 1) { mark = '△'; markColor = 'text-yellow-600 bg-yellow-50 border-yellow-300'; }
                 else { mark = '×'; markColor = 'text-red-500 bg-red-50 border-red-200'; }
 
@@ -2574,7 +2679,7 @@
                         <p class="text-[8px] font-black text-gray-400 mb-0.5 truncate">${itemDef.cat}</p>
                         <p class="text-[10px] font-bold text-gray-700 truncate" title="${itemDef.t}">${itemDef.t}</p>
                     </div>
-                    <div class="w-7 h-7 rounded-full border flex items-center justify-center font-black text-xs ${markColor} flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full border flex items-center justify-center font-black text-[10px] ${markColor} flex-shrink-0" ${hqExcludedItems.has(qid) ? 'title="本社対応により評価除外"' : ''}>
                         ${mark}
                     </div>
                 </div>`;
