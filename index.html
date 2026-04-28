@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -238,7 +238,12 @@
       if (!isM) {
           const selectedWeekOption = $('week-pulldown')?.options[$('week-pulldown').selectedIndex];
           if (selectedWeekOption && selectedWeekOption.disabled) {
-              return window.showGlobalToast("入力期間外の週は選択できません");
+              return window.showGlobalToast("選択できない週です");
+          }
+      } else if (window.appState.currentMode === 'am') {
+          const selectedMonthOption = $('month-pulldown')?.options[$('month-pulldown').selectedIndex];
+          if (selectedMonthOption && selectedMonthOption.disabled) {
+              return window.showGlobalToast("選択できない月です");
           }
       }
 
@@ -977,6 +982,121 @@
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">マスタ設定</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Settings</p></div>
           </div>
       </div>
+
+      <details class="mt-8 bg-white rounded-2xl border shadow-sm group">
+          <summary class="p-5 sm:p-6 font-black text-gray-800 cursor-pointer outline-none flex items-center justify-between list-none">
+              <div class="flex items-center">
+                  <i class="fa-solid fa-circle-info text-blue-500 mr-2 text-lg"></i>
+                  <span class="text-base sm:text-lg">運用ルール / 目的</span>
+              </div>
+              <i class="fa-solid fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <div class="px-5 pb-5 sm:px-6 sm:pb-6 border-t pt-4">
+              <div class="space-y-6">
+                  <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                      <h3 class="text-sm font-black text-blue-800 mb-3">【運用目的（トレンド）】</h3>
+                      <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                          <li>品質レベルの標準化</li>
+                          <li>利用者満足度向上 = 事業所の利益向上 = 皆が幸せになる</li>
+                          <li>品質レベルの標準化をし、上記の「皆が幸せになる」には何点が最低限必要なのかを設計する</li>
+                      </ul>
+                  </div>
+                  
+                  <div>
+                      <h3 class="text-sm font-black text-gray-800 mb-3">【運用ルール】</h3>
+                      <div class="space-y-4">
+                          <div class="border rounded-xl overflow-hidden shadow-sm">
+                              <div class="bg-pink-50 px-4 py-2 border-b border-pink-100">
+                                  <h4 class="text-xs font-black text-pink-600"><i class="fa-solid fa-building mr-1.5"></i>事業所</h4>
+                              </div>
+                              <div class="p-4 bg-white">
+                                  <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                      <li>事業所は毎週金曜日(祝日の場合は前日23:59)までに事業所入力にチェックをすること</li>
+                                      <li>実施有無チェックに虚偽がないこと。虚偽が事実と認められた場合、個人・事業所の評価に影響する(上長判断による)</li>
+                                      <li>期日内に入力出来ない場合、減点評価となる</li>
+                                  </ul>
+                              </div>
+                          </div>
+                          
+                          <div class="border rounded-xl overflow-hidden shadow-sm">
+                              <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100">
+                                  <h4 class="text-xs font-black text-indigo-600"><i class="fa-solid fa-user-tie mr-1.5"></i>AM</h4>
+                              </div>
+                              <div class="p-4 bg-white">
+                                  <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                      <li>月1回は事業所へ来所し、品質評価と印象評価をすること</li>
+                                      <li>担当マネージャーは必ず毎月月末の23:59までに、各品質評価と印象評価を入力すること</li>
+                                      <li>指摘事項は、項目に応じて「事業所対応」と「本社対応」に分けて、サポートチームが事業所または本社に対応を依頼する。依頼されたら期日までに対応すること。<br>
+                                          <span class="text-gray-500 font-normal">（例1：壁の汚れ ⇒ 事業所が対応する。例2：壁の破損 ⇒ 本社が対応する。）</span>
+                                      </li>
+                                      <li>あとでやる、たまたま掃除忘れていた等は一切評価に関係せず、見た事実を評価すること</li>
+                                      <li>月1回品質チェックの評価をもとに必ずフィードバックを実施すること</li>
+                                      <li>期日内に入力出来ない場合、減点評価となる</li>
+                                  </ul>
+                              </div>
+                          </div>
+
+                          <div class="border rounded-xl overflow-hidden shadow-sm">
+                              <div class="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+                                  <h4 class="text-xs font-black text-emerald-600"><i class="fa-solid fa-clipboard-check mr-1.5"></i>QCチーム</h4>
+                              </div>
+                              <div class="p-4 bg-white">
+                                  <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                      <li>QCチームは事業所来所時に品質評価と印象評価 ＋ 加点評価(項目外でもOKとする)をすること</li>
+                                      <li>来所後、営業日3日以内に情報をアプリ内に入力をすること</li>
+                                      <li>情報更新後、事業所 ＋ 担当AMに共有し、改善項目に関しては期日を設ける。期日後に写真などでチェックをし改善有無の判断をする<br>
+                                          <span class="text-gray-500 font-normal">└ 改善を急務に完了しても、月度のQCチーム評価は変わらない。但しAM評価は、月度評価前であれば問題ない</span>
+                                      </li>
+                                      <li>来所時は見た事実と感じた事実をそのまま評価にすること。</li>
+                                      <li>毎週、毎月、期日時間経過後、各事業所の入力期日をチェックする <span class="text-red-500">※1分でも過ぎたら減点</span></li>
+                                  </ul>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                      <h3 class="text-sm font-black text-emerald-800 mb-3">【QCチーム運用ガイド（評価と改善の仕組み）】</h3>
+                      <div class="space-y-4">
+                          
+                          <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
+                              <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">評価点（スコアリング）の設計</h4>
+                              <p class="text-[10px] text-gray-600 mb-2 font-bold">事業所の入力負担を減らしつつ、客観的な評価ができるよう「3段階評価」＋「管轄外（N/A）」を導入します。</p>
+                              <ul class="list-none text-xs text-gray-700 font-bold space-y-1 mb-2">
+                                  <li><span class="text-emerald-500">2点（基準達成）：</span> 基準を満たしている（例：清掃が行き届いている）</li>
+                                  <li><span class="text-yellow-500">1点（一部不備）：</span> すぐに改善できる軽微な不備がある（例：ゴミ箱がいっぱい）</li>
+                                  <li><span class="text-red-500">0点（基準未達）：</span> 基準を満たしておらず、指導・改善が必要</li>
+                                  <li><span class="text-gray-500">N/A（評価対象外）：</span> 本社対応が必要な修繕（壁の破損など）</li>
+                              </ul>
+                              <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-600">
+                                  <span class="font-black text-gray-700">ポイント：</span><br>
+                                  「品質スコア（満点に対して何％達成したか）」と「運用スコア（期日遵守など）」は分けて可視化。事業所のどこに課題があるか（環境維持の意識か、業務管理能力か）を明確にします。
+                              </div>
+                          </div>
+
+                          <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
+                              <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">進捗管理シートと「感じた事実」の標準化</h4>
+                              <p class="text-[10px] text-gray-600 mb-2 font-bold">「感じた事実（例：なんとなく暗い、雑然としている）」は属人化しやすいため、基準に引き上げる工夫をします。</p>
+                              <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-700 leading-relaxed font-bold">
+                                  <span class="text-emerald-600">Before/Afterシートの「マニュアル化」転用：</span><br>
+                                  現在QCチームが使っているBefore/Afterの進捗シートを蓄積し、良い状態（正解）と悪い状態（NG）の「写真付きビジュアルスタンダード（VMD基準）」を作成します。<br>
+                                  言葉によるチェックリストだけでなく、「この写真の状態を維持する」という視覚的な基準がある方が、福祉現場で働く多様なスタッフにとって圧倒的にわかりやすく、負担軽減になります。
+                              </div>
+                          </div>
+
+                          <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
+                              <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">改善プロセスにおける「本社対応」の可視化</h4>
+                              <p class="text-[10px] text-gray-600 mb-2 font-bold">指摘事項を「事業所対応」と「本社対応」に分ける仕組みです。</p>
+                              <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-700 leading-relaxed font-bold">
+                                  事業所が「本社に依頼しているのに直してくれないから、ずっと低評価になっている」とモチベーションを下げないよう、QC管理シート上に「本社対応待ちフラグ」を設け、AMやQCチームが来所した際に、そこは事業所の責任として減点しない（N/A扱いにする）運用を徹底すると、不満が出にくくなります。
+                              </div>
+                          </div>
+
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </details>
 
       <div id="home-knowledge-section" class="mt-8 hidden">
           <div class="flex justify-between items-center mb-4">
@@ -2864,28 +2984,72 @@
       if (ws) { 
           ws.innerHTML = "";
           window.appState.weeksData.forEach(w => { 
-              const endOfDay = new Date(w.end);
-              endOfDay.setHours(23, 59, 59, 999);
+              const deadline = new Date(w.start);
+              deadline.setDate(deadline.getDate() + 4); // 月曜日スタートの+4日で金曜日
+              deadline.setHours(23, 59, 59, 999);
               
-              const isCurrent = now >= w.start && now <= endOfDay;
               let isDisabled = false;
+              let suffix = "";
               
-              if (window.appState.currentMode === 'staff' && !isCurrent) {
-                  isDisabled = true;
+              if (window.appState.currentMode === 'staff') {
+                  if (now > deadline) {
+                      isDisabled = true;
+                      suffix = " (期日超過)";
+                  } else if (now < w.start) {
+                      isDisabled = true;
+                      suffix = " (未来)";
+                  }
               }
               
               if (isDisabled) {
-                  ws.innerHTML += `<option value="${w.label}" disabled>${w.label} (入力期間外)</option>`; 
+                  ws.innerHTML += `<option value="${w.label}" disabled>${w.label}${suffix}</option>`; 
               } else {
+                  const endOfDay = new Date(w.end);
+                  endOfDay.setHours(23, 59, 59, 999);
+                  const isCurrent = now >= w.start && now <= endOfDay;
                   ws.innerHTML += `<option value="${w.label}" ${isCurrent?'selected':''}>${w.label}</option>`; 
               }
           }); 
       }
       
       const ms = $('month-pulldown'); 
-      if (ms && ms.innerHTML === "") { 
+      if (ms) { 
+          ms.innerHTML = "";
           window.appState.monthsData.forEach(m => { 
-              ms.innerHTML += `<option value="${m}">${m}</option>`; 
+              const match = m.match(/(\d{4})年(\d{1,2})月度/);
+              let isDisabled = false;
+              let suffix = "";
+              let isCurrent = false;
+
+              if (match) {
+                  const y = parseInt(match[1], 10);
+                  const mon = parseInt(match[2], 10);
+                  const startOfMonth = new Date(y, mon - 1, 1);
+                  const deadline = new Date(y, mon, 0, 23, 59, 59, 999); // 対象月の月末
+                  
+                  if (window.appState.currentMode === 'am') {
+                      if (now > deadline) {
+                          isDisabled = true;
+                          suffix = " (期日超過)";
+                      } else if (now < startOfMonth) {
+                          isDisabled = true;
+                          suffix = " (未来)";
+                      }
+                  } else if (window.appState.currentMode === 'qc') {
+                      if (now < startOfMonth) {
+                          isDisabled = true;
+                          suffix = " (未来)";
+                      }
+                  }
+
+                  isCurrent = now >= startOfMonth && now <= deadline;
+              }
+
+              if (isDisabled) {
+                  ms.innerHTML += `<option value="${m}" disabled>${m}${suffix}</option>`; 
+              } else {
+                  ms.innerHTML += `<option value="${m}" ${isCurrent?'selected':''}>${m}</option>`; 
+              }
           }); 
       }
       
