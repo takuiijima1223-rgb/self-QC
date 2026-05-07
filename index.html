@@ -100,7 +100,8 @@
         currentMode: 'staff', selectedAM: "", analysisTarget: "all", weeksData: [], monthsData: [], 
         isLastWeekOfMonth: false, dataSource: 'staff', gapCompareMode: 'all', issues: [], good_practices: [],
         carImages: { front: null, back: null, inside1: null, inside2: null },
-        officeImages: { entrance: null, workspace: null, interview: null, office: null }
+        officeImages: { entrance: null, workspace: null, interview: null, office: null },
+        settings: {}
     };
     
     const getCircledNumber = (index) => {
@@ -185,7 +186,7 @@
     
     window.switchTab = (id) => {
       window.appState.activeTab = id;
-      ['home', 'input', 'dashboard', 'master', 'feedback', 'knowledge', 'ranking'].forEach(v => { 
+      ['home', 'input', 'dashboard', 'master', 'feedback', 'knowledge', 'ranking', 'rules'].forEach(v => { 
           sU('view-'+v, el => el.classList.add('hidden')); 
           sU('tab-'+v, el => { if(el) el.classList.remove('tab-active', 'text-pink-500'); }); 
       });
@@ -216,6 +217,8 @@
         } else if (id === 'ranking') {
             window.renderRankingSelectors();
             window.renderRankingList();
+        } else if (id === 'master') {
+            window.renderMasterSettings();
         }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1026,23 +1029,19 @@
           </div>
           <div onclick="window.startAMCheckMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-indigo-600 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-user-check"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">管理者入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">AM Validation</p></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">AM入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">AM Validation</p></div>
           </div>
           <div onclick="window.startQCCheckMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-emerald-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-clipboard-check"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">QCチーム入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">QC Team</p></div>
           </div>
           <div onclick="window.switchTab('dashboard')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">QC管理確認</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">QC Check & Analysis</p></div>
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-chart-pie"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">データ分析</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Data Analysis</p></div>
           </div>
           <div onclick="window.switchTab('feedback')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-yellow-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-comments"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">QCフィードバック</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Feedback</p></div>
-          </div>
-          <div onclick="window.switchTab('dashboard')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-gray-700 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-gray-700 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-chart-pie"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">管理者分析</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Data Analysis</p></div>
           </div>
           <div onclick="window.switchTab('ranking')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-cyan-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-ranking-star"></i></div>
@@ -1052,124 +1051,13 @@
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">マスタ設定</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Settings</p></div>
           </div>
+          <div onclick="window.switchTab('rules')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-blue-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-book-open"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">運用ルール</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Rules</p></div>
+          </div>
       </div>
 
-      <details class="mt-8 bg-white rounded-2xl border shadow-sm group">
-          <summary class="p-5 sm:p-6 font-black text-gray-800 cursor-pointer outline-none flex items-center justify-between list-none">
-              <div class="flex items-center">
-                  <i class="fa-solid fa-circle-info text-blue-500 mr-2 text-lg"></i>
-                  <span class="text-base sm:text-lg">運用ルール / 目的</span>
-              </div>
-              <i class="fa-solid fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
-          </summary>
-          <div class="px-5 pb-5 sm:px-6 sm:pb-6 border-t pt-4">
-              <div class="space-y-6">
-                  <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                      <h3 class="text-sm font-black text-blue-800 mb-3">【運用目的（トレンド）】</h3>
-                      <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
-                          <li>品質レベルの標準化</li>
-                          <li>利用者満足度向上 = 事業所の利益向上 = 皆が幸せになる</li>
-                          <li>品質レベルの標準化をし、上記の「皆が幸せになる」には何点が最低限必要なのかを設計する</li>
-                      </ul>
-                  </div>
-                  
-                  <div>
-                      <h3 class="text-sm font-black text-gray-800 mb-3">【運用ルール】</h3>
-                      <div class="space-y-4">
-                          <div class="border rounded-xl overflow-hidden shadow-sm">
-                              <div class="bg-pink-50 px-4 py-2 border-b border-pink-100">
-                                  <h4 class="text-xs font-black text-pink-600"><i class="fa-solid fa-building mr-1.5"></i>事業所</h4>
-                              </div>
-                              <div class="p-4 bg-white">
-                                  <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
-                                      <li>事業所は毎週金曜日(祝日の場合は前日23:59)までに事業所入力にチェックをすること</li>
-                                      <li>実施有無チェックに虚偽がないこと。虚偽が事実と認められた場合、個人・事業所の評価に影響する(上長判断による)</li>
-                                      <li>期日内に入力出来ない場合、減点評価となる</li>
-                                  </ul>
-                              </div>
-                          </div>
-                          
-                          <div class="border rounded-xl overflow-hidden shadow-sm">
-                              <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100">
-                                  <h4 class="text-xs font-black text-indigo-600"><i class="fa-solid fa-user-tie mr-1.5"></i>AM</h4>
-                              </div>
-                              <div class="p-4 bg-white">
-                                  <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
-                                      <li>月1回は事業所へ来所し、品質評価と印象評価をすること</li>
-                                      <li>担当マネージャーは必ず毎月月末の23:59までに、各品質評価と印象評価を入力すること</li>
-                                      <li>指摘事項は、項目に応じて「事業所対応」と「本社対応」に分けて、サポートチームが事業所または本社に対応を依頼する。依頼されたら期日までに対応すること。<br>
-                                          <span class="text-gray-500 font-normal">（例1：壁の汚れ ⇒ 事業所が対応する。例2：壁の破損 ⇒ 本社が対応する。）</span>
-                                      </li>
-                                      <li>あとでやる、たまたま掃除忘れていた等は一切評価に関係せず、見た事実を評価すること</li>
-                                      <li>月1回品質チェックの評価をもとに必ずフィードバックを実施すること</li>
-                                      <li>期日内に入力出来ない場合、減点評価となる</li>
-                                  </ul>
-                              </div>
-                          </div>
-
-                          <div class="border rounded-xl overflow-hidden shadow-sm">
-                              <div class="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-                                  <h4 class="text-xs font-black text-emerald-600"><i class="fa-solid fa-clipboard-check mr-1.5"></i>QCチーム</h4>
-                              </div>
-                              <div class="p-4 bg-white">
-                                  <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
-                                      <li>QCチームは事業所来所時に品質評価と印象評価 ＋ 加点評価(項目外でもOKとする)をすること</li>
-                                      <li>来所後、営業日3日以内に情報をアプリ内に入力をすること</li>
-                                      <li>情報更新後、事業所 ＋ 担当AMに共有し、改善項目に関しては期日を設ける。期日後に写真などでチェックをし改善有無の判断をする<br>
-                                          <span class="text-gray-500 font-normal">└ 改善を急務に完了しても、月度のQCチーム評価は変わらない。但しAM評価は、月度評価前であれば問題ない</span>
-                                      </li>
-                                      <li>来所時は見た事実と感じた事実をそのまま評価にすること。</li>
-                                      <li>毎週、毎月、期日時間経過後、各事業所の入力期日をチェックする <span class="text-red-500">※1分でも過ぎたら減点</span></li>
-                                  </ul>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-
-                  <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                      <h3 class="text-sm font-black text-emerald-800 mb-3">【QCチーム運用ガイド（評価と改善の仕組み）】</h3>
-                      <div class="space-y-4">
-                          
-                          <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                              <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">評価点（スコアリング）の設計</h4>
-                              <p class="text-[10px] text-gray-600 mb-2 font-bold">事業所の入力負担を減らしつつ、客観的な評価ができるよう「3段階評価」＋「管轄外（N/A）」を導入します。</p>
-                              <ul class="list-none text-xs text-gray-700 font-bold space-y-1 mb-2">
-                                  <li><span class="text-emerald-500">2点（基準達成）：</span> 基準を満たしている（例：清掃が行き届いている）</li>
-                                  <li><span class="text-yellow-500">1点（一部不備）：</span> すぐに改善できる軽微な不備がある（例：ゴミ箱がいっぱい）</li>
-                                  <li><span class="text-red-500">0点（基準未達）：</span> 基準を満たしておらず、指導・改善が必要</li>
-                                  <li><span class="text-gray-500">N/A（評価対象外）：</span> 本社対応が必要な修繕（壁の破損など）</li>
-                              </ul>
-                              <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-600">
-                                  <span class="font-black text-gray-700">ポイント：</span><br>
-                                  「品質スコア（満点に対して何％達成したか）」と「運用スコア（期日遵守など）」は分けて可視化。事業所のどこに課題があるか（環境維持の意識か、業務管理能力か）を明確にします。
-                              </div>
-                          </div>
-
-                          <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                              <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">進捗管理シートと「感じた事実」の標準化</h4>
-                              <p class="text-[10px] text-gray-600 mb-2 font-bold">「感じた事実（例：なんとなく暗い、雑然としている）」は属人化しやすいため、基準に引き上げる工夫をします。</p>
-                              <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-700 leading-relaxed font-bold">
-                                  <span class="text-emerald-600">Before/Afterシートの「マニュアル化」転用：</span><br>
-                                  現在QCチームが使っているBefore/Afterの進捗シートを蓄積し、良い状態（正解）と悪い状態（NG）の「写真付きビジュアルスタンダード（VMD基準）」を作成します。<br>
-                                  言葉によるチェックリストだけでなく、「この写真の状態を維持する」という視覚的な基準がある方が、福祉現場で働く多様なスタッフにとって圧倒的にわかりやすく、負担軽減になります。
-                              </div>
-                          </div>
-
-                          <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                              <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">改善プロセスにおける「本社対応」の可視化</h4>
-                              <p class="text-[10px] text-gray-600 mb-2 font-bold">指摘事項を「事業所対応」と「本社対応」に分ける仕組みです。</p>
-                              <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-700 leading-relaxed font-bold">
-                                  事業所が「本社に依頼しているのに直してくれないから、ずっと低評価になっている」とモチベーションを下げないよう、QC管理シート上に「本社対応待ちフラグ」を設け、AMやQCチームが来所した際に、そこは事業所の責任として減点しない（N/A扱いにする）運用を徹底すると、不満が出にくくなります。
-                              </div>
-                          </div>
-
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </details>
-
-      <div id="home-knowledge-section" class="mt-8 hidden">
+      <div id="home-knowledge-section" class="mt-8">
           <div class="flex justify-between items-center mb-4">
               <h2 class="text-sm sm:text-base font-black text-gray-800 flex items-center"><i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>みんなのGood Practice <span class="text-[9px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full ml-2 font-bold border border-yellow-200">見本となる取り組み</span></h2>
               <button onclick="window.switchTab('knowledge')" class="text-xs font-bold text-pink-500 hover:text-pink-600 bg-pink-50 px-3 py-1.5 rounded-lg transition-colors">すべて見る <i class="fa-solid fa-chevron-right ml-1"></i></button>
@@ -1179,8 +1067,136 @@
       </div>
     </div>
     
+    <div id="view-rules" class="hidden space-y-6 view-content">
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm">
+            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>運用ルール / 目的</h2>
+            <div class="space-y-6 pt-2">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <h3 class="text-sm font-black text-blue-800 mb-3">【運用目的（トレンド）】</h3>
+                    <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                        <li>品質レベルの標準化</li>
+                        <li>利用者満足度向上 = 事業所の利益向上 = 皆が幸せになる</li>
+                        <li>品質レベルの標準化をし、上記の「皆が幸せになる」には何点が最低限必要なのかを設計する</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-sm font-black text-gray-800 mb-3">【運用ルール】</h3>
+                    <div class="space-y-4">
+                        <div class="border rounded-xl overflow-hidden shadow-sm">
+                            <div class="bg-pink-50 px-4 py-2 border-b border-pink-100">
+                                <h4 class="text-xs font-black text-pink-600"><i class="fa-solid fa-building mr-1.5"></i>事業所</h4>
+                            </div>
+                            <div class="p-4 bg-white">
+                                <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                    <li>事業所は毎週金曜日(祝日の場合は前日23:59)までに事業所入力にチェックをすること</li>
+                                    <li>実施有無チェックに虚偽がないこと。虚偽が事実と認められた場合、個人・事業所の評価に影響する(上長判断による)</li>
+                                    <li>期日内に入力出来ない場合、減点評価となる</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="border rounded-xl overflow-hidden shadow-sm">
+                            <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100">
+                                <h4 class="text-xs font-black text-indigo-600"><i class="fa-solid fa-user-tie mr-1.5"></i>AM</h4>
+                            </div>
+                            <div class="p-4 bg-white">
+                                <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                    <li>月1回は事業所へ来所し、品質評価と印象評価をすること</li>
+                                    <li>担当マネージャーは必ず毎月月末の23:59までに、各品質評価と印象評価を入力すること</li>
+                                    <li>指摘事項は、項目に応じて「事業所対応」と「本社対応」に分けて、サポートチームが事業所または本社に対応を依頼する。依頼されたら期日までに対応すること。<br>
+                                        <span class="text-gray-500 font-normal">（例1：壁の汚れ ⇒ 事業所が対応する。例2：壁の破損 ⇒ 本社が対応する。）</span>
+                                    </li>
+                                    <li>あとでやる、たまたま掃除忘れていた等は一切評価に関係せず、見た事実を評価すること</li>
+                                    <li>月1回品質チェックの評価をもとに必ずフィードバックを実施すること</li>
+                                    <li>期日内に入力出来ない場合、減点評価となる</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-xl overflow-hidden shadow-sm">
+                            <div class="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
+                                <h4 class="text-xs font-black text-emerald-600"><i class="fa-solid fa-clipboard-check mr-1.5"></i>QCチーム</h4>
+                            </div>
+                            <div class="p-4 bg-white">
+                                <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                    <li>QCチームは事業所来所時に品質評価と印象評価 ＋ 加点評価(項目外でもOKとする)をすること</li>
+                                    <li>来所後、営業日3日以内に情報をアプリ内に入力をすること</li>
+                                    <li>情報更新後、事業所 ＋ 担当AMに共有し、改善項目に関しては期日を設ける。期日後に写真などでチェックをし改善有無の判断をする<br>
+                                        <span class="text-gray-500 font-normal">└ 改善を急務に完了しても、月度のQCチーム評価は変わらない。但しAM評価は、月度評価前であれば問題ない</span>
+                                    </li>
+                                    <li>来所時は見た事実と感じた事実をそのまま評価にすること。</li>
+                                    <li>毎週、毎月、期日時間経過後、各事業所の入力期日をチェックする <span class="text-red-500">※1分でも過ぎたら減点</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                    <h3 class="text-sm font-black text-emerald-800 mb-3">【QCチーム運用ガイド（評価と改善の仕組み）】</h3>
+                    <div class="space-y-4">
+                        
+                        <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
+                            <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">評価点（スコアリング）の設計</h4>
+                            <p class="text-[10px] text-gray-600 mb-2 font-bold">事業所の入力負担を減らしつつ、客観的な評価ができるよう「3段階評価」＋「管轄外（N/A）」を導入します。</p>
+                            <ul class="list-none text-xs text-gray-700 font-bold space-y-1 mb-2">
+                                <li><span class="text-emerald-500">2点（基準達成）：</span> 基準を満たしている（例：清掃が行き届いている）</li>
+                                <li><span class="text-yellow-500">1点（一部不備）：</span> すぐに改善できる軽微な不備がある（例：ゴミ箱がいっぱい）</li>
+                                <li><span class="text-red-500">0点（基準未達）：</span> 基準を満たしておらず、指導・改善が必要</li>
+                                <li><span class="text-gray-500">N/A（評価対象外）：</span> 本社対応が必要な修繕（壁の破損など）</li>
+                            </ul>
+                            <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-600">
+                                <span class="font-black text-gray-700">ポイント：</span><br>
+                                「品質スコア（満点に対して何％達成したか）」と「運用スコア（期日遵守など）」は分けて可視化。事業所のどこに課題があるか（環境維持の意識か、業務管理能力か）を明確にします。
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
+                            <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">進捗管理シートと「感じた事実」の標準化</h4>
+                            <p class="text-[10px] text-gray-600 mb-2 font-bold">「感じた事実（例：なんとなく暗い、雑然としている）」は属人化しやすいため、基準に引き上げる工夫をします。</p>
+                            <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-700 leading-relaxed font-bold">
+                                <span class="text-emerald-600">Before/Afterシートの「マニュアル化」転用：</span><br>
+                                現在QCチームが使っているBefore/Afterの進捗シートを蓄積し、良い状態（正解）と悪い状態（NG）の「写真付きビジュアルスタンダード（VMD基準）」を作成します。<br>
+                                言葉によるチェックリストだけでなく、「この写真の状態を維持する」という視覚的な基準がある方が、福祉現場で働く多様なスタッフにとって圧倒的にわかりやすく、負担軽減になります。
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
+                            <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">改善プロセスにおける「本社対応」の可視化</h4>
+                            <p class="text-[10px] text-gray-600 mb-2 font-bold">指摘事項を「事業所対応」と「本社対応」に分ける仕組みです。</p>
+                            <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-700 leading-relaxed font-bold">
+                                事業所が「本社に依頼しているのに直してくれないから、ずっと低評価になっている」とモチベーションを下げないよう、QC管理シート上に「本社対応待ちフラグ」を設け、AMやQCチームが来所した際に、そこは事業所の責任として減点しない（N/A扱いにする）運用を徹底すると、不満が出にくくなります。
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="view-master" class="hidden space-y-6 view-content">
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-orange-400 shadow-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm mt-6">
+            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-gear text-blue-500 mr-2"></i>システム共通設定</h2>
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h3 class="text-sm font-black text-blue-800 mb-1">入力期間の制限解除</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
+                        ONにすると、期日超過や未来の週・月でも入力が可能になります。<br>テスト入力や例外的な過去分の修正時のみONにしてください。
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="toggle-input-period" class="sr-only peer" onchange="window.toggleInputPeriodSetting(this.checked)">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-input-period-text">OFF</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-orange-400 shadow-sm mt-6">
             <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-database text-orange-500 mr-2"></i>事業所マスタ管理</h2>
             
             <div class="bg-gray-50 p-4 rounded-xl border mb-6">
@@ -1230,7 +1246,7 @@
             <div class="bg-red-50 p-4 rounded-xl border border-red-200">
                 <h3 class="text-sm font-black text-red-700 mb-2">テスト入力データの一括リセット</h3>
                 <p class="text-[10px] sm:text-xs text-gray-700 mb-4 font-bold leading-relaxed">
-                    事業所・管理者・QCチームの<span class="text-red-600">すべての入力履歴（写真やコメント含む）を完全に消去</span>します。<br>
+                    事業所・AM・QCチームの<span class="text-red-600">すべての入力履歴（写真やコメント含む）を完全に消去</span>します。<br>
                     ※事業所マスタ（一覧）は削除されません。本番運用への切り替え時や、テストを最初からやり直したい時に使用してください。
                 </p>
                 <button onclick="window.resetAllTestData()" class="bg-red-600 hover:bg-red-700 text-white font-black text-xs py-2.5 px-6 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
@@ -1243,12 +1259,12 @@
     <div id="view-ranking" class="hidden space-y-6 view-content">
         <div class="bg-white p-6 rounded-2xl border shadow-sm">
             <h2 class="text-lg font-black text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-ranking-star text-cyan-500 mr-2"></i>点数ランキング</h2>
-            <p class="text-xs text-gray-500 mb-4">各事業所の事業所入力、管理者入力、QCチーム入力のランキングを確認できます。</p>
+            <p class="text-xs text-gray-500 mb-4">各事業所の事業所入力、AM入力、QCチーム入力のランキングを確認できます。</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select id="ranking-month-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
                 <select id="ranking-target-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm">
                     <option value="staff">事業所入力 (自己評価)</option>
-                    <option value="am">管理者入力 (AM評価)</option>
+                    <option value="am">AM入力 (AM評価)</option>
                     <option value="qc">QCチーム入力 (QC評価)</option>
                 </select>
             </div>
@@ -1487,6 +1503,18 @@
           console.error(e);
           window.hideMainLoader();
       });
+
+      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), d => {
+          if (d.exists()) {
+              window.appState.settings = d.data();
+          } else {
+              window.appState.settings = { allowInputOutsidePeriod: false };
+          }
+          if (window.appState.activeTab === 'input' && !window.appState.office) {
+              window.renderSelectors();
+          }
+          window.renderMasterSettings(); 
+      }, e => console.error(e));
       
       const setHist = (cName, hKey, fKey, lKey) => {
         onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', cName), s => {
@@ -1918,6 +1946,31 @@
         } catch (error) {
             console.error(error);
             window.showGlobalToast("データの削除に失敗しました");
+        }
+    };
+
+    window.toggleInputPeriodSetting = async (checked) => {
+        try {
+            await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), { 
+                allowInputOutsidePeriod: checked 
+            }, { merge: true });
+            window.showGlobalToast(checked ? "入力期間の制限を解除しました" : "入力期間の制限を有効にしました");
+        } catch (e) {
+            console.error(e);
+            window.showGlobalToast("設定の更新に失敗しました");
+            const toggle = $('toggle-input-period');
+            if(toggle) toggle.checked = !checked;
+        }
+    };
+
+    window.renderMasterSettings = () => {
+        const toggle = $('toggle-input-period');
+        const text = $('toggle-input-period-text');
+        if (toggle && text) {
+            const isAllowed = window.appState.settings?.allowInputOutsidePeriod || false;
+            toggle.checked = isAllowed;
+            text.innerText = isAllowed ? 'ON' : 'OFF';
+            text.className = isAllowed ? 'ml-3 text-sm font-black text-emerald-600' : 'ml-3 text-sm font-black text-gray-500';
         }
     };
 
@@ -2401,91 +2454,16 @@
         allGPs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
         const recentGPs = allGPs.slice(0, 10); // ホーム画面では最新10件のみ表示
 
-        if (recentGPs.length === 0) {
-            section.classList.add('hidden');
-            return;
-        }
-
         section.classList.remove('hidden');
-        let html = '';
-        recentGPs.forEach(gp => {
-            const comment = gp.comment ? gp.comment.replace(/\n/g, '<br>') : '<span class="text-gray-400">コメントなし</span>';
-            const date = new Date(gp.timestamp).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
-            
-            let catColor = 'bg-gray-100 text-gray-600 border-gray-200';
-            if (gp.category === '環境整備・5S') catColor = 'bg-blue-100 text-blue-600 border-blue-200';
-            else if (gp.category === '支援・プログラムの工夫') catColor = 'bg-pink-100 text-pink-600 border-pink-200';
-            else if (gp.category === '業務効率化・ツール活用') catColor = 'bg-emerald-100 text-emerald-600 border-emerald-200';
-            else if (gp.category === '安全・防災') catColor = 'bg-orange-100 text-orange-600 border-orange-200';
 
-            html += `
-            <div class="snap-start flex-shrink-0 w-60 bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col">
-                <div class="h-36 w-full relative">
-                    <img src="${gp.image}" class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" onclick="window.openImageModal('${gp.image}')">
-                    <div class="absolute top-1.5 left-1.5 bg-black bg-opacity-60 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold backdrop-blur-sm flex items-center">
-                        <i class="fa-solid fa-map-marker-alt mr-1 text-yellow-400"></i>${gp.office}
-                    </div>
+        if (recentGPs.length === 0) {
+            container.innerHTML = `
+                <div class="w-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+                    <i class="fa-solid fa-lightbulb text-gray-300 text-4xl mb-3"></i>
+                    <p class="text-gray-500 font-black text-sm">まだGood Practiceの投稿がありません</p>
+                    <p class="text-gray-400 text-[10px] font-bold mt-2">QCチームが巡回時に見つけた素晴らしい取り組みがここに表示されます</p>
                 </div>
-                <div class="p-3 flex-1 flex flex-col">
-                    <div class="flex items-center justify-between mb-2 pb-1 border-b">
-                        <span class="text-[8px] font-black border px-1.5 py-0.5 rounded ${catColor}">${gp.category}</span>
-                        <span class="text-[9px] text-gray-400 font-bold">${date}</span>
-                    </div>
-                    <p class="text-xs font-bold text-gray-700 leading-relaxed overflow-y-auto max-h-16 scrollbar-hide flex-1">
-                        ${comment}
-                    </p>
-                    <div class="mt-2 flex justify-end">
-                        <span class="text-[10px] font-bold text-yellow-600 flex items-center"><i class="fa-solid fa-thumbs-up mr-1"></i>${gp.likes || 0}</span>
-                    </div>
-                </div>
-            </div>`;
-        });
-        container.innerHTML = html;
-    };
-
-    window.renderKnowledgeGallery = () => {
-        const container = $('knowledge-full-gallery');
-        if (!container) return;
-
-        const catFilter = $('knowledge-category-filter')?.value || '';
-        const wordFilter = $('knowledge-search-input')?.value.toLowerCase() || '';
-
-        let allGPs = [];
-        const qcData = window.appState.teamHistoryFull;
-        
-        Object.values(qcData).forEach(officeData => {
-            Object.values(officeData).forEach(doc => {
-                if (doc.good_practices && doc.good_practices.length > 0) {
-                    doc.good_practices.forEach(gp => {
-                        allGPs.push({
-                            office: doc.office,
-                            month: doc.month,
-                            timestamp: doc.timestamp,
-                            image: gp.image,
-                            comment: gp.comment,
-                            category: gp.category || 'その他',
-                            likes: gp.likes || 0,
-                            id: gp.id
-                        });
-                    });
-                }
-            });
-        });
-
-        allGPs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        if (catFilter) {
-            allGPs = allGPs.filter(gp => gp.category === catFilter);
-        }
-        if (wordFilter) {
-            allGPs = allGPs.filter(gp => 
-                (gp.comment && gp.comment.toLowerCase().includes(wordFilter)) || 
-                (gp.office && gp.office.toLowerCase().includes(wordFilter))
-            );
-        }
-
-        if (allGPs.length === 0) {
-            container.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400 font-bold text-sm"><i class="fa-solid fa-folder-open text-3xl mb-3 block opacity-50"></i>該当する取り組みが見つかりません</div>';
+            `;
             return;
         }
 
@@ -3326,13 +3304,18 @@
                   }
               }
               
+              if (window.appState.settings?.allowInputOutsidePeriod) {
+                  isDisabled = false;
+                  if (suffix) suffix = suffix.replace(')', ' - 制限解除中)');
+              }
+
               if (isDisabled) {
                   ws.innerHTML += `<option value="${w.label}" disabled>${w.label}${suffix}</option>`; 
               } else {
                   const endOfDay = new Date(w.end);
                   endOfDay.setHours(23, 59, 59, 999);
                   const isCurrent = now >= w.start && now <= endOfDay;
-                  ws.innerHTML += `<option value="${w.label}" ${isCurrent?'selected':''}>${w.label}</option>`; 
+                  ws.innerHTML += `<option value="${w.label}" ${isCurrent?'selected':''}>${w.label}${suffix}</option>`; 
               }
           }); 
       }
@@ -3367,13 +3350,18 @@
                       }
                   }
 
+                  if (window.appState.settings?.allowInputOutsidePeriod) {
+                      isDisabled = false;
+                      if (suffix) suffix = suffix.replace(')', ' - 制限解除中)');
+                  }
+
                   isCurrent = now >= startOfMonth && now <= deadline;
               }
 
               if (isDisabled) {
                   ms.innerHTML += `<option value="${m}" disabled>${m}${suffix}</option>`; 
               } else {
-                  ms.innerHTML += `<option value="${m}" ${isCurrent?'selected':''}>${m}</option>`; 
+                  ms.innerHTML += `<option value="${m}" ${isCurrent?'selected':''}>${m}${suffix}</option>`; 
               }
           }); 
       }
