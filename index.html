@@ -197,6 +197,7 @@
       if (id === 'home') {
         ['nav-tabs', 'office-selector', 'role-badge'].forEach(x => sU(x, e => e.classList.add('hidden')));
         sU('current-office-display', e => e.innerText = "HOME");
+        window.renderHomeKnowledgeSpace();
       } else {
         sU('nav-tabs', e => e.classList.remove('hidden')); 
         sU('role-badge', e => { 
@@ -1057,7 +1058,7 @@
           </div>
       </div>
 
-      <div id="home-knowledge-section" class="mt-8">
+      <div id="home-knowledge-section" class="mt-8 hidden">
           <div class="flex justify-between items-center mb-4">
               <h2 class="text-sm sm:text-base font-black text-gray-800 flex items-center"><i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>みんなのGood Practice <span class="text-[9px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full ml-2 font-bold border border-yellow-200">見本となる取り組み</span></h2>
               <button onclick="window.switchTab('knowledge')" class="text-xs font-bold text-pink-500 hover:text-pink-600 bg-pink-50 px-3 py-1.5 rounded-lg transition-colors">すべて見る <i class="fa-solid fa-chevron-right ml-1"></i></button>
@@ -1259,13 +1260,14 @@
     <div id="view-ranking" class="hidden space-y-6 view-content">
         <div class="bg-white p-6 rounded-2xl border shadow-sm">
             <h2 class="text-lg font-black text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-ranking-star text-cyan-500 mr-2"></i>点数ランキング</h2>
-            <p class="text-xs text-gray-500 mb-4">各事業所の事業所入力、AM入力、QCチーム入力のランキングを確認できます。</p>
+            <p class="text-xs text-gray-500 mb-4">各事業所の事業所入力、AM入力、QCチーム入力のスコアを同時に比較・ランキング確認できます。</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select id="ranking-month-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
-                <select id="ranking-target-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm">
-                    <option value="staff">事業所入力 (自己評価)</option>
-                    <option value="am">AM入力 (AM評価)</option>
-                    <option value="qc">QCチーム入力 (QC評価)</option>
+                <select id="ranking-sort-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm">
+                    <option value="total">総合平均スコアで順位づけ</option>
+                    <option value="staff">事業所入力スコアで順位づけ</option>
+                    <option value="am">AM入力スコアで順位づけ</option>
+                    <option value="qc">QCチーム入力スコアで順位づけ</option>
                 </select>
             </div>
         </div>
@@ -1351,7 +1353,7 @@
     <div id="view-dashboard" class="hidden space-y-6 view-content">
       <div class="bg-white p-2 rounded-2xl border shadow-sm mb-2 flex space-x-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
         <button id="btn-source-staff" onclick="window.setDataSource('staff')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-pink-500 text-white shadow-md transition-all">事業所</button>
-        <button id="btn-source-am" onclick="window.setDataSource('am')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">管理者</button>
+        <button id="btn-source-am" onclick="window.setDataSource('am')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">AM</button>
         <button id="btn-source-qc" onclick="window.setDataSource('qc')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">QC</button>
         <button id="btn-source-gap" onclick="window.setDataSource('gap')" class="flex-1 min-w-[100px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">ギャップ比較</button>
       </div>
@@ -1361,8 +1363,8 @@
           <select id="gap-mode-pulldown" onchange="window.handleGapModeChange()" class="w-full p-3 border-2 rounded-xl bg-indigo-50 font-black mt-2 text-sm text-indigo-900">
               <option value="all">3者すべて比較</option>
               <option value="staff_vs_qc">事業所 vs QC</option>
-              <option value="staff_vs_am">事業所 vs 管理者</option>
-              <option value="am_vs_qc">管理者 vs QC</option>
+              <option value="staff_vs_am">事業所 vs AM</option>
+              <option value="am_vs_qc">AM vs QC</option>
           </select>
       </div>
       
@@ -1429,9 +1431,7 @@
           <div id="gap-items-content" class="space-y-2"></div>
       </div>
 
-      <!-- 追加: QC巡回ステータス -->
       <div id="qc-visit-status-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
-          <!-- JSでレンダリングされます -->
       </div>
 
       <div id="detailed-input-data-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
@@ -1900,7 +1900,7 @@
     };
 
     window.resetAllTestData = async () => {
-        const confirmMsg = "【警告】\n事業所入力、管理者入力、QCチーム入力の「すべての入力履歴データ」を完全に削除します。\n(※事業所マスタは削除されません)\n\n本当によろしいですか？";
+        const confirmMsg = "【警告】\n事業所入力、AM入力、QCチーム入力の「すべての入力履歴データ」を完全に削除します。\n(※事業所マスタは削除されません)\n\n本当によろしいですか？";
         if (!confirm(confirmMsg)) return;
 
         const doubleCheckMsg = "本当にすべての入力データを消去します。元に戻すことはできません。\n実行しますか？";
@@ -1989,19 +1989,20 @@
     window.renderRankingList = () => {
         const c = $('ranking-list-container');
         const ms = $('ranking-month-pulldown');
-        const ts = $('ranking-target-pulldown');
-        if (!c || !ms || !ts) return;
+        const ss = $('ranking-sort-pulldown');
+        if (!c || !ms || !ss) return;
 
         const selMonth = ms.value;
-        const selTarget = ts.value; // 'staff', 'am', 'qc'
+        const sortTarget = ss.value; // 'total', 'staff', 'am', 'qc'
         
         let scores = [];
 
         window.appState.offices.forEach(o => {
-            let sum = 0;
-            let count = 0;
+            let staffSum = 0, staffCount = 0;
+            let amSum = 0, amCount = 0;
+            let qcSum = 0, qcCount = 0;
 
-            if (selTarget === 'staff') {
+            if (true) {
                 const history = window.appState.historyFull[o.name] || {};
                 let targetWeeks = [];
                 if (selMonth === 'all') {
@@ -2012,42 +2013,61 @@
                 
                 targetWeeks.forEach(w => {
                     if (history[w] && history[w].score !== undefined) {
-                        sum += history[w].score;
-                        count++;
+                        staffSum += history[w].score;
+                        staffCount++;
                     }
                 });
-            } else if (selTarget === 'am') {
+            }
+            
+            if (true) {
                 const history = window.appState.amHistoryFull[o.name] || {};
                 if (selMonth === 'all') {
                     Object.values(history).forEach(d => {
-                        if (d.score !== undefined) { sum += d.score; count++; }
+                        if (d.score !== undefined) { amSum += d.score; amCount++; }
                     });
                 } else {
                     if (history[selMonth] && history[selMonth].score !== undefined) {
-                        sum += history[selMonth].score;
-                        count++;
+                        amSum += history[selMonth].score;
+                        amCount++;
                     }
                 }
-            } else if (selTarget === 'qc') {
+            }
+            
+            if (true) {
                 const history = window.appState.teamHistoryFull[o.name] || {};
                 if (selMonth === 'all') {
                     Object.values(history).forEach(d => {
-                        if (d.score !== undefined) { sum += d.score; count++; }
+                        if (d.score !== undefined) { qcSum += d.score; qcCount++; }
                     });
                 } else {
                     if (history[selMonth] && history[selMonth].score !== undefined) {
-                        sum += history[selMonth].score;
-                        count++;
+                        qcSum += history[selMonth].score;
+                        qcCount++;
                     }
                 }
             }
 
-            if (count > 0) {
+            const staffScore = staffCount > 0 ? Math.round(staffSum / staffCount) : '--';
+            const amScore = amCount > 0 ? Math.round(amSum / amCount) : '--';
+            const qcScore = qcCount > 0 ? Math.round(qcSum / qcCount) : '--';
+
+            let totalSum = 0;
+            let totalValCount = 0;
+            if (staffScore !== '--') { totalSum += staffScore; totalValCount++; }
+            if (amScore !== '--') { totalSum += amScore; totalValCount++; }
+            if (qcScore !== '--') { totalSum += qcScore; totalValCount++; }
+
+            const totalScore = totalValCount > 0 ? Math.round(totalSum / totalValCount) : '--';
+
+            if (totalValCount > 0) {
                 scores.push({
                     name: o.name,
                     corp: o.corp,
                     area: o.area,
-                    score: Math.round(sum / count)
+                    staffScore,
+                    amScore,
+                    qcScore,
+                    totalScore
                 });
             }
         });
@@ -2058,54 +2078,89 @@
         }
 
         // 降順ソート
-        scores.sort((a, b) => b.score - a.score);
+        scores.sort((a, b) => {
+            const scoreA = a[sortTarget + 'Score'] === '--' ? -1 : a[sortTarget + 'Score'];
+            const scoreB = b[sortTarget + 'Score'] === '--' ? -1 : b[sortTarget + 'Score'];
+            if (scoreB !== scoreA) return scoreB - scoreA;
+            // 同点の場合は総合スコアで比較
+            const totalA = a.totalScore === '--' ? -1 : a.totalScore;
+            const totalB = b.totalScore === '--' ? -1 : b.totalScore;
+            if (totalB !== totalA) return totalB - totalA;
+            return a.name.localeCompare(b.name);
+        });
 
         let html = '<div class="bg-white rounded-2xl border shadow-sm overflow-hidden">';
         
         // ヘッダー部
         html += `
-            <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center text-xs font-black text-gray-500">
-                <div class="w-16 text-center">順位</div>
+            <div class="bg-gray-50 px-2 sm:px-4 py-3 border-b flex justify-between items-center text-[10px] font-black text-gray-500">
+                <div class="w-8 sm:w-12 text-center">順位</div>
                 <div class="flex-1">事業所名</div>
-                <div class="w-20 text-right pr-4">スコア</div>
+                <div class="text-right w-36 sm:w-48 pr-2">各スコア</div>
             </div>
             <div class="divide-y">
         `;
 
         let currentRank = 1;
-        let currentScore = scores[0].score;
+        let currentScore = scores[0][sortTarget + 'Score'];
         let actualIndex = 1;
 
-        scores.forEach((s, idx) => {
-            if (s.score < currentScore) {
+        const getColor = (sc) => {
+            if (sc === '--') return 'text-gray-300 font-normal';
+            if (sc >= 80) return 'text-emerald-500';
+            if (sc >= 50) return 'text-yellow-500';
+            return 'text-red-500';
+        };
+
+        scores.forEach((s) => {
+            const tgtScore = s[sortTarget + 'Score'];
+            if (tgtScore < currentScore) {
                 currentRank = actualIndex;
-                currentScore = s.score;
+                currentScore = tgtScore;
             }
             
             let rankDisplay = `<span class="text-gray-500 font-black">${currentRank}</span>`;
             let rowClass = "hover:bg-gray-50 transition";
-            if (currentRank === 1) {
-                rankDisplay = `<i class="fa-solid fa-crown text-yellow-400 text-xl drop-shadow-sm"></i>`;
-                rowClass = "bg-yellow-50/30 hover:bg-yellow-50";
-            } else if (currentRank === 2) {
-                rankDisplay = `<i class="fa-solid fa-crown text-gray-400 text-lg"></i>`;
-                rowClass = "bg-gray-50/50 hover:bg-gray-100";
-            } else if (currentRank === 3) {
-                rankDisplay = `<i class="fa-solid fa-crown text-amber-600 text-base"></i>`;
-                rowClass = "bg-orange-50/30 hover:bg-orange-50";
+            
+            if (tgtScore === '--') {
+                rankDisplay = `<span class="text-gray-300">-</span>`;
+            } else {
+                if (currentRank === 1) {
+                    rankDisplay = '<i class="fa-solid fa-crown text-yellow-400 text-xl drop-shadow-sm"></i>';
+                    rowClass = "bg-yellow-50/30 hover:bg-yellow-50";
+                } else if (currentRank === 2) {
+                    rankDisplay = '<i class="fa-solid fa-crown text-gray-400 text-lg"></i>';
+                    rowClass = "bg-gray-50/50 hover:bg-gray-100";
+                } else if (currentRank === 3) {
+                    rankDisplay = '<i class="fa-solid fa-crown text-amber-600 text-base"></i>';
+                    rowClass = "bg-orange-50/30 hover:bg-orange-50";
+                }
             }
 
-            const scoreColor = s.score >= 80 ? 'text-emerald-500' : (s.score >= 50 ? 'text-yellow-500' : 'text-red-500');
-
             html += `
-            <div class="flex items-center px-4 py-3 sm:py-4 ${rowClass}">
-                <div class="w-16 text-center flex justify-center items-center h-8">${rankDisplay}</div>
-                <div class="flex-1 min-w-0 pr-2">
-                    <p class="text-sm font-black text-gray-800 truncate">${s.name}</p>
-                    <p class="text-[9px] text-gray-500 mt-0.5"><span class="mr-2">${s.corp}</span><span>${s.area}</span></p>
+            <div class="flex items-center px-2 sm:px-4 py-3 sm:py-4 ${rowClass}">
+                <div class="w-8 sm:w-12 text-center flex justify-center items-center h-8">${rankDisplay}</div>
+                <div class="flex-1 min-w-0 pr-1 sm:pr-2">
+                    <p class="text-xs sm:text-sm font-black text-gray-800 truncate">${s.name}</p>
+                    <p class="text-[8px] sm:text-[9px] text-gray-500 mt-0.5"><span class="mr-1 sm:mr-2">${s.corp}</span><span>${s.area}</span></p>
                 </div>
-                <div class="w-20 text-right pr-2">
-                    <span class="text-lg font-black ${scoreColor}">${s.score}<span class="text-[10px] ml-0.5 text-gray-400">pt</span></span>
+                <div class="flex gap-2 sm:gap-3 text-right">
+                    <div class="text-center w-8 sm:w-10">
+                        <p class="text-[8px] text-gray-400 font-bold mb-0.5 ${sortTarget === 'staff' ? 'text-pink-500' : ''}">事業所</p>
+                        <p class="text-xs sm:text-sm font-black ${getColor(s.staffScore)}">${s.staffScore}</p>
+                    </div>
+                    <div class="text-center w-8 sm:w-10">
+                        <p class="text-[8px] text-gray-400 font-bold mb-0.5 ${sortTarget === 'am' ? 'text-indigo-500' : ''}">AM</p>
+                        <p class="text-xs sm:text-sm font-black ${getColor(s.amScore)}">${s.amScore}</p>
+                    </div>
+                    <div class="text-center w-8 sm:w-10">
+                        <p class="text-[8px] text-gray-400 font-bold mb-0.5 ${sortTarget === 'qc' ? 'text-emerald-500' : ''}">QC</p>
+                        <p class="text-xs sm:text-sm font-black ${getColor(s.qcScore)}">${s.qcScore}</p>
+                    </div>
+                    <div class="text-center w-10 sm:w-12 border-l border-gray-200 pl-2 sm:pl-3">
+                        <p class="text-[8px] text-gray-400 font-bold mb-0.5 ${sortTarget === 'total' ? 'text-gray-800' : ''}">総合</p>
+                        <p class="text-sm sm:text-base font-black ${getColor(s.totalScore)}">${s.totalScore}</p>
+                    </div>
                 </div>
             </div>`;
             actualIndex++;
@@ -2468,6 +2523,93 @@
         }
 
         let html = '';
+        recentGPs.forEach(gp => {
+            const comment = gp.comment ? gp.comment.replace(/\n/g, '<br>') : '<span class="text-gray-400">コメントなし</span>';
+            const date = new Date(gp.timestamp).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+            
+            let catColor = 'bg-gray-100 text-gray-600 border-gray-200';
+            if (gp.category === '環境整備・5S') catColor = 'bg-blue-100 text-blue-600 border-blue-200';
+            else if (gp.category === '支援・プログラムの工夫') catColor = 'bg-pink-100 text-pink-600 border-pink-200';
+            else if (gp.category === '業務効率化・ツール活用') catColor = 'bg-emerald-100 text-emerald-600 border-emerald-200';
+            else if (gp.category === '安全・防災') catColor = 'bg-orange-100 text-orange-600 border-orange-200';
+
+            html += `
+            <div class="snap-start flex-shrink-0 w-60 bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col">
+                <div class="h-36 w-full relative">
+                    <img src="${gp.image}" class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" onclick="window.openImageModal('${gp.image}')">
+                    <div class="absolute top-1.5 left-1.5 bg-black bg-opacity-60 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold backdrop-blur-sm flex items-center">
+                        <i class="fa-solid fa-map-marker-alt mr-1 text-yellow-400"></i>${gp.office}
+                    </div>
+                </div>
+                <div class="p-3 flex-1 flex flex-col">
+                    <div class="flex items-center justify-between mb-2 pb-1 border-b">
+                        <span class="text-[8px] font-black border px-1.5 py-0.5 rounded ${catColor}">${gp.category}</span>
+                        <span class="text-[9px] text-gray-400 font-bold">${date}</span>
+                    </div>
+                    <p class="text-xs font-bold text-gray-700 leading-relaxed overflow-y-auto max-h-16 scrollbar-hide flex-1">
+                        ${comment}
+                    </p>
+                    <div class="mt-2 flex justify-end">
+                        <span class="text-[10px] font-bold text-yellow-600 flex items-center"><i class="fa-solid fa-thumbs-up mr-1"></i>${gp.likes || 0}</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    };
+
+    window.renderKnowledgeGallery = () => {
+        const container = $('knowledge-full-gallery');
+        if (!container) return;
+
+        const catFilter = $('knowledge-category-filter')?.value || '';
+        const wordFilter = $('knowledge-search-input')?.value.toLowerCase() || '';
+
+        let allGPs = [];
+        const qcData = window.appState.teamHistoryFull || {}; // null安全を確保
+        
+        // データの抽出ロジックを確実に実行
+        Object.keys(qcData).forEach(officeName => {
+            const officeEntries = qcData[officeName] || {};
+            Object.keys(officeEntries).forEach(monthKey => {
+                const doc = officeEntries[monthKey];
+                if (doc && doc.good_practices && Array.isArray(doc.good_practices)) {
+                    doc.good_practices.forEach(gp => {
+                        allGPs.push({
+                            office: doc.office,
+                            month: doc.month,
+                            timestamp: doc.timestamp,
+                            image: gp.image, // ここに画像データが入っている
+                            comment: gp.comment,
+                            category: gp.category || 'その他',
+                            likes: gp.likes || 0,
+                            id: gp.id
+                        });
+                    });
+                }
+            });
+        });
+
+        // 投稿日時が新しい順にソート
+        allGPs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // フィルタリング
+        if (catFilter) {
+            allGPs = allGPs.filter(gp => gp.category === catFilter);
+        }
+        if (wordFilter) {
+            allGPs = allGPs.filter(gp => 
+                (gp.comment && gp.comment.toLowerCase().includes(wordFilter)) || 
+                (gp.office && gp.office.toLowerCase().includes(wordFilter))
+            );
+        }
+
+        if (allGPs.length === 0) {
+            container.innerHTML = '<div class="col-span-full text-center py-20 bg-white rounded-2xl border-2 border-dashed text-gray-400 font-bold text-sm"><i class="fa-solid fa-folder-open text-3xl mb-3 block opacity-50"></i>該当する取り組みが見つかりません</div>';
+            return;
+        }
+
+        let html = '';
         allGPs.forEach(gp => {
             const comment = gp.comment ? gp.comment.replace(/\n/g, '<br>') : '<span class="text-gray-400">コメントなし</span>';
             const date = new Date(gp.timestamp).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -2479,23 +2621,26 @@
             else if (gp.category === '安全・防災') catColor = 'bg-orange-100 text-orange-600 border-orange-200';
 
             html += `
-            <div class="bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col hover:shadow-md transition">
-                <div class="h-48 w-full relative group">
-                    <img src="${gp.image}" class="w-full h-full object-cover cursor-pointer hover:opacity-90 transition" onclick="window.openImageModal('${gp.image}')">
-                    <div class="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-[10px] px-2 py-1 rounded-full font-bold backdrop-blur-sm flex items-center">
-                        <i class="fa-solid fa-map-marker-alt mr-1 text-yellow-400"></i>${gp.office}
+            <div class="bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col hover:shadow-md transition group">
+                <div class="h-56 w-full relative overflow-hidden">
+                    <img src="${gp.image}" class="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition duration-500" onclick="window.openImageModal('${gp.image}')">
+                    <div class="absolute top-3 left-3 bg-black bg-opacity-60 text-white text-[10px] px-2 py-1 rounded-full font-bold backdrop-blur-sm flex items-center">
+                        <i class="fa-solid fa-map-marker-alt mr-1.5 text-yellow-400"></i>${gp.office}
+                    </div>
+                    <div class="absolute bottom-3 right-3 bg-white bg-opacity-90 text-gray-800 text-[10px] px-2 py-1 rounded-lg font-black shadow-sm">
+                        ${gp.month}
                     </div>
                 </div>
-                <div class="p-4 flex-1 flex flex-col">
-                    <div class="flex items-center justify-between mb-3 border-b pb-2">
-                        <span class="text-[9px] font-black border px-1.5 py-0.5 rounded ${catColor}">${gp.category}</span>
+                <div class="p-5 flex-1 flex flex-col">
+                    <div class="flex items-center justify-between mb-3 border-b pb-3">
+                        <span class="text-[10px] font-black border px-2 py-0.5 rounded ${catColor}">${gp.category}</span>
                         <span class="text-[10px] text-gray-400 font-bold">${date}</span>
                     </div>
-                    <p class="text-xs font-bold text-gray-700 leading-relaxed flex-1 mb-4">
+                    <p class="text-sm font-bold text-gray-700 leading-relaxed flex-1 mb-5">
                         ${comment}
                     </p>
-                    <button onclick="window.toggleGPLike('${gp.office}', '${gp.month}', ${gp.id})" class="w-full py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 border border-yellow-200 rounded-xl text-xs font-black transition-all flex justify-center items-center active:scale-95">
-                        <i class="fa-solid fa-thumbs-up mr-1"></i>参考になった！ (${gp.likes})
+                    <button onclick="window.toggleGPLike('${gp.office}', '${gp.month}', ${gp.id})" class="w-full py-3 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 border border-yellow-200 rounded-xl text-xs font-black transition-all flex justify-center items-center active:scale-95">
+                        <i class="fa-solid fa-thumbs-up mr-2 text-base"></i>参考になった！ (${gp.likes})
                     </button>
                 </div>
             </div>`;
