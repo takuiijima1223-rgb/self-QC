@@ -185,7 +185,7 @@
     
     window.switchTab = (id) => {
       window.appState.activeTab = id;
-      ['home', 'input', 'dashboard', 'master', 'feedback', 'knowledge'].forEach(v => { 
+      ['home', 'input', 'dashboard', 'master', 'feedback', 'knowledge', 'ranking'].forEach(v => { 
           sU('view-'+v, el => el.classList.add('hidden')); 
           sU('tab-'+v, el => { if(el) el.classList.remove('tab-active', 'text-pink-500'); }); 
       });
@@ -213,6 +213,9 @@
             window.renderFeedbackList();
         } else if (id === 'knowledge') {
             window.renderKnowledgeGallery();
+        } else if (id === 'ranking') {
+            window.renderRankingSelectors();
+            window.renderRankingList();
         }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -332,7 +335,7 @@
         c.appendChild(div);
       });
 
-      if (!isM) {
+      if (!isM && isLW) {
           const officeDiv = document.createElement('div');
           officeDiv.className = "bg-white rounded-2xl shadow-sm border mb-4 overflow-hidden";
           let officeHtml = `
@@ -889,7 +892,7 @@
       let total = items.reduce((sum, cat) => sum + cat.items.length, 0);
       let count = Object.keys(window.appState.answers).length; 
 
-      if (!isM) {
+      if (!isM && isLW) {
           total += 4; // 事業所内チェックの4枚分を分母に追加
           ['entrance', 'workspace', 'interview', 'office'].forEach(k => {
               if (window.appState.officeImages && window.appState.officeImages[k]) count++;
@@ -1005,11 +1008,12 @@
           </div>
           <span id="role-badge" class="hidden text-[11px] px-3 py-1.5 bg-pink-50 text-pink-500 rounded-full font-black"></span>
       </div>
-      <nav class="hidden flex border-t bg-white" id="nav-tabs">
-          <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 py-3 text-[11px] font-black uppercase">入力</button>
-          <button onclick="window.switchTab('dashboard')" id="tab-dashboard" class="flex-1 py-3 text-[11px] font-black uppercase border-l">分析</button>
-          <button onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 py-3 text-[11px] font-black uppercase border-l">FB共有</button>
-          <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 py-3 text-[11px] font-black uppercase border-l">マスタ</button>
+      <nav class="hidden flex border-t bg-white overflow-x-auto scrollbar-hide" id="nav-tabs">
+          <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase">入力</button>
+          <button onclick="window.switchTab('dashboard')" id="tab-dashboard" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">分析</button>
+          <button onclick="window.switchTab('ranking')" id="tab-ranking" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">ランキング</button>
+          <button onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">FB共有</button>
+          <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">マスタ</button>
       </nav>
   </header>
   
@@ -1039,6 +1043,10 @@
           <div onclick="window.switchTab('dashboard')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-gray-700 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-gray-700 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-chart-pie"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">管理者分析</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Data Analysis</p></div>
+          </div>
+          <div onclick="window.switchTab('ranking')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-cyan-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-ranking-star"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">点数ランキング</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Ranking</p></div>
           </div>
           <div onclick="window.switchTab('master')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-orange-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
@@ -1232,6 +1240,22 @@
         </div>
     </div>
 
+    <div id="view-ranking" class="hidden space-y-6 view-content">
+        <div class="bg-white p-6 rounded-2xl border shadow-sm">
+            <h2 class="text-lg font-black text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-ranking-star text-cyan-500 mr-2"></i>点数ランキング</h2>
+            <p class="text-xs text-gray-500 mb-4">各事業所の事業所入力、管理者入力、QCチーム入力のランキングを確認できます。</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <select id="ranking-month-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
+                <select id="ranking-target-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm">
+                    <option value="staff">事業所入力 (自己評価)</option>
+                    <option value="am">管理者入力 (AM評価)</option>
+                    <option value="qc">QCチーム入力 (QC評価)</option>
+                </select>
+            </div>
+        </div>
+        <div id="ranking-list-container" class="space-y-4"></div>
+    </div>
+
     <div id="view-knowledge" class="hidden space-y-4 view-content">
         <div class="bg-white p-5 sm:p-6 rounded-2xl border shadow-sm">
             <div class="flex justify-between items-center mb-4 border-b pb-4">
@@ -1270,7 +1294,11 @@
         <div class="bg-white p-6 rounded-2xl border shadow-sm">
             <h2 class="text-lg font-black text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-comments text-yellow-500 mr-2"></i>QCフィードバック確認</h2>
             <p class="text-xs text-gray-500 mb-4">QCチームによる抜き打ちチェックの結果とコメントを確認できます。</p>
-            <select id="feedback-office-pulldown" onchange="window.renderFeedbackList()" class="w-full p-4 border-2 rounded-2xl font-bold bg-gray-50"></select>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <select id="feedback-area-pulldown" onchange="window.handleFeedbackAreaChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
+                <select id="feedback-office-pulldown" onchange="window.handleFeedbackOfficeChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
+                <select id="feedback-month-pulldown" onchange="window.renderFeedbackList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
+            </div>
         </div>
         <div id="feedback-list-container" class="space-y-4"></div>
     </div>
@@ -1481,6 +1509,8 @@
               window.renderFeedbackList();
           } else if (st.activeTab === 'knowledge') {
               window.renderKnowledgeGallery();
+          } else if (st.activeTab === 'ranking') {
+              window.renderRankingList();
           }
           if (cName === 'team_qc_history') {
               window.renderHomeKnowledgeSpace();
@@ -1515,7 +1545,7 @@
           });
       }
       
-      if (!isM) total += 4; // 事業所内チェックの配点分
+      if (!isM && isLW) total += 4; // 事業所内チェックの配点分
       if (!isM && isLW) total += 4; 
 
       hqExcludedItems.forEach(id => {
@@ -1529,7 +1559,7 @@
           }
       }); 
       
-      if (!isM) {
+      if (!isM && isLW) {
           ['entrance', 'workspace', 'interview', 'office'].forEach(k => {
               if (st.officeImages && st.officeImages[k]) sum += 2; // 写真1枚につき満点(2点)とする
           });
@@ -1571,7 +1601,7 @@
           mode: st.currentMode 
       };
 
-      if (!isM && st.officeImages) {
+      if (!isM && isLW && st.officeImages) {
           payload.officeImages = st.officeImages;
       }
 
@@ -1882,6 +1912,8 @@
                 window.renderFeedbackList();
             } else if (window.appState.activeTab === 'knowledge') {
                 window.renderKnowledgeGallery();
+            } else if (window.appState.activeTab === 'ranking') {
+                window.renderRankingList();
             }
         } catch (error) {
             console.error(error);
@@ -1889,33 +1921,221 @@
         }
     };
 
+    window.renderRankingSelectors = () => {
+        const ms = $('ranking-month-pulldown');
+        if (!ms) return;
+        
+        if (ms.options.length === 0) {
+            ms.innerHTML = '<option value="all" selected>全期間 (平均)</option>';
+            window.appState.monthsData.slice().reverse().forEach(m => { 
+                ms.innerHTML += `<option value="${m}">${m}</option>`;
+            });
+        }
+    };
+
+    window.renderRankingList = () => {
+        const c = $('ranking-list-container');
+        const ms = $('ranking-month-pulldown');
+        const ts = $('ranking-target-pulldown');
+        if (!c || !ms || !ts) return;
+
+        const selMonth = ms.value;
+        const selTarget = ts.value; // 'staff', 'am', 'qc'
+        
+        let scores = [];
+
+        window.appState.offices.forEach(o => {
+            let sum = 0;
+            let count = 0;
+
+            if (selTarget === 'staff') {
+                const history = window.appState.historyFull[o.name] || {};
+                let targetWeeks = [];
+                if (selMonth === 'all') {
+                    targetWeeks = window.appState.weeksData.filter(w => w.isLastWeekOfMonth).map(w => w.label);
+                } else {
+                    targetWeeks = window.appState.weeksData.filter(w => w.monthStr === selMonth && w.isLastWeekOfMonth).map(w => w.label);
+                }
+                
+                targetWeeks.forEach(w => {
+                    if (history[w] && history[w].score !== undefined) {
+                        sum += history[w].score;
+                        count++;
+                    }
+                });
+            } else if (selTarget === 'am') {
+                const history = window.appState.amHistoryFull[o.name] || {};
+                if (selMonth === 'all') {
+                    Object.values(history).forEach(d => {
+                        if (d.score !== undefined) { sum += d.score; count++; }
+                    });
+                } else {
+                    if (history[selMonth] && history[selMonth].score !== undefined) {
+                        sum += history[selMonth].score;
+                        count++;
+                    }
+                }
+            } else if (selTarget === 'qc') {
+                const history = window.appState.teamHistoryFull[o.name] || {};
+                if (selMonth === 'all') {
+                    Object.values(history).forEach(d => {
+                        if (d.score !== undefined) { sum += d.score; count++; }
+                    });
+                } else {
+                    if (history[selMonth] && history[selMonth].score !== undefined) {
+                        sum += history[selMonth].score;
+                        count++;
+                    }
+                }
+            }
+
+            if (count > 0) {
+                scores.push({
+                    name: o.name,
+                    corp: o.corp,
+                    area: o.area,
+                    score: Math.round(sum / count)
+                });
+            }
+        });
+
+        if (scores.length === 0) {
+            c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-chart-simple text-3xl mb-3 block opacity-50"></i>この期間のランキングデータはありません</p></div>';
+            return;
+        }
+
+        // 降順ソート
+        scores.sort((a, b) => b.score - a.score);
+
+        let html = '<div class="bg-white rounded-2xl border shadow-sm overflow-hidden">';
+        
+        // ヘッダー部
+        html += `
+            <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center text-xs font-black text-gray-500">
+                <div class="w-16 text-center">順位</div>
+                <div class="flex-1">事業所名</div>
+                <div class="w-20 text-right pr-4">スコア</div>
+            </div>
+            <div class="divide-y">
+        `;
+
+        let currentRank = 1;
+        let currentScore = scores[0].score;
+        let actualIndex = 1;
+
+        scores.forEach((s, idx) => {
+            if (s.score < currentScore) {
+                currentRank = actualIndex;
+                currentScore = s.score;
+            }
+            
+            let rankDisplay = `<span class="text-gray-500 font-black">${currentRank}</span>`;
+            let rowClass = "hover:bg-gray-50 transition";
+            if (currentRank === 1) {
+                rankDisplay = `<i class="fa-solid fa-crown text-yellow-400 text-xl drop-shadow-sm"></i>`;
+                rowClass = "bg-yellow-50/30 hover:bg-yellow-50";
+            } else if (currentRank === 2) {
+                rankDisplay = `<i class="fa-solid fa-crown text-gray-400 text-lg"></i>`;
+                rowClass = "bg-gray-50/50 hover:bg-gray-100";
+            } else if (currentRank === 3) {
+                rankDisplay = `<i class="fa-solid fa-crown text-amber-600 text-base"></i>`;
+                rowClass = "bg-orange-50/30 hover:bg-orange-50";
+            }
+
+            const scoreColor = s.score >= 80 ? 'text-emerald-500' : (s.score >= 50 ? 'text-yellow-500' : 'text-red-500');
+
+            html += `
+            <div class="flex items-center px-4 py-3 sm:py-4 ${rowClass}">
+                <div class="w-16 text-center flex justify-center items-center h-8">${rankDisplay}</div>
+                <div class="flex-1 min-w-0 pr-2">
+                    <p class="text-sm font-black text-gray-800 truncate">${s.name}</p>
+                    <p class="text-[9px] text-gray-500 mt-0.5"><span class="mr-2">${s.corp}</span><span>${s.area}</span></p>
+                </div>
+                <div class="w-20 text-right pr-2">
+                    <span class="text-lg font-black ${scoreColor}">${s.score}<span class="text-[10px] ml-0.5 text-gray-400">pt</span></span>
+                </div>
+            </div>`;
+            actualIndex++;
+        });
+
+        html += `</div></div>`;
+        c.innerHTML = html;
+    };
+
     window.renderFeedbackSelectors = () => {
+        const as = $('feedback-area-pulldown');
+        const ms = $('feedback-month-pulldown');
+        if (!as || !ms) return;
+        
+        if (as.options.length === 0) {
+            as.innerHTML = '<option value="" disabled selected>エリア選択...</option><option value="all">全エリア</option>';
+            const amList = ["石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
+            amList.forEach(a => {
+                as.innerHTML += `<option value="${a}">${a}</option>`;
+            });
+            as.innerHTML += `<option value="その他">その他</option>`;
+        }
+
+        if (ms.options.length === 0) {
+            ms.innerHTML = '<option value="all" selected>全月度</option>';
+            window.appState.monthsData.slice().reverse().forEach(m => { 
+                ms.innerHTML += `<option value="${m}">${m}</option>`;
+            });
+        }
+
+        window.handleFeedbackAreaChange();
+    };
+
+    window.handleFeedbackAreaChange = () => {
+        const as = $('feedback-area-pulldown');
         const os = $('feedback-office-pulldown');
-        if (!os) return;
+        if (!as || !os) return;
+
+        const selA = as.value;
+        let filtered = window.appState.offices;
+        if (selA && selA !== 'all') {
+            filtered = filtered.filter(o => o.area === selA);
+        }
+
         const currentVal = os.value;
-        os.innerHTML = '<option value="" disabled selected>- 事業所を選択してください -</option>';
-        window.appState.offices.sort((a,b) => a.name.localeCompare(b.name)).forEach(o => { 
+        os.innerHTML = '<option value="" disabled selected>事業所選択...</option>';
+        filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(o => { 
             os.innerHTML += `<option value="${o.name}">【${o.corp}】 ${o.name}</option>`; 
         });
-        if (currentVal && window.appState.offices.find(o => o.name === currentVal)) {
+
+        if (currentVal && filtered.find(o => o.name === currentVal)) {
             os.value = currentVal;
+        } else {
+            os.value = "";
         }
+        window.renderFeedbackList();
+    };
+
+    window.handleFeedbackOfficeChange = () => {
+        window.renderFeedbackList();
     };
 
     window.renderFeedbackList = () => {
         const c = $('feedback-list-container');
         const os = $('feedback-office-pulldown');
+        const ms = $('feedback-month-pulldown');
+        
         if (!c || !os || !os.value) {
-            if(c) c.innerHTML = '<p class="text-center text-xs text-gray-400 mt-10">事業所を選択すると、過去のQCフィードバックが表示されます。</p>';
+            if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>事業所を選択するとフィードバックが表示されます</p></div>';
             return;
         }
 
         const oName = os.value;
+        const selMonth = ms ? ms.value : 'all';
         const qcData = window.appState.teamHistoryFull[oName] || {};
-        const entries = Object.values(qcData).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+        let entries = Object.values(qcData).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        if (selMonth !== 'all') {
+            entries = entries.filter(e => e.month === selMonth);
+        }
 
         if (entries.length === 0) {
-            c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-inbox text-3xl mb-3 block opacity-50"></i>フィードバックはまだありません</p></div>';
+            c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-inbox text-3xl mb-3 block opacity-50"></i>該当するフィードバックはありません</p></div>';
             return;
         }
 
@@ -3197,7 +3417,6 @@
         const areaSelect = $('new-area');
         if (areaSelect && areaSelect.options.length <= 1) {
             areaSelect.innerHTML = '<option value="" disabled selected>エリア (AM) を選択</option>';
-            const amList = ["石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
             amList.forEach(a => {
                 areaSelect.innerHTML += `<option value="${a}">${a}</option>`;
             });
