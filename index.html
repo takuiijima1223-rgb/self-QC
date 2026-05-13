@@ -220,6 +220,8 @@
             window.renderRankingList();
         } else if (id === 'master') {
             window.renderMasterSettings();
+        } else if (id === 'rules') {
+            if (window.renderRules) window.renderRules();
         }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -493,7 +495,10 @@
       if (window.appState.currentMode === 'qc') {
           cc.innerHTML = `
             <div class="bg-white rounded-2xl shadow-sm border mb-4 p-5 border-l-4 border-l-emerald-500">
-                <h4 class="font-black text-gray-800 mb-3 flex items-center"><i class="fa-solid fa-comment-dots text-emerald-500 mr-2"></i>QCフィードバック（事業所共有用）</h4>
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-comment-dots text-emerald-500 mr-2"></i>QCフィードバック（事業所共有用）</h4>
+                    <button id="btn-ai-summary" onclick="window.generateAISummary()" type="button" class="text-[10px] bg-purple-50 text-purple-600 hover:bg-purple-100 px-2 py-1 rounded font-bold transition flex items-center border border-purple-200 active:scale-95"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>✨ AIで総評をドラフト作成</button>
+                </div>
                 <textarea id="qc-comment-input" class="w-full border-2 rounded-xl p-3 text-sm font-bold bg-gray-50 focus:bg-white focus:border-emerald-500 transition-all outline-none mb-4" rows="3" placeholder="全体的な総評を入力 (任意)"></textarea>
                 
                 <div class="border-t pt-4">
@@ -1068,109 +1073,81 @@
       </div>
     </div>
     
-    <div id="view-rules" class="hidden space-y-6 view-content">
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm">
+    <div id="view-rules" class="hidden space-y-6 view-content relative">
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm relative">
+            <div class="absolute top-4 right-4 z-10 flex gap-2">
+                <button id="btn-edit-rules" onclick="window.toggleRulesEditMode(true)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-[10px] font-bold transition shadow-sm border"><i class="fa-solid fa-pen mr-1"></i>編集</button>
+                <button id="btn-save-rules" onclick="window.saveRules()" class="hidden bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-[10px] font-bold transition shadow-sm border"><i class="fa-solid fa-save mr-1"></i>保存</button>
+                <button id="btn-cancel-rules" onclick="window.toggleRulesEditMode(false)" class="hidden bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-[10px] font-bold transition shadow-sm border"><i class="fa-solid fa-times mr-1"></i>キャンセル</button>
+            </div>
+
             <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-circle-info text-blue-500 mr-2"></i>運用ルール / 目的</h2>
+            
             <div class="space-y-6 pt-2">
+                <!-- 目的 -->
                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
                     <h3 class="text-sm font-black text-blue-800 mb-3">【運用目的（トレンド）】</h3>
-                    <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
-                        <li>品質レベルの標準化</li>
-                        <li>利用者満足度向上 = 事業所の利益向上 = 皆が幸せになる</li>
-                        <li>品質レベルの標準化をし、上記の「皆が幸せになる」には何点が最低限必要なのかを設計する</li>
-                    </ul>
+                    <div id="display-rule-purpose" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                    <textarea id="edit-rule-purpose" class="hidden w-full p-3 border border-blue-300 rounded-lg text-xs font-bold text-gray-700 bg-white focus:outline-none focus:border-blue-500 resize-y min-h-[100px]"></textarea>
                 </div>
                 
+                <!-- ルール -->
                 <div>
                     <h3 class="text-sm font-black text-gray-800 mb-3">【運用ルール】</h3>
                     <div class="space-y-4">
+                        <!-- 事業所 -->
                         <div class="border rounded-xl overflow-hidden shadow-sm">
                             <div class="bg-pink-50 px-4 py-2 border-b border-pink-100">
                                 <h4 class="text-xs font-black text-pink-600"><i class="fa-solid fa-building mr-1.5"></i>事業所</h4>
                             </div>
                             <div class="p-4 bg-white">
-                                <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
-                                    <li>事業所は毎週金曜日(祝日の場合は前日23:59)までに事業所入力にチェックをすること</li>
-                                    <li>実施有無チェックに虚偽がないこと。虚偽が事実と認められた場合、個人・事業所の評価に影響する(上長判断による)</li>
-                                    <li>期日内に入力出来ない場合、減点評価となる</li>
-                                </ul>
+                                <div id="display-rule-office" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                                <textarea id="edit-rule-office" class="hidden w-full p-3 border border-pink-300 rounded-lg text-xs font-bold text-gray-700 bg-white focus:outline-none focus:border-pink-500 resize-y min-h-[120px]"></textarea>
                             </div>
                         </div>
                         
+                        <!-- AM -->
                         <div class="border rounded-xl overflow-hidden shadow-sm">
                             <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100">
                                 <h4 class="text-xs font-black text-indigo-600"><i class="fa-solid fa-user-tie mr-1.5"></i>AM</h4>
                             </div>
                             <div class="p-4 bg-white">
-                                <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
-                                    <li>月1回は事業所へ来所し、品質評価と印象評価をすること</li>
-                                    <li>担当マネージャーは必ず毎月月末の23:59までに、各品質評価と印象評価を入力すること</li>
-                                    <li>指摘事項は、項目に応じて「事業所対応」と「本社対応」に分けて、サポートチームが事業所または本社に対応を依頼する。依頼されたら期日までに対応すること。<br>
-                                        <span class="text-gray-500 font-normal">（例1：壁の汚れ ⇒ 事業所が対応する。例2：壁の破損 ⇒ 本社が対応する。）</span>
-                                    </li>
-                                    <li>あとでやる、たまたま掃除忘れていた等は一切評価に関係せず、見た事実を評価すること</li>
-                                    <li>月1回品質チェックの評価をもとに必ずフィードバックを実施すること</li>
-                                    <li>期日内に入力出来ない場合、減点評価となる</li>
-                                </ul>
+                                <div id="display-rule-am" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                                <textarea id="edit-rule-am" class="hidden w-full p-3 border border-indigo-300 rounded-lg text-xs font-bold text-gray-700 bg-white focus:outline-none focus:border-indigo-500 resize-y min-h-[150px]"></textarea>
                             </div>
                         </div>
 
+                        <!-- QC -->
                         <div class="border rounded-xl overflow-hidden shadow-sm">
                             <div class="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
                                 <h4 class="text-xs font-black text-emerald-600"><i class="fa-solid fa-clipboard-check mr-1.5"></i>QCチーム</h4>
                             </div>
                             <div class="p-4 bg-white">
-                                <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
-                                    <li>QCチームは事業所来所時に品質評価と印象評価 ＋ 加点評価(項目外でもOKとする)をすること</li>
-                                    <li>来所後、営業日3日以内に情報をアプリ内に入力をすること</li>
-                                    <li>情報更新後、事業所 ＋ 担当AMに共有し、改善項目に関しては期日を設ける。期日後に写真などでチェックをし改善有無の判断をする<br>
-                                        <span class="text-gray-500 font-normal">└ 改善を急務に完了しても、月度のQCチーム評価は変わらない。但しAM評価は、月度評価前であれば問題ない</span>
-                                    </li>
-                                    <li>来所時は見た事実と感じた事実をそのまま評価にすること。</li>
-                                    <li>毎週、毎月、期日時間経過後、各事業所の入力期日をチェックする <span class="text-red-500">※1分でも過ぎたら減点</span></li>
-                                </ul>
+                                <div id="display-rule-qc" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                                <textarea id="edit-rule-qc" class="hidden w-full p-3 border border-emerald-300 rounded-lg text-xs font-bold text-gray-700 bg-white focus:outline-none focus:border-emerald-500 resize-y min-h-[150px]"></textarea>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- ガイド -->
                 <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
                     <h3 class="text-sm font-black text-emerald-800 mb-3">【QCチーム運用ガイド（評価と改善の仕組み）】</h3>
                     <div class="space-y-4">
-                        
                         <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                            <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">評価点（スコアリング）の設計</h4>
-                            <p class="text-[10px] text-gray-600 mb-2 font-bold">事業所の入力負担を減らしつつ、客観的な評価ができるよう「3段階評価」＋「管轄外（N/A）」を導入します。</p>
-                            <ul class="list-none text-xs text-gray-700 font-bold space-y-1 mb-2">
-                                <li><span class="text-emerald-500">2点（基準達成）：</span> 基準を満たしている（例：清掃が行き届いている）</li>
-                                <li><span class="text-yellow-500">1点（一部不備）：</span> すぐに改善できる軽微な不備がある（例：ゴミ箱がいっぱい）</li>
-                                <li><span class="text-red-500">0点（基準未達）：</span> 基準を満たしておらず、指導・改善が必要</li>
-                                <li><span class="text-gray-500">N/A（評価対象外）：</span> 本社対応が必要な修繕（壁の破損など）</li>
-                            </ul>
-                            <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-600">
-                                <span class="font-black text-gray-700">ポイント：</span><br>
-                                「品質スコア（満点に対して何％達成したか）」と「運用スコア（期日遵守など）」は分けて可視化。事業所のどこに課題があるか（環境維持の意識か、業務管理能力か）を明確にします。
-                            </div>
+                            <div id="display-rule-guide1" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                            <textarea id="edit-rule-guide1" class="hidden w-full p-3 border border-emerald-300 rounded-lg text-xs font-bold text-gray-700 bg-white focus:outline-none focus:border-emerald-500 resize-y min-h-[180px]"></textarea>
                         </div>
 
                         <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                            <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">進捗管理シートと「感じた事実」の標準化</h4>
-                            <p class="text-[10px] text-gray-600 mb-2 font-bold">「感じた事実（例：なんとなく暗い、雑然としている）」は属人化しやすいため、基準に引き上げる工夫をします。</p>
-                            <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-700 leading-relaxed font-bold">
-                                <span class="text-emerald-600">Before/Afterシートの「マニュアル化」転用：</span><br>
-                                現在QCチームが使っているBefore/Afterの進捗シートを蓄積し、良い状態（正解）と悪い状態（NG）の「写真付きビジュアルスタンダード（VMD基準）」を作成します。<br>
-                                言葉によるチェックリストだけでなく、「この写真の状態を維持する」という視覚的な基準がある方が、福祉現場で働く多様なスタッフにとって圧倒的にわかりやすく、負担軽減になります。
-                            </div>
+                            <div id="display-rule-guide2" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                            <textarea id="edit-rule-guide2" class="hidden w-full p-3 border border-emerald-300 rounded-lg text-xs font-bold text-gray-700 bg-white focus:outline-none focus:border-emerald-500 resize-y min-h-[150px]"></textarea>
                         </div>
 
                         <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                            <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">改善プロセスにおける「本社対応」の可視化</h4>
-                            <p class="text-[10px] text-gray-600 mb-2 font-bold">指摘事項を「事業所対応」と「本社対応」に分ける仕組みです。</p>
-                            <div class="bg-gray-50 p-2 rounded text-[10px] text-gray-700 leading-relaxed font-bold">
-                                事業所が「本社に依頼しているのに直してくれないから、ずっと低評価になっている」とモチベーションを下げないよう、QC管理シート上に「本社対応待ちフラグ」を設け、AMやQCチームが来所した際に、そこは事業所の責任として減点しない（N/A扱いにする）運用を徹底すると、不満が出にくくなります。
-                            </div>
+                            <div id="display-rule-guide3" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                            <textarea id="edit-rule-guide3" class="hidden w-full p-3 border border-emerald-300 rounded-lg text-xs font-bold text-gray-700 bg-white focus:outline-none focus:border-emerald-500 resize-y min-h-[120px]"></textarea>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -1260,14 +1237,14 @@
     <div id="view-ranking" class="hidden space-y-6 view-content">
         <div class="bg-white p-6 rounded-2xl border shadow-sm">
             <h2 class="text-lg font-black text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-ranking-star text-cyan-500 mr-2"></i>点数ランキング</h2>
-            <p class="text-xs text-gray-500 mb-4">各事業所の事業所入力、AM入力、QCチーム入力のスコアを同時に比較・ランキング確認できます。</p>
+            <p class="text-xs text-gray-500 mb-4">各事業所の品質スコア（平均点）によるランキングです。<br><span class="font-bold text-pink-600">※同点数の場合は、対象期間内の「入力率」が高い事業所が上位になります。</span></p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select id="ranking-month-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
                 <select id="ranking-sort-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm">
-                    <option value="total">総合平均スコアで順位づけ</option>
-                    <option value="staff">事業所入力スコアで順位づけ</option>
-                    <option value="am">AM入力スコアで順位づけ</option>
-                    <option value="qc">QCチーム入力スコアで順位づけ</option>
+                    <option value="total">総合スコアで順位づけ</option>
+                    <option value="staff">事業所スコアで順位づけ</option>
+                    <option value="am">AMスコアで順位づけ</option>
+                    <option value="qc">QCスコアで順位づけ</option>
                 </select>
             </div>
         </div>
@@ -1516,6 +1493,17 @@
           window.renderMasterSettings(); 
       }, e => console.error(e));
       
+      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules'), d => {
+          if (d.exists()) {
+              window.appState.rules = d.data();
+          } else {
+              window.appState.rules = null;
+          }
+          if (window.appState.activeTab === 'rules') {
+              if (window.renderRules) window.renderRules();
+          }
+      }, e => console.error(e));
+
       const setHist = (cName, hKey, fKey, lKey) => {
         onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', cName), s => {
           const st = window.appState; 
@@ -1573,9 +1561,6 @@
           });
       }
       
-      if (!isM && isLW) total += 4; // 事業所内チェックの配点分
-      if (!isM && isLW) total += 4; 
-
       hqExcludedItems.forEach(id => {
           total -= 1;
       });
@@ -1586,19 +1571,8 @@
               sum += val;
           }
       }); 
-      
-      if (!isM && isLW) {
-          ['entrance', 'workspace', 'interview', 'office'].forEach(k => {
-              if (st.officeImages && st.officeImages[k]) sum += 2; // 写真1枚につき満点(2点)とする
-          });
-      }
 
-      if (!isM && isLW) {
-          ['front', 'back', 'inside1', 'inside2'].forEach(k => {
-              if (st.carImages && st.carImages[k]) sum += 2; 
-          });
-      }
-
+      // 写真提出による無条件加点を廃止し、純粋なチェック項目のみの点数で計算
       let score = total > 0 ? Math.round((sum/(total*2))*100) : 100;
       
       let gpBonus = 0;
@@ -1974,6 +1948,73 @@
         }
     };
 
+    const defaultRulesData = {
+        purpose: "・品質レベルの標準化\n・利用者満足度向上 = 事業所の利益向上 = 皆が幸せになる\n・品質レベルの標準化をし、上記の「皆が幸せになる」には何点が最低限必要なのかを設計する",
+        office: "・事業所は毎週金曜日(祝日の場合は前日23:59)までに事業所入力にチェックをすること\n・実施有無チェックに虚偽がないこと。虚偽が事実と認められた場合、個人・事業所の評価に影響する(上長判断による)\n・期日内に入力出来ない場合、減点評価となる",
+        am: "・月1回は事業所へ来所し、品質評価と印象評価をすること\n・担当マネージャーは必ず毎月月末の23:59までに、各品質評価と印象評価を入力すること\n・指摘事項は、項目に応じて「事業所対応」と「本社対応」に分けて、サポートチームが事業所または本社に対応を依頼する。依頼されたら期日までに対応すること。\n　（例1：壁の汚れ ⇒ 事業所が対応する。例2：壁の破損 ⇒ 本社が対応する。）\n・あとでやる、たまたま掃除忘れていた等は一切評価に関係せず、見た事実を評価すること\n・月1回品質チェックの評価をもとに必ずフィードバックを実施すること\n・期日内に入力出来ない場合、減点評価となる",
+        qc: "・QCチームは事業所来所時に品質評価と印象評価 ＋ 加点評価(項目外でもOKとする)をすること\n・来所後、営業日3日以内に情報をアプリ内に入力をすること\n・情報更新後、事業所 ＋ 担当AMに共有し、改善項目に関しては期日を設ける。期日後に写真などでチェックをし改善有無の判断をする\n　└ 改善を急務に完了しても、月度のQCチーム評価は変わらない。但しAM評価は、月度評価前であれば問題ない\n・来所時は見た事実と感じた事実をそのまま評価にすること。\n・毎週、毎月、期日時間経過後、各事業所の入力期日をチェックする ※1分でも過ぎたら減点",
+        guide1: "【評価点（スコアリング）の設計】\n事業所の入力負担を減らしつつ、客観的な評価ができるよう「3段階評価」＋「管轄外（N/A）」を導入します。\n\n2点（基準達成）： 基準を満たしている（例：清掃が行き届いている）\n1点（一部不備）： すぐに改善できる軽微な不備がある（例：ゴミ箱がいっぱい）\n0点（基準未達）： 基準を満たしておらず、指導・改善が必要\nN/A（評価対象外）： 本社対応が必要な修繕（壁の破損など）\n\nポイント：\n「品質スコア（満点に対して何％達成したか）」と「運用スコア（期日遵守など）」は分けて可視化。事業所のどこに課題があるか（環境維持の意識か、業務管理能力か）を明確にします。",
+        guide2: "【進捗管理シートと「感じた事実」の標準化】\n「感じた事実（例：なんとなく暗い、雑然としている）」は属人化しやすいため、基準に引き上げる工夫をします。\n\nBefore/Afterシートの「マニュアル化」転用：\n現在QCチームが使っているBefore/Afterの進捗シートを蓄積し、良い状態（正解）と悪い状態（NG）の「写真付きビジュアルスタンダード（VMD基準）」を作成します。\n言葉によるチェックリストだけでなく、「この写真の状態を維持する」という視覚的な基準がある方が、福祉現場で働く多様なスタッフにとって圧倒的にわかりやすく、負担軽減になります。",
+        guide3: "【改善プロセスにおける「本社対応」の可視化】\n指摘事項を「事業所対応」と「本社対応」に分ける仕組みです。\n\n事業所が「本社に依頼しているのに直してくれないから、ずっと低評価になっている」とモチベーションを下げないよう、QC管理シート上に「本社対応待ちフラグ」を設け、AMやQCチームが来所した際に、そこは事業所の責任として減点しない（N/A扱いにする）運用を徹底すると、不満が出にくくなります。"
+    };
+
+    window.renderRules = () => {
+        const rules = window.appState.rules || defaultRulesData;
+        ['purpose', 'office', 'am', 'qc', 'guide1', 'guide2', 'guide3'].forEach(key => {
+            const displayEl = $(`display-rule-${key}`);
+            const editEl = $(`edit-rule-${key}`);
+            if (displayEl) {
+                displayEl.innerText = rules[key] || '';
+            }
+            if (editEl) {
+                editEl.value = rules[key] || '';
+            }
+        });
+    };
+
+    window.toggleRulesEditMode = (isEdit) => {
+        const keys = ['purpose', 'office', 'am', 'qc', 'guide1', 'guide2', 'guide3'];
+        
+        sU('btn-edit-rules', e => isEdit ? e.classList.add('hidden') : e.classList.remove('hidden'));
+        sU('btn-save-rules', e => isEdit ? e.classList.remove('hidden') : e.classList.add('hidden'));
+        sU('btn-cancel-rules', e => isEdit ? e.classList.remove('hidden') : e.classList.add('hidden'));
+
+        keys.forEach(key => {
+            const displayEl = $(`display-rule-${key}`);
+            const editEl = $(`edit-rule-${key}`);
+            if (isEdit) {
+                if (displayEl) displayEl.classList.add('hidden');
+                if (editEl) editEl.classList.remove('hidden');
+            } else {
+                if (displayEl) displayEl.classList.remove('hidden');
+                if (editEl) editEl.classList.add('hidden');
+                if (!isEdit && displayEl && editEl) {
+                    editEl.value = displayEl.innerText;
+                }
+            }
+        });
+    };
+
+    window.saveRules = async () => {
+        const keys = ['purpose', 'office', 'am', 'qc', 'guide1', 'guide2', 'guide3'];
+        const newRules = {};
+        keys.forEach(key => {
+            const editEl = $(`edit-rule-${key}`);
+            if (editEl) {
+                newRules[key] = editEl.value;
+            }
+        });
+
+        try {
+            await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'rules'), newRules);
+            window.showGlobalToast("ルールを保存しました");
+            window.toggleRulesEditMode(false);
+        } catch(e) {
+            console.error(e);
+            window.showGlobalToast("ルールの保存に失敗しました");
+        }
+    };
+
     window.renderRankingSelectors = () => {
         const ms = $('ranking-month-pulldown');
         if (!ms) return;
@@ -1996,78 +2037,91 @@
         const sortTarget = ss.value; // 'total', 'staff', 'am', 'qc'
         
         let scores = [];
+        const now = new Date();
+
+        // 対象期間の算出（未来の週・月は除外して分母を計算）
+        let targetWeeks = [];
+        if (selMonth === 'all') {
+            targetWeeks = window.appState.weeksData.filter(w => w.isLastWeekOfMonth && w.start <= now).map(w => w.label);
+        } else {
+            targetWeeks = window.appState.weeksData.filter(w => w.monthStr === selMonth && w.isLastWeekOfMonth && w.start <= now).map(w => w.label);
+        }
+        const staffTargetCount = targetWeeks.length;
+
+        const allMonths = window.appState.monthsData;
+        const validMonths = allMonths.filter(m => {
+            const match = m.match(/(\d{4})年(\d{1,2})月度/);
+            if (!match) return false;
+            const y = parseInt(match[1], 10);
+            const mon = parseInt(match[2], 10);
+            const startOfMonth = new Date(y, mon - 1, 1);
+            return startOfMonth <= now;
+        });
+
+        let targetMonths = [];
+        if (selMonth === 'all') {
+            targetMonths = validMonths;
+        } else {
+            targetMonths = validMonths.filter(m => m === selMonth);
+        }
+        const monthTargetCount = targetMonths.length;
 
         window.appState.offices.forEach(o => {
             let staffSum = 0, staffCount = 0;
             let amSum = 0, amCount = 0;
             let qcSum = 0, qcCount = 0;
 
-            if (true) {
-                const history = window.appState.historyFull[o.name] || {};
-                let targetWeeks = [];
-                if (selMonth === 'all') {
-                    targetWeeks = window.appState.weeksData.filter(w => w.isLastWeekOfMonth).map(w => w.label);
-                } else {
-                    targetWeeks = window.appState.weeksData.filter(w => w.monthStr === selMonth && w.isLastWeekOfMonth).map(w => w.label);
+            const staffHistory = window.appState.historyFull[o.name] || {};
+            targetWeeks.forEach(w => {
+                if (staffHistory[w] && staffHistory[w].score !== undefined) {
+                    staffSum += staffHistory[w].score;
+                    staffCount++;
                 }
-                
-                targetWeeks.forEach(w => {
-                    if (history[w] && history[w].score !== undefined) {
-                        staffSum += history[w].score;
-                        staffCount++;
-                    }
-                });
-            }
+            });
             
-            if (true) {
-                const history = window.appState.amHistoryFull[o.name] || {};
-                if (selMonth === 'all') {
-                    Object.values(history).forEach(d => {
-                        if (d.score !== undefined) { amSum += d.score; amCount++; }
-                    });
-                } else {
-                    if (history[selMonth] && history[selMonth].score !== undefined) {
-                        amSum += history[selMonth].score;
-                        amCount++;
-                    }
+            const amHistory = window.appState.amHistoryFull[o.name] || {};
+            targetMonths.forEach(m => {
+                if (amHistory[m] && amHistory[m].score !== undefined) {
+                    amSum += amHistory[m].score;
+                    amCount++;
                 }
-            }
+            });
             
-            if (true) {
-                const history = window.appState.teamHistoryFull[o.name] || {};
-                if (selMonth === 'all') {
-                    Object.values(history).forEach(d => {
-                        if (d.score !== undefined) { qcSum += d.score; qcCount++; }
-                    });
-                } else {
-                    if (history[selMonth] && history[selMonth].score !== undefined) {
-                        qcSum += history[selMonth].score;
-                        qcCount++;
-                    }
+            const qcHistory = window.appState.teamHistoryFull[o.name] || {};
+            targetMonths.forEach(m => {
+                if (qcHistory[m] && qcHistory[m].score !== undefined) {
+                    qcSum += qcHistory[m].score;
+                    qcCount++;
                 }
-            }
+            });
 
-            const staffScore = staffCount > 0 ? Math.round(staffSum / staffCount) : '--';
-            const amScore = amCount > 0 ? Math.round(amSum / amCount) : '--';
-            const qcScore = qcCount > 0 ? Math.round(qcSum / qcCount) : '--';
+            // 平均スコアと入力率の計算
+            const staffAvg = staffCount > 0 ? Math.round(staffSum / staffCount) : '--';
+            const staffRate = staffTargetCount > 0 ? Math.round((staffCount / staffTargetCount) * 100) : 0;
 
-            let totalSum = 0;
-            let totalValCount = 0;
-            if (staffScore !== '--') { totalSum += staffScore; totalValCount++; }
-            if (amScore !== '--') { totalSum += amScore; totalValCount++; }
-            if (qcScore !== '--') { totalSum += qcScore; totalValCount++; }
+            const amAvg = amCount > 0 ? Math.round(amSum / amCount) : '--';
+            const amRate = monthTargetCount > 0 ? Math.round((amCount / monthTargetCount) * 100) : 0;
 
-            const totalScore = totalValCount > 0 ? Math.round(totalSum / totalValCount) : '--';
+            const qcAvg = qcCount > 0 ? Math.round(qcSum / qcCount) : '--';
+            const qcRate = monthTargetCount > 0 ? Math.round((qcCount / monthTargetCount) * 100) : 0;
+
+            let totalAvgSum = 0, totalRateSum = 0, totalValCount = 0;
+            if (staffAvg !== '--') { totalAvgSum += staffAvg; totalRateSum += staffRate; totalValCount++; }
+            if (amAvg !== '--') { totalAvgSum += amAvg; totalRateSum += amRate; totalValCount++; }
+            if (qcAvg !== '--') { totalAvgSum += qcAvg; totalRateSum += qcRate; totalValCount++; }
+
+            const totalAvg = totalValCount > 0 ? Math.round(totalAvgSum / totalValCount) : '--';
+            const totalRate = totalValCount > 0 ? Math.round(totalRateSum / totalValCount) : 0;
 
             if (totalValCount > 0) {
                 scores.push({
                     name: o.name,
                     corp: o.corp,
                     area: o.area,
-                    staffScore,
-                    amScore,
-                    qcScore,
-                    totalScore
+                    staffAvg, staffRate,
+                    amAvg, amRate,
+                    qcAvg, qcRate,
+                    totalAvg, totalRate
                 });
             }
         });
@@ -2079,13 +2133,25 @@
 
         // 降順ソート
         scores.sort((a, b) => {
-            const scoreA = a[sortTarget + 'Score'] === '--' ? -1 : a[sortTarget + 'Score'];
-            const scoreB = b[sortTarget + 'Score'] === '--' ? -1 : b[sortTarget + 'Score'];
+            const scoreA = a[sortTarget + 'Avg'] === '--' ? -1 : a[sortTarget + 'Avg'];
+            const scoreB = b[sortTarget + 'Avg'] === '--' ? -1 : b[sortTarget + 'Avg'];
+            
+            // 第一キー：品質スコア
             if (scoreB !== scoreA) return scoreB - scoreA;
-            // 同点の場合は総合スコアで比較
-            const totalA = a.totalScore === '--' ? -1 : a.totalScore;
-            const totalB = b.totalScore === '--' ? -1 : b.totalScore;
+            
+            // 第二キー：入力率 (同スコアの場合)
+            const rateA = a[sortTarget + 'Rate'];
+            const rateB = b[sortTarget + 'Rate'];
+            if (rateB !== rateA) return rateB - rateA;
+
+            // 第三キー：総合スコア
+            const totalA = a.totalAvg === '--' ? -1 : a.totalAvg;
+            const totalB = b.totalAvg === '--' ? -1 : b.totalAvg;
             if (totalB !== totalA) return totalB - totalA;
+
+            // 第四キー：総合入力率
+            if (b.totalRate !== a.totalRate) return b.totalRate - a.totalRate;
+
             return a.name.localeCompare(b.name);
         });
 
@@ -2096,13 +2162,14 @@
             <div class="bg-gray-50 px-2 sm:px-4 py-3 border-b flex justify-between items-center text-[10px] font-black text-gray-500">
                 <div class="w-8 sm:w-12 text-center">順位</div>
                 <div class="flex-1">事業所名</div>
-                <div class="text-right w-36 sm:w-48 pr-2">各スコア</div>
+                <div class="text-right w-[150px] sm:w-[220px] pr-2">品質スコア / 入力率</div>
             </div>
             <div class="divide-y">
         `;
 
         let currentRank = 1;
-        let currentScore = scores[0][sortTarget + 'Score'];
+        let currentScore = scores[0][sortTarget + 'Avg'];
+        let currentRate = scores[0][sortTarget + 'Rate'];
         let actualIndex = 1;
 
         const getColor = (sc) => {
@@ -2113,10 +2180,13 @@
         };
 
         scores.forEach((s) => {
-            const tgtScore = s[sortTarget + 'Score'];
-            if (tgtScore < currentScore) {
+            const tgtScore = s[sortTarget + 'Avg'];
+            const tgtRate = s[sortTarget + 'Rate'];
+            
+            if (tgtScore < currentScore || (tgtScore === currentScore && tgtRate < currentRate)) {
                 currentRank = actualIndex;
                 currentScore = tgtScore;
+                currentRate = tgtRate;
             }
             
             let rankDisplay = `<span class="text-gray-500 font-black">${currentRank}</span>`;
@@ -2144,22 +2214,26 @@
                     <p class="text-xs sm:text-sm font-black text-gray-800 truncate">${s.name}</p>
                     <p class="text-[8px] sm:text-[9px] text-gray-500 mt-0.5"><span class="mr-1 sm:mr-2">${s.corp}</span><span>${s.area}</span></p>
                 </div>
-                <div class="flex gap-2 sm:gap-3 text-right">
-                    <div class="text-center w-8 sm:w-10">
+                <div class="flex gap-1 sm:gap-2 text-right">
+                    <div class="text-center w-10 sm:w-14">
                         <p class="text-[8px] text-gray-400 font-bold mb-0.5 ${sortTarget === 'staff' ? 'text-pink-500' : ''}">事業所</p>
-                        <p class="text-xs sm:text-sm font-black ${getColor(s.staffScore)}">${s.staffScore}</p>
+                        <p class="text-xs sm:text-sm font-black ${getColor(s.staffAvg)}">${s.staffAvg}</p>
+                        <p class="text-[7px] font-bold ${s.staffRate < 100 ? 'text-red-400' : 'text-gray-400'} mt-0.5">${s.staffRate}%</p>
                     </div>
-                    <div class="text-center w-8 sm:w-10">
+                    <div class="text-center w-10 sm:w-14">
                         <p class="text-[8px] text-gray-400 font-bold mb-0.5 ${sortTarget === 'am' ? 'text-indigo-500' : ''}">AM</p>
-                        <p class="text-xs sm:text-sm font-black ${getColor(s.amScore)}">${s.amScore}</p>
+                        <p class="text-xs sm:text-sm font-black ${getColor(s.amAvg)}">${s.amAvg}</p>
+                        <p class="text-[7px] font-bold ${s.amRate < 100 ? 'text-red-400' : 'text-gray-400'} mt-0.5">${s.amRate}%</p>
                     </div>
-                    <div class="text-center w-8 sm:w-10">
+                    <div class="text-center w-10 sm:w-14">
                         <p class="text-[8px] text-gray-400 font-bold mb-0.5 ${sortTarget === 'qc' ? 'text-emerald-500' : ''}">QC</p>
-                        <p class="text-xs sm:text-sm font-black ${getColor(s.qcScore)}">${s.qcScore}</p>
+                        <p class="text-xs sm:text-sm font-black ${getColor(s.qcAvg)}">${s.qcAvg}</p>
+                        <p class="text-[7px] font-bold ${s.qcRate < 100 ? 'text-red-400' : 'text-gray-400'} mt-0.5">${s.qcRate}%</p>
                     </div>
-                    <div class="text-center w-10 sm:w-12 border-l border-gray-200 pl-2 sm:pl-3">
+                    <div class="text-center w-12 sm:w-16 border-l border-gray-200 pl-1 sm:pl-2">
                         <p class="text-[8px] text-gray-400 font-bold mb-0.5 ${sortTarget === 'total' ? 'text-gray-800' : ''}">総合</p>
-                        <p class="text-sm sm:text-base font-black ${getColor(s.totalScore)}">${s.totalScore}</p>
+                        <p class="text-sm sm:text-base font-black ${getColor(s.totalAvg)}">${s.totalAvg}</p>
+                        <p class="text-[7px] font-bold ${s.totalRate < 100 ? 'text-red-400' : 'text-gray-400'} mt-0.5">${s.totalRate}%</p>
                     </div>
                 </div>
             </div>`;
@@ -2447,6 +2521,19 @@
                 `;
             }
 
+            const aiAdviceId = `ai-advice-${e.office}-${e.month}`;
+            let aiAdviceSection = `
+                <div class="mt-4 pt-4 border-t border-purple-100">
+                    <button id="btn-${aiAdviceId}" onclick="window.getAIAdvice('${e.office}', '${e.month}', '${aiAdviceId}')" class="w-full py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-xl text-xs font-black transition-all flex justify-center items-center active:scale-95 shadow-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-2 text-base"></i>✨ この結果をもとにAI改善アドバイスをもらう
+                    </button>
+                    <div id="container-${aiAdviceId}" class="hidden mt-3 p-4 bg-purple-50 border border-purple-100 rounded-xl">
+                        <h4 class="text-[10px] font-black text-purple-700 mb-2 flex items-center"><i class="fa-solid fa-robot mr-1"></i>✨ AI アドバイス</h4>
+                        <div id="content-${aiAdviceId}" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                    </div>
+                </div>
+            `;
+
             html += `
             <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-4">
                 <div class="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
@@ -2463,6 +2550,7 @@
                     
                     ${issuesSection}
                     ${qcApprovalSection}
+                    ${aiAdviceSection}
 
                     <div class="flex space-x-3 border-t pt-4 mt-4">
                         <button onclick="window.toggleFeedbackCheck('${e.office}', '${e.month}', 'staff_checked', ${staffChecked})" class="flex-1 py-2.5 px-3 border-2 rounded-xl text-xs font-black transition-all flex justify-center items-center active:scale-95 ${staffBtnClass}">
@@ -3030,7 +3118,10 @@
             answersHtml += '</div>';
 
             let imagesHtml = '';
+            let hasImagesToAnalyze = false;
+
             if (fullData.officeImages && Object.values(fullData.officeImages).some(v => v)) {
+                hasImagesToAnalyze = true;
                 imagesHtml += `<h5 class="text-[10px] font-black text-pink-600 mt-4 mb-2"><i class="fa-solid fa-building mr-1"></i>事業所内チェック写真</h5>`;
                 imagesHtml += `<div class="grid grid-cols-4 gap-2 mb-3">`;
                 ['entrance', 'workspace', 'interview', 'office'].forEach(k => {
@@ -3048,6 +3139,7 @@
             }
 
             if (fullData.carImages && Object.values(fullData.carImages).some(v => v)) {
+                hasImagesToAnalyze = true;
                 imagesHtml += `<h5 class="text-[10px] font-black text-pink-600 mt-4 mb-2"><i class="fa-solid fa-car mr-1"></i>社用車チェック写真</h5>`;
                 imagesHtml += `<div class="grid grid-cols-4 gap-2">`;
                 ['front', 'back', 'inside1', 'inside2'].forEach(k => {
@@ -3064,6 +3156,21 @@
                 imagesHtml += `</div>`;
             }
 
+            let aiVisionSection = '';
+            if (hasImagesToAnalyze && isStaff) {
+                const aiVisionId = `ai-vision-${o.name}-${selectedPeriod}`.replace(/[/ ]/g, '_');
+                aiVisionSection = `
+                <div class="mt-4 pt-4 border-t border-blue-100">
+                    <button id="btn-${aiVisionId}" onclick="window.analyzeImagesWithAI('${o.name}', '${selectedPeriod}', '${aiVisionId}')" class="w-full py-2.5 bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white rounded-xl text-xs font-black transition-all flex justify-center items-center active:scale-95 shadow-sm">
+                        <i class="fa-solid fa-eye mr-2 text-base"></i>✨ 画像解析で一次チェック（アラート検知）
+                    </button>
+                    <div id="container-${aiVisionId}" class="hidden mt-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                        <h4 class="text-[10px] font-black text-blue-700 mb-2 flex items-center"><i class="fa-solid fa-robot mr-1"></i>✨ AI 一次チェック結果</h4>
+                        <div id="content-${aiVisionId}" class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap"></div>
+                    </div>
+                </div>`;
+            }
+
             html += `
             <div class="border rounded-2xl overflow-hidden shadow-sm">
                 <div class="bg-gray-100 px-4 py-2 border-b flex justify-between items-center">
@@ -3076,6 +3183,7 @@
                 <div class="p-4 bg-white">
                     ${answersHtml}
                     ${imagesHtml}
+                    ${aiVisionSection}
                 </div>
             </div>`;
         });
@@ -3085,6 +3193,106 @@
         }
 
         container.innerHTML = html;
+    };
+
+    window.analyzeImagesWithAI = async (office, period, containerId) => {
+        const btn = $(`btn-${containerId}`);
+        const container = $(`container-${containerId}`);
+        const contentEl = $(`content-${containerId}`);
+        
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>画像を解析中...';
+        }
+
+        try {
+            const st = window.appState;
+            const conf = window.getHConf(st.dataSource);
+            const fullData = conf.f[office]?.[period];
+
+            if (!fullData) throw new Error("Data not found");
+
+            let parts = [];
+            
+            let prompt = "あなたは福祉施設の品質管理(QC)プロフェッショナルです。提出された事業所の写真と社用車の写真を解析し、以下の基準で一次チェックを行ってください。\n\n";
+            prompt += "【チェック基準】\n";
+            prompt += "1. 玄関・避難経路: 整理整頓されているか。避難の妨げになる段ボールや荷物がないか。\n";
+            prompt += "2. 事務室・作業スペース: 机の上に書類が放置されていないか（クリアデスク違反）、床にゴミや危険な配線がないか。\n";
+            prompt += "3. 社用車: 外装に目立つ傷や凹みがないか。車内（特に荷室）が整理整頓されているか。\n\n";
+            prompt += "問題が見つかった場合は「⚠️ アラート：〜」として具体的に指摘し、問題がなければ「✅ 問題なし」としてください。各写真のカテゴリごとに結果をまとめてください。";
+
+            parts.push({ text: prompt });
+
+            const addImagePart = (imgData) => {
+                if (imgData && imgData.includes('base64,')) {
+                    const mimeType = imgData.split(';')[0].split(':')[1];
+                    const base64Data = imgData.split(',')[1];
+                    parts.push({
+                        inlineData: {
+                            mimeType: mimeType,
+                            data: base64Data
+                        }
+                    });
+                }
+            };
+
+            if (fullData.officeImages) {
+                Object.values(fullData.officeImages).forEach(img => addImagePart(img));
+            }
+            if (fullData.carImages) {
+                Object.values(fullData.carImages).forEach(img => addImagePart(img));
+            }
+
+            if (parts.length === 1) {
+                throw new Error("解析できる画像がありません");
+            }
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: parts }] })
+            });
+
+            const data = await response.json();
+            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (aiText && container && contentEl) {
+                // いつ・どこのデータかを明記するヘッダーを追加
+                const headerHtml = `<div class="mb-3 pb-2 border-b border-blue-200"><span class="font-black text-blue-800 text-sm"><i class="fa-solid fa-map-marker-alt mr-1"></i>${office}</span> <span class="text-xs text-blue-600 ml-2 font-bold">${period} 提出分</span></div>`;
+                
+                // アラート文字などをハイライト装飾
+                let formattedText = aiText
+                    .replace(/⚠️ アラート/g, '<span class="text-red-600 font-black bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shadow-sm">⚠️ アラート</span>')
+                    .replace(/✅ 問題なし/g, '<span class="text-emerald-600 font-black bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shadow-sm">✅ 問題なし</span>');
+
+                contentEl.innerHTML = headerHtml + '<div class="leading-relaxed whitespace-pre-wrap">' + formattedText + '</div>';
+                
+                // アラートが含まれている場合はコンテナ全体を赤色にして目立たせる
+                if (aiText.includes('⚠️')) {
+                    container.classList.remove('bg-blue-50', 'border-blue-100');
+                    container.classList.add('bg-red-50', 'border-red-200');
+                    const titleEl = container.querySelector('h4');
+                    if (titleEl) {
+                        titleEl.classList.remove('text-blue-700');
+                        titleEl.classList.add('text-red-700');
+                        titleEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i>✨ AI 一次チェック結果 (要確認)';
+                    }
+                }
+
+                container.classList.remove('hidden');
+                if (btn) btn.classList.add('hidden');
+                window.showGlobalToast("画像解析が完了しました");
+            } else {
+                throw new Error("AI response is empty");
+            }
+        } catch (error) {
+            console.error("AI Vision Error:", error);
+            window.showGlobalToast("画像解析に失敗しました");
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-eye mr-2 text-base"></i>✨ 画像解析で一次チェック（アラート検知）';
+            }
+        }
     };
 
     window.renderMasterList = () => { 
@@ -3433,7 +3641,7 @@
           ws.innerHTML = "";
           window.appState.weeksData.forEach(w => { 
               const deadline = new Date(w.start);
-              deadline.setDate(deadline.getDate() + 4); // 月曜日スタートの+4日で金曜日
+              deadline.setDate(deadline.getDate() + 4); 
               deadline.setHours(23, 59, 59, 999);
               
               let isDisabled = false;
@@ -3478,7 +3686,7 @@
                   const y = parseInt(match[1], 10);
                   const mon = parseInt(match[2], 10);
                   const startOfMonth = new Date(y, mon - 1, 1);
-                  const deadline = new Date(y, mon, 0, 23, 59, 59, 999); // 対象月の月末
+                  const deadline = new Date(y, mon, 0, 23, 59, 59, 999); 
                   
                   if (window.appState.currentMode === 'am') {
                       if (now > deadline) {
@@ -3521,39 +3729,124 @@
       window.handleAreaFilterChange();
     };
 
-    window.renderMasterList = () => { 
-        sU('office-count', e => e.innerText = window.appState.offices.length); 
-        const l = $('master-office-list'); 
-        if(!l) return; 
-        l.innerHTML = ''; 
-        window.appState.offices.sort((a,b) => {
-            if(a.area === b.area) return a.name.localeCompare(b.name);
-            return a.area.localeCompare(b.area);
-        }).forEach(o => { 
-            const isFixed = o.isFixed ? '<span class="bg-gray-100 text-gray-400 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold border">初期データ</span>' : '';
-            const delBtn = o.isFixed 
-                ? `<button disabled class="text-gray-300 cursor-not-allowed opacity-50"><i class="fa-solid fa-trash"></i></button>`
-                : `<button onclick="window.deleteMasterOffice('${o.name}')" class="text-red-400 hover:text-red-600 transition p-2 bg-red-50 hover:bg-red-100 rounded-lg"><i class="fa-solid fa-trash"></i></button>`;
-            
-            l.innerHTML += `
-            <tr class="border-b hover:bg-gray-50 transition">
-                <td class="p-3 font-bold text-gray-800">${o.corp}</td>
-                <td class="p-3">
-                    <div class="font-black text-gray-900">${o.name}${isFixed}</div>
-                    <div class="text-[9px] text-gray-400 mt-0.5">${o.type || '就労A型'}</div>
-                </td>
-                <td class="p-3"><span class="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-1 rounded text-[10px] font-bold">${o.area}</span></td>
-                <td class="p-3 text-center">${delBtn}</td>
-            </tr>`; 
-        }); 
+    const apiKey = "";
 
-        const areaSelect = $('new-area');
-        if (areaSelect && areaSelect.options.length <= 1) {
-            areaSelect.innerHTML = '<option value="" disabled selected>エリア (AM) を選択</option>';
-            amList.forEach(a => {
-                areaSelect.innerHTML += `<option value="${a}">${a}</option>`;
+    window.generateAISummary = async () => {
+        const btn = $('btn-ai-summary');
+        const input = $('qc-comment-input');
+        const issues = window.appState.issues || [];
+        const gps = window.appState.good_practices || [];
+
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>作成中...';
+        }
+
+        try {
+            let prompt = "あなたは福祉施設の品質管理(QC)チームのプロフェッショナルです。以下のチェック結果をもとに、事業所に向けた丁寧で建設的な総評コメント(300文字程度)を作成してください。良い点は称賛し、課題については改善を促す前向きなトーンでお願いします。\\n\\n";
+            prompt += "【指摘事項】\\n";
+            if (issues.length > 0) {
+                issues.forEach((issue, idx) => {
+                    prompt += `- ${issue.comment || '写真での指摘のみ'}\\n`;
+                });
+            } else {
+                prompt += "特になし\\n";
+            }
+
+            prompt += "\\n【Good Practice (良い点)】\\n";
+            if (gps.length > 0) {
+                gps.forEach((gp, idx) => {
+                    prompt += `- ${gp.category}: ${gp.comment || '写真での報告のみ'}\\n`;
+                });
+            } else {
+                prompt += "特になし\\n";
+            }
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
             });
-            areaSelect.innerHTML += `<option value="その他">その他</option>`;
+
+            const data = await response.json();
+            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (aiText && input) {
+                input.value = aiText;
+                window.showGlobalToast("AIが総評を作成しました");
+            } else {
+                throw new Error("AI response is empty");
+            }
+        } catch (error) {
+            console.error("AI Summary Error:", error);
+            window.showGlobalToast("AIによる作成に失敗しました");
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-1"></i>✨ AIで総評をドラフト作成';
+            }
+        }
+    };
+
+    window.getAIAdvice = async (office, month, containerId) => {
+        const btn = $(`btn-${containerId}`);
+        const container = $(`container-${containerId}`);
+        const contentEl = $(`content-${containerId}`);
+        
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>AIが分析中...';
+        }
+
+        try {
+            const qcData = window.appState.teamHistoryFull[office]?.[month];
+            if (!qcData) throw new Error("Data not found");
+
+            let prompt = `あなたは福祉施設の運営コンサルタントです。${office}事業所の${month}のQCチェック結果を分析し、来月に向けてどのような具体的なアクションを取るべきか、3つのステップで改善アドバイス(400文字程度)を提案してください。\\n\\n`;
+            prompt += `【総合スコア】 ${qcData.score}点\\n`;
+            prompt += `【総評コメント】\\n${qcData.comment || 'なし'}\\n\\n`;
+            
+            prompt += "【指摘事項】\\n";
+            if (qcData.issues && qcData.issues.length > 0) {
+                qcData.issues.forEach((issue) => {
+                    prompt += `- ${issue.comment || '写真による指摘'}\\n`;
+                });
+            } else {
+                prompt += "特になし\\n";
+            }
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            const data = await response.json();
+            const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (aiText && container && contentEl) {
+                contentEl.innerText = aiText;
+                container.classList.remove('hidden');
+                if (btn) btn.classList.add('hidden');
+                window.showGlobalToast("AIアドバイスを取得しました");
+            } else {
+                throw new Error("AI response is empty");
+            }
+        } catch (error) {
+            console.error("AI Advice Error:", error);
+            window.showGlobalToast("AIによる分析に失敗しました");
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles mr-2 text-base"></i>✨ この結果をもとにAI改善アドバイスをもらう';
+            }
         }
     };
 
