@@ -2478,7 +2478,7 @@
         window.handleFeedbackAreaChange();
     };
 
-    window.handleFeedbackAreaChange = () => {
+    window.handleFeedbackAreaChange = (shouldRender = true) => {
         const as = $('feedback-area-pulldown');
         const os = $('feedback-office-pulldown');
         if (!as || !os) return;
@@ -2489,10 +2489,23 @@
             filtered = filtered.filter(o => o.area === selA);
         }
 
+        // 未確認のフィードバックを持つ事業所を特定
+        const qcData = window.appState.teamHistoryFull || {};
+        const unreadOffices = new Set();
+        Object.keys(qcData).forEach(officeName => {
+            Object.values(qcData[officeName]).forEach(doc => {
+                if ((doc.comment || (doc.issues && doc.issues.length > 0)) && !doc.staff_checked) {
+                    unreadOffices.add(officeName);
+                }
+            });
+        });
+
         const currentVal = os.value;
         os.innerHTML = '<option value="" disabled selected>事業所選択...</option>';
         filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(o => { 
-            os.innerHTML += `<option value="${o.name}">【${o.corp}】 ${o.name}</option>`; 
+            const isUnread = unreadOffices.has(o.name);
+            const mark = isUnread ? ' 🔴未確認あり' : '';
+            os.innerHTML += `<option value="${o.name}">【${o.corp}】 ${o.name}${mark}</option>`; 
         });
 
         if (currentVal && filtered.find(o => o.name === currentVal)) {
@@ -2500,10 +2513,30 @@
         } else {
             os.value = "";
         }
-        window.renderFeedbackList();
+        if (shouldRender) window.renderFeedbackList();
     };
 
     window.handleFeedbackOfficeChange = () => {
+        window.renderFeedbackList();
+    };
+
+    window.selectFeedbackOffice = (officeName, month) => {
+        const officeInfo = window.appState.offices.find(o => o.name === officeName);
+        if (officeInfo) {
+            const as = $('feedback-area-pulldown');
+            if (as) {
+                let optionExists = Array.from(as.options).some(opt => opt.value === officeInfo.area);
+                as.value = optionExists ? officeInfo.area : 'その他';
+                window.handleFeedbackAreaChange(false);
+            }
+        }
+        
+        const os = $('feedback-office-pulldown');
+        if (os) os.value = officeName;
+        
+        const ms = $('feedback-month-pulldown');
+        if (ms) ms.value = month;
+        
         window.renderFeedbackList();
     };
 
@@ -2513,7 +2546,60 @@
         const ms = $('feedback-month-pulldown');
         
         if (!c || !os || !os.value) {
-            if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>事業所を選択するとフィードバックが表示されます</p></div>';
+            // 事業所未選択時は新着のフィードバック一覧を表示
+            let recentEntries = [];
+            const qcData = window.appState.teamHistoryFull || {};
+            const as = $('feedback-area-pulldown');
+            const selA = (as && as.value) ? as.value : 'all'; // 未選択("")の場合は全エリア対象
+
+            Object.keys(qcData).forEach(officeName => {
+                const officeInfo = window.appState.offices.find(o => o.name === officeName);
+                if (selA !== 'all' && officeInfo && officeInfo.area !== selA) return;
+
+                Object.values(qcData[officeName]).forEach(doc => {
+                    if (doc.comment || (doc.issues && doc.issues.length > 0) || (doc.good_practices && doc.good_practices.length > 0)) {
+                        recentEntries.push({ ...doc, office: officeName });
+                    }
+                });
+            });
+
+            recentEntries.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            recentEntries = recentEntries.slice(0, 10);
+
+            if (recentEntries.length > 0) {
+                let recentHtml = `<div class="bg-pink-50 p-4 rounded-xl border border-pink-100 mb-4">
+                    <h3 class="text-sm font-black text-pink-700 mb-3"><i class="fa-solid fa-bell mr-1"></i>新着のQCフィードバック</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
+                
+                recentEntries.forEach(entry => {
+                    const date = new Date(entry.timestamp).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const isStaffChecked = entry.staff_checked;
+                    const badge = !isStaffChecked ? `<span class="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm ml-2 animate-pulse">未確認</span>` : '';
+                    let issueCount = entry.issues ? entry.issues.length : 0;
+                    let issueBadge = issueCount > 0 ? `<span class="text-[9px] text-red-600 bg-red-100 px-1.5 rounded border border-red-200 ml-1">指摘 ${issueCount}件</span>` : '';
+
+                    recentHtml += `
+                    <div class="bg-white p-3 rounded-lg border shadow-sm cursor-pointer hover:bg-pink-50 transition flex items-center justify-between" 
+                         onclick="window.selectFeedbackOffice('${entry.office}', '${entry.month}')">
+                        <div>
+                            <p class="text-xs font-black text-gray-800">${entry.office} <span class="text-[9px] text-gray-500 font-bold ml-1">${entry.month}</span></p>
+                            <div class="flex items-center mt-1">
+                                <span class="text-[9px] text-gray-400 font-bold">${date} 更新</span>
+                                ${issueBadge}
+                            </div>
+                        </div>
+                        <div>
+                            ${badge}
+                            <i class="fa-solid fa-chevron-right text-gray-300 ml-2"></i>
+                        </div>
+                    </div>`;
+                });
+                recentHtml += `</div></div>`;
+                
+                if(c) c.innerHTML = recentHtml + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>上から選択するか、プルダウンで事業所を指定してください</p></div>';
+            } else {
+                if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>事業所を選択するとフィードバックが表示されます</p></div>';
+            }
             return;
         }
 
