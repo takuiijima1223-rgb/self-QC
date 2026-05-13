@@ -93,6 +93,8 @@
       ["HELLOS","北仙台（A型）","中村AM"],["グランメル","アイステージ中浦和","中村AM"],["グランメル","アイステージ川口","中村AM"]
     ];
 
+    const amList = ["石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
+
     const defaultRules = {
         purpose: "品質レベルの標準化\n利用者満足度向上 = 事業所の利益向上 = 皆が幸せになる\n品質レベルの標準化をし、上記の「皆が幸せになる」には何点が最低限必要なのかを設計する",
         officeRules: "事業所は毎週金曜日(祝日の場合は前日23:59)までに事業所入力にチェックをすること\n実施有無チェックに虚偽がないこと。虚偽が事実と認められた場合、個人・事業所の評価に影響する(上長判断による)\n期日内に入力出来ない場合、減点評価となる",
@@ -1022,19 +1024,26 @@
     };
 
     window.saveRules = async () => {
+        if (!window.appState.user) {
+            window.showGlobalToast("通信の確認中です。少し待ってから再度保存してください。");
+            return;
+        }
+
         const newRules = {
-            purpose: $('rule-edit-purpose').value,
-            officeRules: $('rule-edit-office').value,
-            amRules: $('rule-edit-am').value,
-            qcRules: $('rule-edit-qc').value,
-            guide1: $('rule-edit-g1').value,
-            guide2: $('rule-edit-g2').value,
-            guide3: $('rule-edit-g3').value,
+            purpose: $('rule-edit-purpose')?.value || "",
+            officeRules: $('rule-edit-office')?.value || "",
+            amRules: $('rule-edit-am')?.value || "",
+            qcRules: $('rule-edit-qc')?.value || "",
+            guide1: $('rule-edit-g1')?.value || "",
+            guide2: $('rule-edit-g2')?.value || "",
+            guide3: $('rule-edit-g3')?.value || "",
         };
+
         try {
             await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'rules'), newRules);
             window.showGlobalToast("運用ルールを保存しました");
             window.appState.isRulesEditMode = false;
+            window.renderRules();
         } catch(e) {
             console.error(e);
             window.showGlobalToast("保存に失敗しました");
@@ -1172,951 +1181,6 @@
             `;
         }
     };
-  </script>
-</head>
-<body>
-  <div id="loading-overlay">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mb-4"></div>
-      <p class="text-xs font-bold text-gray-400">CONNECTING...</p>
-  </div>
-  
-  <header class="bg-white sticky top-0 z-50 border-b-2 border-pink-400 shadow-sm">
-      <div class="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
-          <div class="flex items-center" onclick="window.switchTab('home')" style="cursor:pointer">
-              <svg width="52" height="52" viewBox="0 0 100 100" fill="none" class="mr-3 sm:mr-4">
-                  <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="#f06292"/>
-                  <circle cx="53" cy="38" r="14" fill="white"/>
-                  <path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/>
-              </svg>
-              <div>
-                  <h1 class="text-2xl sm:text-3xl font-black text-gray-800">self-A</h1>
-                  <p id="current-office-display" class="text-[10px] font-bold text-gray-400 mt-0.5">HOME</p>
-              </div>
-          </div>
-          <span id="role-badge" class="hidden text-[11px] px-3 py-1.5 bg-pink-50 text-pink-500 rounded-full font-black"></span>
-      </div>
-      <nav class="hidden flex border-t bg-white overflow-x-auto scrollbar-hide" id="nav-tabs">
-          <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase">入力</button>
-          <button onclick="window.switchTab('dashboard')" id="tab-dashboard" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">分析</button>
-          <button onclick="window.switchTab('ranking')" id="tab-ranking" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">ランキング</button>
-          <button onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">FB共有</button>
-          <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">マスタ</button>
-      </nav>
-  </header>
-  
-  <main class="max-w-4xl mx-auto p-4">
-    <div id="view-home" class="view-content pt-2 pb-6">
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-          <div onclick="window.startInputMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-pink-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 brand-bg-pink rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-pen-to-square"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">事業所入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Weekly Check</p></div>
-          </div>
-          <div onclick="window.startAMCheckMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-indigo-600 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-user-check"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">AM入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">AM Validation</p></div>
-          </div>
-          <div onclick="window.startQCCheckMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-emerald-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-clipboard-check"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">QCチーム入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">QC Team</p></div>
-          </div>
-          <div onclick="window.switchTab('dashboard')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-chart-pie"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">データ分析</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Data Analysis</p></div>
-          </div>
-          <div onclick="window.switchTab('feedback')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-yellow-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-comments"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">QCフィードバック</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Feedback</p></div>
-          </div>
-          <div onclick="window.switchTab('ranking')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-cyan-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-ranking-star"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">点数ランキング</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Ranking</p></div>
-          </div>
-          <div onclick="window.switchTab('master')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-orange-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">マスタ設定</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Settings</p></div>
-          </div>
-          <div onclick="window.switchTab('rules')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-blue-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-book-open"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">運用ルール</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Rules</p></div>
-          </div>
-      </div>
-
-      <div id="home-knowledge-section" class="mt-8 hidden">
-          <div class="flex justify-between items-center mb-4">
-              <h2 class="text-sm sm:text-base font-black text-gray-800 flex items-center"><i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>みんなのGood Practice <span class="text-[9px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full ml-2 font-bold border border-yellow-200">見本となる取り組み</span></h2>
-              <button onclick="window.switchTab('knowledge')" class="text-xs font-bold text-pink-500 hover:text-pink-600 bg-pink-50 px-3 py-1.5 rounded-lg transition-colors">すべて見る <i class="fa-solid fa-chevron-right ml-1"></i></button>
-          </div>
-          <div id="knowledge-gallery" class="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
-          </div>
-      </div>
-    </div>
-    
-    <div id="view-rules" class="hidden space-y-6 view-content">
-        <div class="flex justify-between items-center mb-2">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-book-open text-blue-500 mr-2"></i>運用ルール / 目的</h2>
-            <button id="btn-edit-rules" onclick="window.toggleRulesEdit()" class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-100 transition shadow-sm"><i class="fa-solid fa-pen mr-1"></i>編集する</button>
-        </div>
-        <div id="rules-content-container"></div>
-    </div>
-
-    <div id="view-master" class="hidden space-y-6 view-content">
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm mt-6">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-gear text-blue-500 mr-2"></i>システム共通設定</h2>
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h3 class="text-sm font-black text-blue-800 mb-1">入力期間の制限解除</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
-                        ONにすると、期日超過や未来の週・月でも入力が可能になります。<br>テスト入力や例外的な過去分の修正時のみONにしてください。
-                    </p>
-                </div>
-                <div class="flex-shrink-0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" id="toggle-input-period" class="sr-only peer" onchange="window.toggleInputPeriodSetting(this.checked)">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-input-period-text">OFF</span>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
-                <div>
-                    <h3 class="text-sm font-black text-blue-800 mb-1">賞与用スコアの表示（管理者用）</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
-                        ONにすると、ランキング画面に「品質スコア×入力率」で計算された賞与用スコアが表示されます。
-                    </p>
-                </div>
-                <div class="flex-shrink-0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" id="toggle-bonus-score" class="sr-only peer" onchange="window.toggleBonusScoreSetting(this.checked)">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-bonus-score-text">OFF</span>
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-orange-400 shadow-sm mt-6">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-database text-orange-500 mr-2"></i>事業所マスタ管理</h2>
-            
-            <div class="bg-gray-50 p-4 rounded-xl border mb-6">
-                <h3 class="text-xs font-black text-gray-700 mb-3"><i class="fa-solid fa-plus-circle mr-1"></i>新規事業所の追加</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <input type="text" id="new-corp" placeholder="法人名 (例: ハニービー)" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
-                    <input type="text" id="new-name" placeholder="事業所名 (一意な名前)" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
-                    <select id="new-area" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition"></select>
-                    <select id="new-type" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
-                        <option value="就労A型">就労A型</option>
-                        <option value="就労B型">就労B型</option>
-                        <option value="就労移行">就労移行</option>
-                        <option value="その他">その他</option>
-                    </select>
-                </div>
-                <div class="mt-4 text-right">
-                    <button onclick="window.addMasterOffice()" class="bg-orange-500 hover:bg-orange-600 text-white font-black text-xs py-2.5 px-6 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
-                        <i class="fa-solid fa-plus mr-1"></i>事業所を追加する
-                    </button>
-                </div>
-            </div>
-
-            <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-xs font-black text-gray-700"><i class="fa-solid fa-list mr-1"></i>登録済み事業所一覧</h3>
-                    <span class="text-[10px] font-bold text-gray-500">計 <span id="office-count" class="text-orange-500 font-black">0</span> 件</span>
-                </div>
-                <div class="overflow-x-auto rounded-xl border border-gray-200">
-                    <table class="w-full text-left border-collapse whitespace-nowrap">
-                        <thead>
-                            <tr class="bg-gray-100 text-[10px] text-gray-500 border-b">
-                                <th class="p-3 font-bold w-1/4">法人名</th>
-                                <th class="p-3 font-bold w-1/3">事業所名・種類</th>
-                                <th class="p-3 font-bold w-1/4">エリア (AM)</th>
-                                <th class="p-3 font-bold w-1/6 text-center">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="master-office-list" class="text-xs font-bold text-gray-700 bg-white">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-red-500 shadow-sm mt-6">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>危険な操作 (システム管理)</h2>
-            <div class="bg-red-50 p-4 rounded-xl border border-red-200">
-                <h3 class="text-sm font-black text-red-700 mb-2">テスト入力データの一括リセット</h3>
-                <p class="text-[10px] sm:text-xs text-gray-700 mb-4 font-bold leading-relaxed">
-                    事業所・AM・QCチームの<span class="text-red-600">すべての入力履歴（写真やコメント含む）を完全に消去</span>します。<br>
-                    ※事業所マスタ（一覧）は削除されません。本番運用への切り替え時や、テストを最初からやり直したい時に使用してください。
-                </p>
-                <button onclick="window.resetAllTestData()" class="bg-red-600 hover:bg-red-700 text-white font-black text-xs py-2.5 px-6 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
-                    <i class="fa-solid fa-trash-can mr-1"></i>すべての入力データをリセットする
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-ranking" class="hidden space-y-6 view-content">
-        <div class="bg-white p-6 rounded-2xl border shadow-sm">
-            <h2 class="text-lg font-black text-gray-800 mb-3 flex items-center"><i class="fa-solid fa-ranking-star text-cyan-500 mr-2"></i>点数ランキング（評価スコア）</h2>
-            <div class="bg-cyan-50 border border-cyan-100 p-3 rounded-xl mb-4">
-                <p class="text-[11px] text-cyan-800 font-bold leading-relaxed">
-                    <i class="fa-solid fa-circle-info mr-1"></i>基本ランキングは<span class="text-pink-600 font-black">「品質スコア（平均点）」</span>で順位付けされます（同点時は自己入力率が高い事業所が上位）。<br>
-                    <span id="ranking-bonus-desc" class="hidden mt-1 block">賞与評価用として、未入力による減点を加味した <span class="bg-white px-1 rounded text-red-500">賞与用スコア (品質×自己入力率)</span> も算出しています。</span>
-                </p>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-                <div class="flex flex-col gap-2">
-                    <select id="ranking-month-pulldown" onchange="window.handleRankingMonthChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm outline-none focus:border-cyan-400 transition-all"></select>
-                    <div id="ranking-custom-period-container" class="hidden flex items-center gap-2 bg-gray-50 p-2 rounded-xl border-2">
-                        <input type="date" id="ranking-custom-start" onchange="window.renderRankingList()" class="w-full p-1.5 border rounded-lg font-bold bg-white text-[10px] sm:text-xs outline-none focus:border-cyan-400 text-gray-700">
-                        <span class="text-gray-400 font-bold text-[10px]">～</span>
-                        <input type="date" id="ranking-custom-end" onchange="window.renderRankingList()" class="w-full p-1.5 border rounded-lg font-bold bg-white text-[10px] sm:text-xs outline-none focus:border-cyan-400 text-gray-700">
-                    </div>
-                </div>
-                <select id="ranking-sort-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm outline-none focus:border-cyan-400 transition-all h-fit">
-                </select>
-            </div>
-        </div>
-        <div id="ranking-list-container" class="space-y-3"></div>
-    </div>
-
-    <div id="view-knowledge" class="hidden space-y-4 view-content">
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border shadow-sm">
-            <div class="flex justify-between items-center mb-4 border-b pb-4">
-                <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-book-open text-yellow-500 mr-2"></i>Good Practice ギャラリー</h2>
-                <button onclick="window.switchTab('home')" class="text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-arrow-left mr-1"></i>ホーム</button>
-            </div>
-            <p class="text-[10px] sm:text-xs text-gray-500 mb-4">全国の事業所から集まった素晴らしい取り組みのナレッジベースです。他の事業所の工夫を探して、自事業所に生かしましょう。</p>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">カテゴリで絞り込み</label>
-                    <select id="knowledge-category-filter" onchange="window.renderKnowledgeGallery()" class="w-full p-2.5 border rounded-xl font-bold text-xs bg-gray-50 outline-none focus:border-yellow-400 focus:bg-white transition-all">
-                        <option value="">すべてのカテゴリ</option>
-                        <option value="環境整備・5S">環境整備・5S</option>
-                        <option value="支援・プログラムの工夫">支援・プログラムの工夫</option>
-                        <option value="業務効率化・ツール活用">業務効率化・ツール活用</option>
-                        <option value="安全・防災">安全・防災</option>
-                        <option value="その他">その他</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">フリーワード検索</label>
-                    <div class="relative">
-                        <input type="text" id="knowledge-search-input" onkeyup="window.renderKnowledgeGallery()" placeholder="事業所名やキーワードを入力..." class="w-full p-2.5 pl-9 border rounded-xl font-bold text-xs bg-gray-50 outline-none focus:border-yellow-400 focus:bg-white transition-all">
-                        <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="knowledge-full-gallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        </div>
-    </div>
-
-    <div id="view-feedback" class="hidden space-y-6 view-content">
-        <div class="bg-white p-6 rounded-2xl border shadow-sm">
-            <h2 class="text-lg font-black text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-comments text-yellow-500 mr-2"></i>QCフィードバック確認</h2>
-            <p class="text-xs text-gray-500 mb-4">QCチームによる抜き打ちチェックの結果とコメントを確認できます。</p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <select id="feedback-area-pulldown" onchange="window.handleFeedbackAreaChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
-                <select id="feedback-office-pulldown" onchange="window.handleFeedbackOfficeChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
-                <select id="feedback-month-pulldown" onchange="window.renderFeedbackList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
-            </div>
-        </div>
-        <div id="feedback-list-container" class="space-y-4"></div>
-    </div>
-    
-    <div id="office-selector" class="hidden view-content bg-white p-8 rounded-3xl shadow-xl border">
-      <h2 class="text-xl font-black text-center mb-8" id="selector-title">対象を選択</h2>
-      <div class="space-y-5">
-        <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 border-2 rounded-2xl font-bold bg-white">
-            <option value="" selected disabled>エリア選択...</option>
-            <option value="石川AM">石川AM</option><option value="寺口AM">寺口AM</option><option value="甲部AM">甲部AM</option>
-            <option value="若林AM">若林AM</option><option value="辰橋AM">辰橋AM</option><option value="中村AM">中村AM</option>
-            <option value="小野統括">小野統括</option>
-        </select>
-        <select id="office-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
-        <div id="week-pulldown-section"><select id="week-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select></div>
-        <div id="month-pulldown-section" class="hidden"><select id="month-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select></div>
-        <button onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-xl uppercase">START</button>
-      </div>
-    </div>
-    
-    <div id="view-input" class="hidden space-y-6 view-content">
-        <div class="bg-pink-50 p-5 rounded-2xl border">
-            <div class="flex justify-between items-start mb-2">
-                <p class="text-[10px] text-pink-500 font-black uppercase">QC Sheet</p>
-                <p id="progress-text" class="text-2xl font-black text-pink-600">0%</p>
-            </div>
-            <h2 class="font-black text-gray-800" id="input-view-header-title">チェックシート</h2>
-        </div>
-        <div id="categories-container"></div>
-        <div id="comment-container" class="hidden"></div>
-        <button id="submit-btn" disabled onclick="window.submitData()" class="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black text-lg shadow-xl transition-all">すべて入力してください</button>
-    </div>
-    
-    <div id="view-dashboard" class="hidden space-y-6 view-content">
-      <div class="bg-white p-2 rounded-2xl border shadow-sm mb-2 flex space-x-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
-        <button id="btn-source-staff" onclick="window.setDataSource('staff')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-pink-500 text-white shadow-md transition-all">事業所</button>
-        <button id="btn-source-am" onclick="window.setDataSource('am')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">AM</button>
-        <button id="btn-source-qc" onclick="window.setDataSource('qc')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">QC</button>
-        <button id="btn-source-gap" onclick="window.setDataSource('gap')" class="flex-1 min-w-[100px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">ギャップ比較</button>
-      </div>
-      
-      <div id="gap-mode-section" class="hidden bg-white p-4 rounded-2xl border shadow-sm mb-2">
-          <label class="text-[11px] font-black text-indigo-500 uppercase">比較パターン</label>
-          <select id="gap-mode-pulldown" onchange="window.handleGapModeChange()" class="w-full p-3 border-2 rounded-xl bg-indigo-50 font-black mt-2 text-sm text-indigo-900">
-              <option value="all">3者すべて比較</option>
-              <option value="staff_vs_qc">事業所 vs QC</option>
-              <option value="staff_vs_am">事業所 vs AM</option>
-              <option value="am_vs_qc">AM vs QC</option>
-          </select>
-      </div>
-      
-      <div class="bg-white p-6 rounded-2xl border shadow-sm">
-          <label class="text-[11px] font-black text-pink-500 uppercase">レイヤーを選択</label>
-          <select id="analysis-am-pulldown" onchange="window.renderAnalysisFilters()" class="w-full p-4 border-2 rounded-2xl bg-pink-50 font-black mt-3"></select>
-      </div>
-      
-      <div id="analysis-target-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm space-y-5">
-          <div class="flex justify-between items-center">
-              <h3 class="text-xs font-black text-gray-400 uppercase">分析対象</h3>
-              <span id="target-type-badge" class="text-[9px] px-2 py-0.5 rounded-full font-bold"></span>
-          </div>
-          <select id="analysis-office-pulldown" onchange="window.handleAnalysisTargetChange()" class="w-full p-4 border-2 rounded-2xl bg-white font-black"></select>
-          <div id="area-office-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
-      </div>
-      
-      <div id="analysis-stats-section" class="hidden grid grid-cols-2 gap-4">
-          <div class="bg-white p-5 rounded-2xl border-l-4 border-pink-500 shadow-sm">
-              <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Target Score</p>
-              <p class="text-3xl font-black"><span id="display-avg-score">--</span><span class="text-xs ml-1 text-gray-400">pt</span></p>
-          </div>
-          <div class="bg-white p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm">
-              <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Status</p>
-              <p class="text-3xl font-black"><span id="display-input-rate">--</span><span class="text-xs ml-1 text-gray-400">%</span></p>
-          </div>
-      </div>
-      
-      <div id="analysis-chart-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm">
-          <h3 class="font-black text-gray-700 flex items-center mb-6"><i class="fa-solid fa-chart-line mr-2 text-pink-500"></i><span id="chart-title-text">TREND</span></h3>
-          <div class="chart-scroll-wrapper"><div class="chart-inner-container"><canvas id="qcChart"></canvas></div></div>
-      </div>
-      
-      <div id="progress-overview-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
-          <div class="flex justify-between items-center mb-4">
-              <h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-tasks mr-2 text-blue-500"></i>現在の入力進捗</h3>
-              <span id="progress-period-badge" class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100"></span>
-          </div>
-          
-          <div id="area-progress-container" class="mb-6 space-y-3"></div>
-
-          <div class="bg-red-50 p-4 rounded-xl border border-red-100">
-              <h4 class="text-xs font-black text-red-700 mb-3"><i class="fa-solid fa-triangle-exclamation mr-1"></i>未入力事業所</h4>
-              <div id="missing-offices-list" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
-          </div>
-      </div>
-
-      <div id="auto-analysis-section" class="hidden bg-white p-6 rounded-2xl border-indigo-100 shadow-sm border mt-6">
-          <div class="flex justify-between items-center mb-4">
-              <h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-robot mr-2 text-indigo-500"></i>自動分析</h3>
-              <span id="auto-analysis-title-badge" class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100"></span>
-          </div>
-          <select id="analysis-period-pulldown" onchange="window.renderAutoAnalysis()" class="w-full p-3 border rounded-lg bg-white font-bold text-xs mb-4">
-              <option value="latest">最新のデータ</option>
-              <option value="current_week">今週分のみ</option>
-              <option value="last_1_month">直近1ヶ月分</option>
-              <option value="all">全期間</option>
-          </select>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="auto-analysis-content"></div>
-      </div>
-      
-      <div id="gap-items-breakdown-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
-          <h3 class="font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-list-check mr-2 text-orange-500"></i>項目別ギャップ詳細</h3>
-          <div id="gap-items-content" class="space-y-2"></div>
-      </div>
-
-      <div id="qc-visit-status-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
-      </div>
-
-      <div id="detailed-input-data-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-              <h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-file-lines mr-2 text-purple-500"></i>入力詳細データ確認</h3>
-              <select id="detail-period-pulldown" onchange="window.renderDetailedInputData()" class="w-full sm:w-auto p-2 border-2 rounded-xl font-bold text-xs bg-gray-50 outline-none focus:border-purple-400 transition-all"></select>
-          </div>
-          <div id="detailed-data-container" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar"></div>
-      </div>
-    </div>
-  </main>
-  
-  <div id="success-toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border-l-4 border-pink-500">
-      <i class="fa-solid fa-check-circle text-pink-400 mr-3"></i><span id="toast-message" class="font-black text-sm uppercase">COMPLETE</span>
-  </div>
-
-  <div id="image-modal" class="fixed inset-0 z-[10000] bg-black bg-opacity-90 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm" onclick="this.classList.add('hidden')">
-      <button class="absolute top-6 right-6 text-white text-4xl hover:text-red-500 transition cursor-pointer z-50"><i class="fa-solid fa-times"></i></button>
-      <img id="image-modal-content" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()">
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    async function connectCloud() {
-      try {
-        let config = { apiKey:"AIzaSyBdbezD4xYpqPTy9XZMttHbLBt5cXe33G8", authDomain:"self-qc.firebaseapp.com", projectId:"self-qc", storageBucket:"self-qc.firebasestorage.app", messagingSenderId:"247849012338", appId:"1:247849012338:web:833502cbdbe980a33046eb" };
-        if (typeof __firebase_config !== 'undefined') {
-            config = JSON.parse(__firebase_config);
-        }
-        const app = initializeApp(config); 
-        const auth = getAuth(app); 
-        const db = getFirestore(app); 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'self-a-qc-manager-v1';
-        window.db = db; 
-        window.appId = appId;
-        
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token); 
-        } else {
-            await signInAnonymously(auth);
-        }
-        
-        onAuthStateChanged(auth, (user) => { 
-            if (user && !window.appState.syncStarted) { 
-                window.appState.user = user; 
-                window.appState.syncStarted = true; 
-                startSync(db, appId); 
-            } 
-        });
-      } catch (e) { 
-          console.error(e);
-          window.hideMainLoader(); 
-      }
-    }
-
-    function startSync(db, appId) {
-      onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'offices'), s => {
-        const m = new Map(); 
-        window.initialOffices.forEach(o => m.set(o.name, o)); 
-        s.docs.forEach(d => m.set(d.data().name, d.data()));
-        window.appState.offices = Array.from(m.values()); 
-        window.renderMasterList(); 
-        window.renderSelectors(); 
-        window.hideMainLoader();
-      }, e => {
-          console.error(e);
-          window.hideMainLoader();
-      });
-
-      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), d => {
-          if (d.exists()) {
-              window.appState.settings = d.data();
-          } else {
-              window.appState.settings = { allowInputOutsidePeriod: false, showBonusScore: false };
-          }
-          if (window.appState.activeTab === 'input' && !window.appState.office) {
-              window.renderSelectors();
-          }
-          window.renderMasterSettings(); 
-          if (window.appState.activeTab === 'ranking') {
-              window.renderRankingSelectors();
-              window.renderRankingList();
-          }
-      }, e => console.error(e));
-
-      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules'), d => {
-          if (d.exists()) {
-              window.appState.rules = d.data();
-          } else {
-              window.appState.rules = defaultRules;
-          }
-          if (window.appState.activeTab === 'rules') {
-              window.renderRules();
-          }
-      }, e => console.error(e));
-      
-      const setHist = (cName, hKey, fKey, lKey) => {
-        onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', cName), s => {
-          const st = window.appState; 
-          st[hKey] = {}; 
-          st[fKey] = {};
-          s.docs.forEach(d => { 
-              const v = d.data(); 
-              if (!st[hKey][v.office]) { st[hKey][v.office] = {}; st[fKey][v.office] = {}; } 
-              const l = v[lKey] || v.week; 
-              st[hKey][v.office][l] = v.score; 
-              st[fKey][v.office][l] = v; 
-          });
-          if (st.activeTab === 'dashboard') { 
-              window.updateStatsDisplay(); 
-              window.renderQualityChart(); 
-              window.renderOfficeQuickList(); 
-              window.renderAutoAnalysis(); 
-          } else if (st.activeTab === 'feedback') {
-              window.renderFeedbackList();
-          } else if (st.activeTab === 'knowledge') {
-              window.renderKnowledgeGallery();
-          } else if (st.activeTab === 'ranking') {
-              window.renderRankingList();
-          }
-          if (cName === 'team_qc_history') {
-              window.renderHomeKnowledgeSpace();
-              if (st.activeTab === 'knowledge') window.renderKnowledgeGallery();
-          }
-        }, e => console.error(e));
-      };
-      
-      setHist('qc_history', 'history', 'historyFull', 'week'); 
-      setHist('am_qc_history', 'amHistory', 'amHistoryFull', 'month'); 
-      setHist('team_qc_history', 'teamHistory', 'teamHistoryFull', 'month');
-    }
-
-    window.submitData = async () => {
-      const b = $('submit-btn'); 
-      b.disabled = true; 
-      b.innerText = "同期中..."; 
-      const st = window.appState;
-      
-      const isM = (st.currentMode === 'am' || st.currentMode === 'qc'); 
-      const isLW = !isM && st.isLastWeekOfMonth;
-      const items = isM || isLW ? [...amCheckItems, ...staffCheckItems] : staffCheckItems;
-      
-      let total = items.reduce((sum, cat) => sum + cat.items.length, 0);
-      
-      let hqExcludedItems = new Set();
-      if (st.currentMode === 'qc' && st.issues) {
-          st.issues.forEach(issue => {
-              if (issue.responsibility === 'hq' && issue.relatedItemId) {
-                  hqExcludedItems.add(issue.relatedItemId);
-              }
-          });
-      }
-      
-      if (!isM && isLW) total += 4; // 事業所内チェックの配点分
-      if (!isM && isLW) total += 4; 
-
-      hqExcludedItems.forEach(id => {
-          total -= 1;
-      });
-
-      let sum = 0; 
-      Object.entries(st.answers).forEach(([id, val]) => {
-          if (!hqExcludedItems.has(id)) {
-              sum += val;
-          }
-      }); 
-      
-      if (!isM && isLW) {
-          ['entrance', 'workspace', 'interview', 'office'].forEach(k => {
-              if (st.officeImages && st.officeImages[k]) sum += 2; // 写真1枚につき満点(2点)とする
-          });
-      }
-
-      if (!isM && isLW) {
-          ['front', 'back', 'inside1', 'inside2'].forEach(k => {
-              if (st.carImages && st.carImages[k]) sum += 2; 
-          });
-      }
-
-      let score = total > 0 ? Math.round((sum/(total*2))*100) : 100;
-      
-      let gpBonus = 0;
-      if (st.currentMode === 'qc') {
-          const gpBonusEl = $('gp-bonus-input');
-          if (gpBonusEl) {
-              gpBonus = parseInt(gpBonusEl.value, 10) || 0;
-              score += gpBonus;
-          }
-      }
-      
-      if (score > 100) score = 100;
-
-      const t = isM ? st.inputMonth : st.inputWeek; 
-      const docId = (st.office + "_" + t).replace(/[/ ]/g, '_');
-      
-      let colName = 'qc_history'; 
-      if (st.currentMode === 'am') colName = 'am_qc_history'; 
-      if (st.currentMode === 'qc') colName = 'team_qc_history';
-      
-      const payload = { 
-          office: st.office, 
-          score: score, 
-          answers: st.answers, 
-          timestamp: new Date().toISOString(), 
-          week: st.inputWeek, 
-          month: st.inputMonth, 
-          mode: st.currentMode 
-      };
-
-      if (!isM && isLW && st.officeImages) {
-          payload.officeImages = st.officeImages;
-      }
-
-      if (!isM && isLW && st.carImages) {
-          payload.carImages = st.carImages;
-      }
-
-      if (st.currentMode === 'qc') {
-          payload.gp_bonus = gpBonus; 
-          const commentEl = $('qc-comment-input');
-          if (commentEl) payload.comment = commentEl.value; 
-          if (st.issues && st.issues.length > 0) {
-              payload.issues = st.issues; 
-          }
-          if (st.good_practices && st.good_practices.length > 0) {
-              payload.good_practices = st.good_practices; 
-          }
-      }
-
-      try {
-        await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', colName, docId), payload);
-        window.appState.issues = []; 
-        window.appState.good_practices = [];
-        if (!isM) {
-            window.appState.carImages = { front: null, back: null, inside1: null, inside2: null };
-            window.appState.officeImages = { entrance: null, workspace: null, interview: null, office: null };
-        }
-        window.showGlobalToast("保存完了"); 
-        b.innerText = "完了"; 
-        b.className = `w-full py-4 ${st.currentMode === 'qc' ? 'bg-emerald-500' : (st.currentMode === 'am' ? 'bg-indigo-600' : 'brand-bg-pink')} text-white rounded-xl font-black`;
-      } catch (e) { 
-          console.error(e);
-          window.showGlobalToast("保存失敗"); 
-          b.disabled = false; 
-          b.innerText = "クラウドへ送信"; 
-      }
-    };
-
-    window.toggleFeedbackCheck = async (office, month, type, currentValue) => {
-        const docId = (office + "_" + month).replace(/[/ ]/g, '_');
-        const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId);
-        try {
-            const updateData = {};
-            updateData[type] = !currentValue;
-            await updateDoc(docRef, updateData);
-        } catch (e) {
-            console.error(e);
-            window.showGlobalToast("更新に失敗しました");
-        }
-    };
-
-    window.uploadIssueAfterImages = async (office, month, issueIdx, event) => {
-        const files = event.target.files;
-        if(!files || files.length === 0) return;
-        
-        const docId = (office + "_" + month).replace(/[/ ]/g, '_');
-        const docData = window.appState.teamHistoryFull[office][month];
-        
-        let issues = docData.issues || [];
-        
-        if (issues.length === 0 && (docData.beforeImages || docData.beforeImage)) {
-             const bImgs = docData.beforeImages || (docData.beforeImage ? [docData.beforeImage] : []);
-             bImgs.forEach((img, i) => {
-                 issues.push({ beforeImage: img, comment: i === 0 ? docData.comment : "", afterImages: [] });
-             });
-        }
-        
-        if (!issues[issueIdx].afterImages) issues[issueIdx].afterImages = [];
-        
-        let addCount = files.length;
-        if (issues[issueIdx].afterImages.length + addCount > 5) {
-            window.showGlobalToast("各指摘のAfter写真は最大5枚までです");
-            addCount = 5 - issues[issueIdx].afterImages.length;
-        }
-        if (addCount <= 0) return;
-
-        window.showGlobalToast("写真をアップロード中...");
-        
-        try {
-            for (let i = 0; i < addCount; i++) {
-                const compressed = await window.compressImage(files[i]);
-                issues[issueIdx].afterImages.push(compressed);
-            }
-            
-            if (!issues[issueIdx].after_reported_date) {
-                issues[issueIdx].after_reported_date = window.getNowLocalStr();
-            }
-
-            issues[issueIdx].qc_status = null;
-
-            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId);
-            await updateDoc(docRef, { issues: issues });
-            window.showGlobalToast("After写真を添付しました");
-        } catch(e) {
-            console.error(e);
-            window.showGlobalToast("アップロードに失敗しました");
-        }
-    };
-
-    window.removeIssueAfterImage = async (office, month, issueIdx, imgIdx) => {
-        if (!confirm("このAfter写真を削除しますか？")) return;
-        
-        const docId = (office + "_" + month).replace(/[/ ]/g, '_');
-        const docData = window.appState.teamHistoryFull[office][month];
-        let issues = docData.issues;
-        
-        issues[issueIdx].afterImages.splice(imgIdx, 1);
-        
-        try {
-            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId);
-            await updateDoc(docRef, { issues: issues });
-            window.showGlobalToast("写真を削除しました");
-        } catch(e) {
-            console.error(e);
-            window.showGlobalToast("削除に失敗しました");
-        }
-    };
-
-    window.updateIssueReportDate = async (office, month, issueIdx, val) => {
-        const docId = (office + "_" + month).replace(/[/ ]/g, '_');
-        const docData = window.appState.teamHistoryFull[office][month];
-        let issues = docData.issues;
-        if (!issues[issueIdx]) return;
-        
-        issues[issueIdx].after_reported_date = val;
-        
-        try {
-            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId);
-            await updateDoc(docRef, { issues: issues });
-            window.showGlobalToast("日時を保存しました");
-        } catch(e) {
-            console.error(e);
-            window.showGlobalToast("保存に失敗しました");
-        }
-    };
-
-    window.updateIssueAfterComment = async (office, month, issueIdx, val) => {
-        const docId = (office + "_" + month).replace(/[/ ]/g, '_');
-        const docData = window.appState.teamHistoryFull[office][month];
-        let issues = docData.issues;
-        
-        if (!issues[issueIdx]) return;
-        issues[issueIdx].afterComment = val;
-
-        if (!issues[issueIdx].after_reported_date) {
-            issues[issueIdx].after_reported_date = window.getNowLocalStr();
-        }
-        
-        try {
-            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId);
-            await updateDoc(docRef, { issues: issues });
-            window.showGlobalToast("改善報告を保存しました");
-        } catch(e) {
-            console.error(e);
-            window.showGlobalToast("保存に失敗しました");
-        }
-    };
-
-    window.setQCStatus = async (office, month, status) => {
-        const docId = (office + "_" + month).replace(/[/ ]/g, '_');
-        const commentVal = $(`qc-judge-comment-${month}`)?.value || '';
-        let dateVal = $(`qc-judge-date-${month}`)?.value || '';
-
-        if (!dateVal) {
-            dateVal = window.getNowLocalStr();
-        }
-
-        try {
-            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId);
-            await updateDoc(docRef, { 
-                qc_status: status,
-                qc_judge_comment: commentVal,
-                qc_judged_date: dateVal
-            });
-            window.showGlobalToast(status === 'passed' ? "全体合格判定を記録しました" : "不合格(再改善)として記録しました");
-        } catch(e) {
-            console.error(e);
-            window.showGlobalToast("判定の保存に失敗しました");
-        }
-    };
-
-    window.setIssueQCStatus = async (office, month, issueIdx, status) => {
-        const docId = (office + "_" + month).replace(/[/ ]/g, '_');
-        const commentVal = $(`issue-judge-comment-${month}-${issueIdx}`)?.value || '';
-        let dateVal = $(`issue-judge-date-${month}-${issueIdx}`)?.value || '';
-
-        if (!dateVal) {
-            dateVal = window.getNowLocalStr();
-        }
-
-        const docData = window.appState.teamHistoryFull[office][month];
-        let issues = docData.issues || [];
-        if (!issues[issueIdx]) return;
-
-        issues[issueIdx].qc_status = status;
-        issues[issueIdx].qc_judge_comment = commentVal;
-        issues[issueIdx].qc_judged_date = dateVal;
-
-        try {
-            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId);
-            await updateDoc(docRef, { issues: issues });
-            window.showGlobalToast(status === 'passed' ? "合格判定を記録しました" : "不合格(再改善)として記録しました");
-        } catch(e) {
-            console.error(e);
-            window.showGlobalToast("判定の保存に失敗しました");
-        }
-    };
-
-    window.toggleGPLike = async (office, month, gpId) => {
-        const docId = (office + "_" + month).replace(/[/ ]/g, '_');
-        const docData = window.appState.teamHistoryFull[office]?.[month];
-        if (!docData || !docData.good_practices) return;
-
-        let gps = [...docData.good_practices];
-        const gpIndex = gps.findIndex(g => g.id === gpId);
-        if (gpIndex === -1) return;
-
-        gps[gpIndex].likes = (gps[gpIndex].likes || 0) + 1;
-
-        try {
-            const docRef = doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId);
-            await updateDoc(docRef, { good_practices: gps });
-            window.showGlobalToast("参考になった！👍 を送りました");
-        } catch(e) {
-            console.error(e);
-            window.showGlobalToast("エラーが発生しました");
-        }
-    };
-
-    window.addMasterOffice = async () => {
-        const corp = $('new-corp').value.trim();
-        const name = $('new-name').value.trim();
-        const area = $('new-area').value;
-        const type = $('new-type').value;
-
-        if (!corp || !name || !area) {
-            return window.showGlobalToast("法人名・事業所名・エリアを全て入力してください");
-        }
-
-        if (window.appState.offices.some(o => o.name === name)) {
-            return window.showGlobalToast("すでに同名の事業所が登録されています");
-        }
-
-        try {
-            await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name), { 
-                corp, name, area, type, isFixed: false, timestamp: window.getNowLocalStr() 
-            });
-            window.showGlobalToast("新しい事業所を追加しました");
-            $('new-corp').value = '';
-            $('new-name').value = '';
-            $('new-area').value = '';
-            $('new-type').value = '就労A型';
-        } catch (e) {
-            console.error(e);
-            window.showGlobalToast("追加に失敗しました");
-        }
-    };
-
-    window.deleteMasterOffice = async (name) => {
-        if (!confirm(`事業所「${name}」を削除しますか？\n※初期データとして登録されている事業所は削除できません`)) return;
-        try {
-            await deleteDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name));
-            window.showGlobalToast("事業所を削除しました");
-        } catch (e) {
-            console.error(e);
-            window.showGlobalToast("削除に失敗しました");
-        }
-    };
-
-    window.resetAllTestData = async () => {
-        const confirmMsg = "【警告】\n事業所入力、AM入力、QCチーム入力の「すべての入力履歴データ」を完全に削除します。\n(※事業所マスタは削除されません)\n\n本当によろしいですか？";
-        if (!confirm(confirmMsg)) return;
-
-        const doubleCheckMsg = "本当にすべての入力データを消去します。元に戻すことはできません。\n実行しますか？";
-        if (!confirm(doubleCheckMsg)) return;
-
-        window.showGlobalToast("データ削除を実行中...");
-        const db = window.db;
-        const appId = window.appId;
-        const collectionsToDelete = ['qc_history', 'am_qc_history', 'team_qc_history'];
-
-        try {
-            for (const colName of collectionsToDelete) {
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', colName);
-                const querySnapshot = await getDocs(colRef);
-                const deletePromises = [];
-                querySnapshot.forEach((docSnap) => {
-                    deletePromises.push(deleteDoc(docSnap.ref));
-                });
-                await Promise.all(deletePromises);
-            }
-            
-            window.appState.history = {};
-            window.appState.historyFull = {};
-            window.appState.amHistory = {};
-            window.appState.amHistoryFull = {};
-            window.appState.teamHistory = {};
-            window.appState.teamHistoryFull = {};
-
-            window.showGlobalToast("すべての入力データをリセットしました");
-            
-            if (window.appState.activeTab === 'dashboard') {
-                window.updateStatsDisplay(); 
-                window.renderQualityChart(); 
-                window.renderOfficeQuickList(); 
-                window.renderAutoAnalysis();
-            } else if (window.appState.activeTab === 'feedback') {
-                window.renderFeedbackList();
-            } else if (window.appState.activeTab === 'knowledge') {
-                window.renderKnowledgeGallery();
-            } else if (window.appState.activeTab === 'ranking') {
-                window.renderRankingList();
-            }
-        } catch (error) {
-            console.error(error);
-            window.showGlobalToast("データの削除に失敗しました");
-        }
-    };
-
-    window.toggleInputPeriodSetting = async (checked) => {
-        try {
-            await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), { 
-                allowInputOutsidePeriod: checked 
-            }, { merge: true });
-            window.showGlobalToast(checked ? "入力期間の制限を解除しました" : "入力期間の制限を有効にしました");
-        } catch (e) {
-            console.error(e);
-            window.showGlobalToast("設定の更新に失敗しました");
-            const toggle = $('toggle-input-period');
-            if(toggle) toggle.checked = !checked;
-        }
-    };
-
-    window.toggleBonusScoreSetting = async (checked) => {
-        try {
-            await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), { 
-                showBonusScore: checked 
-            }, { merge: true });
-            window.showGlobalToast(checked ? "賞与用スコアを表示します" : "賞与用スコアを非表示にしました");
-        } catch (e) {
-            console.error(e);
-            window.showGlobalToast("設定の更新に失敗しました");
-            const toggle = $('toggle-bonus-score');
-            if(toggle) toggle.checked = !checked;
-        }
-    };
-
-    window.renderMasterSettings = () => {
-        const toggle = $('toggle-input-period');
-        const text = $('toggle-input-period-text');
-        if (toggle && text) {
-            const isAllowed = window.appState.settings?.allowInputOutsidePeriod || false;
-            toggle.checked = isAllowed;
-            text.innerText = isAllowed ? 'ON' : 'OFF';
-            text.className = isAllowed ? 'ml-3 text-sm font-black text-emerald-600' : 'ml-3 text-sm font-black text-gray-500';
-        }
-
-        const toggleBonus = $('toggle-bonus-score');
-        const textBonus = $('toggle-bonus-score-text');
-        if (toggleBonus && textBonus) {
-            const showBonus = window.appState.settings?.showBonusScore || false;
-            toggleBonus.checked = showBonus;
-            textBonus.innerText = showBonus ? 'ON' : 'OFF';
-            textBonus.className = showBonus ? 'ml-3 text-sm font-black text-emerald-600' : 'ml-3 text-sm font-black text-gray-500';
-        }
-    };
 
     window.handleRankingMonthChange = () => {
         const ms = $('ranking-month-pulldown');
@@ -2136,7 +1200,7 @@
         if (ms) {
             if (ms.options.length === 0) {
                 ms.innerHTML = '<option value="all" selected>全期間 (平均)</option>';
-                ms.innerHTML += '<option value="custom">手動で期間を設定...</option>';
+                ms.innerHTML += '<option value="custom">手持で期間を設定...</option>';
                 window.appState.monthsData.slice().reverse().forEach(m => { 
                     ms.innerHTML += `<option value="${m}">${m}</option>`;
                 });
@@ -2193,11 +1257,9 @@
             }
         }
         
-        // 日付未指定のカスタムモードは全期間として扱う
         const effectiveMonthMode = (selMonth === 'custom' && !hasCustomDate) ? 'all' : selMonth;
 
         let scores = [];
-
         let expectedStaffCount = 0;
         const now = new Date();
         const validWeeks = [];
@@ -2209,7 +1271,6 @@
                 if (customEnd && new Date(w.start) > customEnd) return;
             }
 
-            // その週が始まっていれば「入力対象タスク」としてカウント
             if (now >= w.start) {
                 expectedStaffCount++;
                 validWeeks.push(w.label);
@@ -2282,26 +1343,14 @@
             if (qcScore !== '--') { totalSum += qcScore; totalValCount++; }
 
             const qualityScore = totalValCount > 0 ? Math.round(totalSum / totalValCount) : '--';
-            
             const inputRate = expectedStaffCount > 0 ? Math.round((actualStaffCount / expectedStaffCount) * 100) : 0;
-            
-            // 評価スコア (最終スコア) = 品質スコア * (入力率/100)
             const finalScore = qualityScore !== '--' ? Math.round(qualityScore * (inputRate / 100)) : '--';
 
-            // 少なくともどれかのデータが存在するか、期待されるタスクがある場合に表示
             if (totalValCount > 0 || expectedStaffCount > 0) {
                 scores.push({
-                    name: o.name,
-                    corp: o.corp,
-                    area: o.area,
-                    staffScore,
-                    amScore,
-                    qcScore,
-                    qualityScore,
-                    inputRate,
-                    actualStaffCount,
-                    expectedStaffCount,
-                    finalScore
+                    name: o.name, corp: o.corp, area: o.area,
+                    staffScore, amScore, qcScore, qualityScore,
+                    inputRate, actualStaffCount, expectedStaffCount, finalScore
                 });
             }
         });
@@ -2314,25 +1363,18 @@
         const showBonus = window.appState.settings?.showBonusScore || false;
         sU('ranking-bonus-desc', e => e.className = showBonus ? 'mt-1 block' : 'hidden');
 
-        // カスタムソート処理
         scores.sort((a, b) => {
             if (sortTarget === 'quality_with_rate') {
                 const qA = a.qualityScore === '--' ? -1 : a.qualityScore;
                 const qB = b.qualityScore === '--' ? -1 : b.qualityScore;
-                if (qB !== qA) return qB - qA; // 1. 品質スコアの降順
-                
-                const rA = a.inputRate;
-                const rB = b.inputRate;
-                if (rB !== rA) return rB - rA; // 2. 同点時は入力率の降順
+                if (qB !== qA) return qB - qA; 
+                if (b.inputRate !== a.inputRate) return b.inputRate - a.inputRate; 
             } else if (sortTarget === 'final') {
                 const fA = a.finalScore === '--' ? -1 : a.finalScore;
                 const fB = b.finalScore === '--' ? -1 : b.finalScore;
                 if (fB !== fA) return fB - fA;
             } else if (sortTarget === 'gap_staff_qc') {
-                const getGap = (obj) => {
-                    if (obj.staffScore === '--' || obj.qcScore === '--') return -1;
-                    return Math.abs(obj.staffScore - obj.qcScore);
-                };
+                const getGap = (obj) => (obj.staffScore === '--' || obj.qcScore === '--') ? -1 : Math.abs(obj.staffScore - obj.qcScore);
                 const gapA = getGap(a);
                 const gapB = getGap(b);
                 if (gapB !== gapA) return gapB - gapA;
@@ -2343,31 +1385,19 @@
                 const sB = b[sortTarget + 'Score'] === '--' ? -1 : b[sortTarget + 'Score'];
                 if (sB !== sA) return sB - sA;
             }
-
-            // 最終的な同点処理
             return a.name.localeCompare(b.name);
         });
 
         let html = '';
-
-        let currentRank = 1;
-        let currentScore = null;
-        let actualIndex = 1;
+        let currentRank = 1, currentScore = null, actualIndex = 1;
 
         scores.forEach((s) => {
             let tgtScore;
-            if (sortTarget === 'quality_with_rate') {
-                // quality_with_rateの場合、同位判定は品質スコアと入力率の両方を見る
-                tgtScore = s.qualityScore + '_' + s.inputRate;
-            } else if (sortTarget === 'final') {
-                tgtScore = s.finalScore;
-            } else if (sortTarget === 'gap_staff_qc') {
-                tgtScore = (s.staffScore !== '--' && s.qcScore !== '--') ? Math.abs(s.staffScore - s.qcScore) : -1;
-            } else if (sortTarget === 'input_rate') {
-                tgtScore = s.inputRate;
-            } else {
-                tgtScore = s[sortTarget + 'Score'];
-            }
+            if (sortTarget === 'quality_with_rate') tgtScore = s.qualityScore + '_' + s.inputRate;
+            else if (sortTarget === 'final') tgtScore = s.finalScore;
+            else if (sortTarget === 'gap_staff_qc') tgtScore = (s.staffScore !== '--' && s.qcScore !== '--') ? Math.abs(s.staffScore - s.qcScore) : -1;
+            else if (sortTarget === 'input_rate') tgtScore = s.inputRate;
+            else tgtScore = s[sortTarget + 'Score'];
 
             if (currentScore === null || tgtScore !== currentScore) {
                 currentRank = actualIndex;
@@ -2379,44 +1409,32 @@
             
             if (s.qualityScore === '--') {
                 rankDisplay = `<div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center font-black text-gray-300">-</div>`;
-            } else {
-                if (currentRank === 1) {
-                    rankDisplay = '<div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center font-black text-yellow-600 shadow-md border border-yellow-200"><i class="fa-solid fa-crown"></i></div>';
-                    rowClass = "bg-yellow-50/20 hover:bg-yellow-50 border-yellow-200 shadow-md transform hover:-translate-y-0.5";
-                } else if (currentRank === 2) {
-                    rankDisplay = '<div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center font-black text-gray-600 shadow-md border border-gray-200"><i class="fa-solid fa-medal"></i></div>';
-                    rowClass = "bg-gray-50/40 hover:bg-gray-50 border-gray-300 shadow-sm";
-                } else if (currentRank === 3) {
-                    rankDisplay = '<div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center font-black text-orange-600 shadow-md border border-orange-200"><i class="fa-solid fa-award"></i></div>';
-                    rowClass = "bg-orange-50/20 hover:bg-orange-50 border-orange-200 shadow-sm";
-                }
+            } else if (currentRank === 1) {
+                rankDisplay = '<div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center font-black text-yellow-600 shadow-md border border-yellow-200"><i class="fa-solid fa-crown"></i></div>';
+                rowClass = "bg-yellow-50/20 hover:bg-yellow-50 border-yellow-200 shadow-md transform hover:-translate-y-0.5";
+            } else if (currentRank === 2) {
+                rankDisplay = '<div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center font-black text-gray-600 shadow-md border border-gray-200"><i class="fa-solid fa-medal"></i></div>';
+                rowClass = "bg-gray-50/40 hover:bg-gray-50 border-gray-300 shadow-sm";
+            } else if (currentRank === 3) {
+                rankDisplay = '<div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center font-black text-orange-600 shadow-md border border-orange-200"><i class="fa-solid fa-award"></i></div>';
+                rowClass = "bg-orange-50/20 hover:bg-orange-50 border-orange-200 shadow-sm";
             }
 
-            const getQColor = (sc) => {
-                if (sc === '--') return 'text-gray-400';
-                if (sc >= 80) return 'text-emerald-600';
-                if (sc >= 50) return 'text-yellow-600';
-                return 'text-red-600';
-            };
-
+            const getQColor = (sc) => sc === '--' ? 'text-gray-400' : (sc >= 80 ? 'text-emerald-600' : (sc >= 50 ? 'text-yellow-600' : 'text-red-600'));
             const rateColor = s.inputRate >= 90 ? 'text-emerald-600' : (s.inputRate >= 50 ? 'text-yellow-600' : 'text-red-600');
             const rateBg = s.inputRate >= 90 ? 'bg-emerald-50' : (s.inputRate >= 50 ? 'bg-yellow-50' : 'bg-red-50');
 
             const gridColsClass = showBonus ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2";
             const qualityColSpan = showBonus ? "col-span-2 sm:col-span-1" : "col-span-1";
             
-            let bonusScoreHtml = '';
-            if (showBonus) {
-                bonusScoreHtml = `
-                    <div class="bg-gray-50 rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm relative">
-                        <p class="text-[9px] text-gray-500 font-bold mb-1">賞与用スコア</p>
-                        <div class="flex items-baseline justify-center">
-                            <span class="text-sm font-black text-pink-600">${s.finalScore}</span><span class="text-[10px] font-bold text-pink-400 ml-0.5">pt</span>
-                        </div>
-                        <p class="text-[8px] font-bold text-gray-400 mt-0.5">品質 × 入力率</p>
+            let bonusScoreHtml = showBonus ? `
+                <div class="bg-gray-50 rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm relative">
+                    <p class="text-[9px] text-gray-500 font-bold mb-1">賞与用スコア</p>
+                    <div class="flex items-baseline justify-center">
+                        <span class="text-sm font-black text-pink-600">${s.finalScore}</span><span class="text-[10px] font-bold text-pink-400 ml-0.5">pt</span>
                     </div>
-                `;
-            }
+                    <p class="text-[8px] font-bold text-gray-400 mt-0.5">品質 × 入力率</p>
+                </div>` : '';
 
             html += `
             <div class="bg-white rounded-2xl border ${rowClass} p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center gap-4 mb-3">
@@ -2450,7 +1468,6 @@
             </div>`;
             actualIndex++;
         });
-
         c.innerHTML = html;
     };
 
@@ -2474,7 +1491,6 @@
                 ms.innerHTML += `<option value="${m}">${m}</option>`;
             });
         }
-
         window.handleFeedbackAreaChange();
     };
 
@@ -2489,7 +1505,6 @@
             filtered = filtered.filter(o => o.area === selA);
         }
 
-        // 未確認のフィードバックを持つ事業所を特定
         const qcData = window.appState.teamHistoryFull || {};
         const unreadOffices = new Set();
         Object.keys(qcData).forEach(officeName => {
@@ -2546,11 +1561,10 @@
         const ms = $('feedback-month-pulldown');
         
         if (!c || !os || !os.value) {
-            // 事業所未選択時は新着のフィードバック一覧を表示
             let recentEntries = [];
             const qcData = window.appState.teamHistoryFull || {};
             const as = $('feedback-area-pulldown');
-            const selA = (as && as.value) ? as.value : 'all'; // 未選択("")の場合は全エリア対象
+            const selA = (as && as.value) ? as.value : 'all';
 
             Object.keys(qcData).forEach(officeName => {
                 const officeInfo = window.appState.offices.find(o => o.name === officeName);
@@ -2877,7 +1891,7 @@
 
         // 投稿日時が新しい順にソート
         allGPs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-        const recentGPs = allGPs.slice(0, 10); // ホーム画面では最新10件のみ表示
+        const recentGPs = allGPs.slice(0, 10); 
 
         section.classList.remove('hidden');
 
@@ -3014,8 +2028,6 @@
         });
         container.innerHTML = html;
     };
-
-    const amList = ["石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
 
     window.renderAnalysisFilters = () => {
       const amS = $('analysis-am-pulldown'); 
@@ -3885,7 +2897,517 @@
             areaSelect.innerHTML += `<option value="その他">その他</option>`;
         }
     };
+  </script>
+</head>
+<body>
+  <div id="loading-overlay">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mb-4"></div>
+      <p class="text-xs font-bold text-gray-400">CONNECTING...</p>
+  </div>
+  
+  <header class="bg-white sticky top-0 z-50 border-b-2 border-pink-400 shadow-sm">
+      <div class="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
+          <div class="flex items-center" onclick="window.switchTab('home')" style="cursor:pointer">
+              <svg width="52" height="52" viewBox="0 0 100 100" fill="none" class="mr-3 sm:mr-4">
+                  <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="#f06292"/>
+                  <circle cx="53" cy="38" r="14" fill="white"/>
+                  <path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/>
+              </svg>
+              <div>
+                  <h1 class="text-2xl sm:text-3xl font-black text-gray-800">self-A</h1>
+                  <p id="current-office-display" class="text-[10px] font-bold text-gray-400 mt-0.5">HOME</p>
+              </div>
+          </div>
+          <span id="role-badge" class="hidden text-[11px] px-3 py-1.5 bg-pink-50 text-pink-500 rounded-full font-black"></span>
+      </div>
+      <nav class="hidden flex border-t bg-white overflow-x-auto scrollbar-hide" id="nav-tabs">
+          <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase">入力</button>
+          <button onclick="window.switchTab('dashboard')" id="tab-dashboard" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">分析</button>
+          <button onclick="window.switchTab('ranking')" id="tab-ranking" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">ランキング</button>
+          <button onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">FB共有</button>
+          <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">マスタ</button>
+      </nav>
+  </header>
+  
+  <main class="max-w-4xl mx-auto p-4">
+    <div id="view-home" class="view-content pt-2 pb-6">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div onclick="window.startInputMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-pink-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 brand-bg-pink rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-pen-to-square"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">事業所入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Weekly Check</p></div>
+          </div>
+          <div onclick="window.startAMCheckMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-indigo-600 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-user-check"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">AM入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">AM Validation</p></div>
+          </div>
+          <div onclick="window.startQCCheckMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-emerald-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-clipboard-check"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">QCチーム入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">QC Team</p></div>
+          </div>
+          <div onclick="window.switchTab('dashboard')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-chart-pie"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">データ分析</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Data Analysis</p></div>
+          </div>
+          <div onclick="window.switchTab('feedback')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-yellow-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-comments"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">QCフィードバック</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Feedback</p></div>
+          </div>
+          <div onclick="window.switchTab('ranking')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-cyan-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-ranking-star"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">点数ランキング</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Ranking</p></div>
+          </div>
+          <div onclick="window.switchTab('master')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-orange-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">マスタ設定</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Settings</p></div>
+          </div>
+          <div onclick="window.switchTab('rules')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-blue-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-book-open"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">運用ルール</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Rules</p></div>
+          </div>
+      </div>
 
+      <div id="home-knowledge-section" class="mt-8 hidden">
+          <div class="flex justify-between items-center mb-4">
+              <h2 class="text-sm sm:text-base font-black text-gray-800 flex items-center"><i class="fa-solid fa-lightbulb text-yellow-500 mr-2"></i>みんなのGood Practice <span class="text-[9px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full ml-2 font-bold border border-yellow-200">見本となる取り組み</span></h2>
+              <button onclick="window.switchTab('knowledge')" class="text-xs font-bold text-pink-500 hover:text-pink-600 bg-pink-50 px-3 py-1.5 rounded-lg transition-colors">すべて見る <i class="fa-solid fa-chevron-right ml-1"></i></button>
+          </div>
+          <div id="knowledge-gallery" class="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
+          </div>
+      </div>
+    </div>
+    
+    <div id="view-rules" class="hidden space-y-6 view-content">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-book-open text-blue-500 mr-2"></i>運用ルール / 目的</h2>
+            <button id="btn-edit-rules" onclick="window.toggleRulesEdit()" class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-100 transition shadow-sm"><i class="fa-solid fa-pen mr-1"></i>編集する</button>
+        </div>
+        <div id="rules-content-container"></div>
+    </div>
+
+    <div id="view-master" class="hidden space-y-6 view-content">
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm mt-6">
+            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-gear text-blue-500 mr-2"></i>システム共通設定</h2>
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h3 class="text-sm font-black text-blue-800 mb-1">入力期間の制限解除</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
+                        ONにすると、期日超過や未来の週・月でも入力が可能になります。<br>テスト入力や例外的な過去分の修正時のみONにしてください。
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="toggle-input-period" class="sr-only peer" onchange="window.toggleInputPeriodSetting(this.checked)">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-input-period-text">OFF</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
+                <div>
+                    <h3 class="text-sm font-black text-blue-800 mb-1">賞与用スコアの表示（管理者用）</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
+                        ONにすると、ランキング画面に「品質スコア×入力率」で計算された賞与用スコアが表示されます。
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="toggle-bonus-score" class="sr-only peer" onchange="window.toggleBonusScoreSetting(this.checked)">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-bonus-score-text">OFF</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-orange-400 shadow-sm mt-6">
+            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-database text-orange-500 mr-2"></i>事業所マスタ管理</h2>
+            
+            <div class="bg-gray-50 p-4 rounded-xl border mb-6">
+                <h3 class="text-xs font-black text-gray-700 mb-3"><i class="fa-solid fa-plus-circle mr-1"></i>新規事業所の追加</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <input type="text" id="new-corp" placeholder="法人名 (例: ハニービー)" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
+                    <input type="text" id="new-name" placeholder="事業所名 (一意な名前)" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
+                    <select id="new-area" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition"></select>
+                    <select id="new-type" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
+                        <option value="就労A型">就労A型</option>
+                        <option value="就労B型">就労B型</option>
+                        <option value="就労移行">就労移行</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <div class="mt-4 text-right">
+                    <button onclick="window.addMasterOffice()" class="bg-orange-500 hover:bg-orange-600 text-white font-black text-xs py-2.5 px-6 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
+                        <i class="fa-solid fa-plus mr-1"></i>事業所を追加する
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-black text-gray-700"><i class="fa-solid fa-list mr-1"></i>登録済み事業所一覧</h3>
+                    <span class="text-[10px] font-bold text-gray-500">計 <span id="office-count" class="text-orange-500 font-black">0</span> 件</span>
+                </div>
+                <div class="overflow-x-auto rounded-xl border border-gray-200">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-gray-100 text-[10px] text-gray-500 border-b">
+                                <th class="p-3 font-bold w-1/4">法人名</th>
+                                <th class="p-3 font-bold w-1/3">事業所名・種類</th>
+                                <th class="p-3 font-bold w-1/4">エリア (AM)</th>
+                                <th class="p-3 font-bold w-1/6 text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-office-list" class="text-xs font-bold text-gray-700 bg-white">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-red-500 shadow-sm mt-6">
+            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>危険な操作 (システム管理)</h2>
+            <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+                <h3 class="text-sm font-black text-red-700 mb-2">テスト入力データの一括リセット</h3>
+                <p class="text-[10px] sm:text-xs text-gray-700 mb-4 font-bold leading-relaxed">
+                    事業所・AM・QCチームの<span class="text-red-600">すべての入力履歴（写真やコメント含む）を完全に消去</span>します。<br>
+                    ※事業所マスタ（一覧）は削除されません。本番運用への切り替え時や、テストを最初からやり直したい時に使用してください。
+                </p>
+                <button onclick="window.resetAllTestData()" class="bg-red-600 hover:bg-red-700 text-white font-black text-xs py-2.5 px-6 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
+                    <i class="fa-solid fa-trash-can mr-1"></i>すべての入力データをリセットする
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-ranking" class="hidden space-y-6 view-content">
+        <div class="bg-white p-6 rounded-2xl border shadow-sm">
+            <h2 class="text-lg font-black text-gray-800 mb-3 flex items-center"><i class="fa-solid fa-ranking-star text-cyan-500 mr-2"></i>点数ランキング（評価スコア）</h2>
+            <div class="bg-cyan-50 border border-cyan-100 p-3 rounded-xl mb-4">
+                <p class="text-[11px] text-cyan-800 font-bold leading-relaxed">
+                    <i class="fa-solid fa-circle-info mr-1"></i>基本ランキングは<span class="text-pink-600 font-black">「品質スコア（平均点）」</span>で順位付けされます（同点時は自己入力率が高い事業所が上位）。<br>
+                    <span id="ranking-bonus-desc" class="hidden mt-1 block">賞与評価用として、未入力による減点を加味した <span class="bg-white px-1 rounded text-red-500">賞与用スコア (品質×自己入力率)</span> も算出しています。</span>
+                </p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+                <div class="flex flex-col gap-2">
+                    <select id="ranking-month-pulldown" onchange="window.handleRankingMonthChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm outline-none focus:border-cyan-400 transition-all"></select>
+                    <div id="ranking-custom-period-container" class="hidden flex items-center gap-2 bg-gray-50 p-2 rounded-xl border-2">
+                        <input type="date" id="ranking-custom-start" onchange="window.renderRankingList()" class="w-full p-1.5 border rounded-lg font-bold bg-white text-[10px] sm:text-xs outline-none focus:border-cyan-400 text-gray-700">
+                        <span class="text-gray-400 font-bold text-[10px]">～</span>
+                        <input type="date" id="ranking-custom-end" onchange="window.renderRankingList()" class="w-full p-1.5 border rounded-lg font-bold bg-white text-[10px] sm:text-xs outline-none focus:border-cyan-400 text-gray-700">
+                    </div>
+                </div>
+                <select id="ranking-sort-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm outline-none focus:border-cyan-400 transition-all h-fit">
+                </select>
+            </div>
+        </div>
+        <div id="ranking-list-container" class="space-y-3"></div>
+    </div>
+
+    <div id="view-knowledge" class="hidden space-y-4 view-content">
+        <div class="bg-white p-5 sm:p-6 rounded-2xl border shadow-sm">
+            <div class="flex justify-between items-center mb-4 border-b pb-4">
+                <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-book-open text-yellow-500 mr-2"></i>Good Practice ギャラリー</h2>
+                <button onclick="window.switchTab('home')" class="text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg transition"><i class="fa-solid fa-arrow-left mr-1"></i>ホーム</button>
+            </div>
+            <p class="text-[10px] sm:text-xs text-gray-500 mb-4">全国の事業所から集まった素晴らしい取り組みのナレッジベースです。他の事業所の工夫を探して、自事業所に生かしましょう。</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">カテゴリで絞り込み</label>
+                    <select id="knowledge-category-filter" onchange="window.renderKnowledgeGallery()" class="w-full p-2.5 border rounded-xl font-bold text-xs bg-gray-50 outline-none focus:border-yellow-400 focus:bg-white transition-all">
+                        <option value="">すべてのカテゴリ</option>
+                        <option value="環境整備・5S">環境整備・5S</option>
+                        <option value="支援・プログラムの工夫">支援・プログラムの工夫</option>
+                        <option value="業務効率化・ツール活用">業務効率化・ツール活用</option>
+                        <option value="安全・防災">安全・防災</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 mb-1 block">フリーワード検索</label>
+                    <div class="relative">
+                        <input type="text" id="knowledge-search-input" onkeyup="window.renderKnowledgeGallery()" placeholder="事業所名やキーワードを入力..." class="w-full p-2.5 pl-9 border rounded-xl font-bold text-xs bg-gray-50 outline-none focus:border-yellow-400 focus:bg-white transition-all">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="knowledge-full-gallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        </div>
+    </div>
+
+    <div id="view-feedback" class="hidden space-y-6 view-content">
+        <div class="bg-white p-6 rounded-2xl border shadow-sm">
+            <h2 class="text-lg font-black text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-comments text-yellow-500 mr-2"></i>QCフィードバック確認</h2>
+            <p class="text-xs text-gray-500 mb-4">QCチームによる抜き打ちチェックの結果とコメントを確認できます。</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <select id="feedback-area-pulldown" onchange="window.handleFeedbackAreaChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
+                <select id="feedback-office-pulldown" onchange="window.handleFeedbackOfficeChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
+                <select id="feedback-month-pulldown" onchange="window.renderFeedbackList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
+            </div>
+        </div>
+        <div id="feedback-list-container" class="space-y-4"></div>
+    </div>
+    
+    <div id="office-selector" class="hidden view-content bg-white p-8 rounded-3xl shadow-xl border">
+      <h2 class="text-xl font-black text-center mb-8" id="selector-title">対象を選択</h2>
+      <div class="space-y-5">
+        <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 border-2 rounded-2xl font-bold bg-white">
+            <option value="" selected disabled>エリア選択...</option>
+            <option value="石川AM">石川AM</option><option value="寺口AM">寺口AM</option><option value="甲部AM">甲部AM</option>
+            <option value="若林AM">若林AM</option><option value="辰橋AM">辰橋AM</option><option value="中村AM">中村AM</option>
+            <option value="小野統括">小野統括</option>
+        </select>
+        <select id="office-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
+        <div id="week-pulldown-section"><select id="week-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select></div>
+        <div id="month-pulldown-section" class="hidden"><select id="month-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select></div>
+        <button onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-xl uppercase">START</button>
+      </div>
+    </div>
+    
+    <div id="view-input" class="hidden space-y-6 view-content">
+        <div class="bg-pink-50 p-5 rounded-2xl border">
+            <div class="flex justify-between items-start mb-2">
+                <p class="text-[10px] text-pink-500 font-black uppercase">QC Sheet</p>
+                <p id="progress-text" class="text-2xl font-black text-pink-600">0%</p>
+            </div>
+            <h2 class="font-black text-gray-800" id="input-view-header-title">チェックシート</h2>
+        </div>
+        <div id="categories-container"></div>
+        <div id="comment-container" class="hidden"></div>
+        <button id="submit-btn" disabled onclick="window.submitData()" class="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black text-lg shadow-xl transition-all">すべて入力してください</button>
+    </div>
+    
+    <div id="view-dashboard" class="hidden space-y-6 view-content">
+      <div class="bg-white p-2 rounded-2xl border shadow-sm mb-2 flex space-x-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+        <button id="btn-source-staff" onclick="window.setDataSource('staff')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-pink-500 text-white shadow-md transition-all">事業所</button>
+        <button id="btn-source-am" onclick="window.setDataSource('am')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">AM</button>
+        <button id="btn-source-qc" onclick="window.setDataSource('qc')" class="flex-1 min-w-[80px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">QC</button>
+        <button id="btn-source-gap" onclick="window.setDataSource('gap')" class="flex-1 min-w-[100px] py-3 px-2 text-[11px] font-black rounded-xl bg-gray-50 text-gray-500 transition-all">ギャップ比較</button>
+      </div>
+      
+      <div id="gap-mode-section" class="hidden bg-white p-4 rounded-2xl border shadow-sm mb-2">
+          <label class="text-[11px] font-black text-indigo-500 uppercase">比較パターン</label>
+          <select id="gap-mode-pulldown" onchange="window.handleGapModeChange()" class="w-full p-3 border-2 rounded-xl bg-indigo-50 font-black mt-2 text-sm text-indigo-900">
+              <option value="all">3者すべて比較</option>
+              <option value="staff_vs_qc">事業所 vs QC</option>
+              <option value="staff_vs_am">事業所 vs AM</option>
+              <option value="am_vs_qc">AM vs QC</option>
+          </select>
+      </div>
+      
+      <div class="bg-white p-6 rounded-2xl border shadow-sm">
+          <label class="text-[11px] font-black text-pink-500 uppercase">レイヤーを選択</label>
+          <select id="analysis-am-pulldown" onchange="window.renderAnalysisFilters()" class="w-full p-4 border-2 rounded-2xl bg-pink-50 font-black mt-3"></select>
+      </div>
+      
+      <div id="analysis-target-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm space-y-5">
+          <div class="flex justify-between items-center">
+              <h3 class="text-xs font-black text-gray-400 uppercase">分析対象</h3>
+              <span id="target-type-badge" class="text-[9px] px-2 py-0.5 rounded-full font-bold"></span>
+          </div>
+          <select id="analysis-office-pulldown" onchange="window.handleAnalysisTargetChange()" class="w-full p-4 border-2 rounded-2xl bg-white font-black"></select>
+          <div id="area-office-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+      </div>
+      
+      <div id="analysis-stats-section" class="hidden grid grid-cols-2 gap-4">
+          <div class="bg-white p-5 rounded-2xl border-l-4 border-pink-500 shadow-sm">
+              <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Target Score</p>
+              <p class="text-3xl font-black"><span id="display-avg-score">--</span><span class="text-xs ml-1 text-gray-400">pt</span></p>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border-l-4 border-emerald-500 shadow-sm">
+              <p class="text-[10px] font-black text-gray-400 uppercase mb-1">Status</p>
+              <p class="text-3xl font-black"><span id="display-input-rate">--</span><span class="text-xs ml-1 text-gray-400">%</span></p>
+          </div>
+      </div>
+      
+      <div id="analysis-chart-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm">
+          <h3 class="font-black text-gray-700 flex items-center mb-6"><i class="fa-solid fa-chart-line mr-2 text-pink-500"></i><span id="chart-title-text">TREND</span></h3>
+          <div class="chart-scroll-wrapper"><div class="chart-inner-container"><canvas id="qcChart"></canvas></div></div>
+      </div>
+      
+      <div id="progress-overview-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
+          <div class="flex justify-between items-center mb-4">
+              <h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-tasks mr-2 text-blue-500"></i>現在の入力進捗</h3>
+              <span id="progress-period-badge" class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100"></span>
+          </div>
+          
+          <div id="area-progress-container" class="mb-6 space-y-3"></div>
+
+          <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+              <h4 class="text-xs font-black text-red-700 mb-3"><i class="fa-solid fa-triangle-exclamation mr-1"></i>未入力事業所</h4>
+              <div id="missing-offices-list" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
+          </div>
+      </div>
+
+      <div id="auto-analysis-section" class="hidden bg-white p-6 rounded-2xl border-indigo-100 shadow-sm border mt-6">
+          <div class="flex justify-between items-center mb-4">
+              <h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-robot mr-2 text-indigo-500"></i>自動分析</h3>
+              <span id="auto-analysis-title-badge" class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100"></span>
+          </div>
+          <select id="analysis-period-pulldown" onchange="window.renderAutoAnalysis()" class="w-full p-3 border rounded-lg bg-white font-bold text-xs mb-4">
+              <option value="latest">最新のデータ</option>
+              <option value="current_week">今週分のみ</option>
+              <option value="last_1_month">直近1ヶ月分</option>
+              <option value="all">全期間</option>
+          </select>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="auto-analysis-content"></div>
+      </div>
+      
+      <div id="gap-items-breakdown-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
+          <h3 class="font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-list-check mr-2 text-orange-500"></i>項目別ギャップ詳細</h3>
+          <div id="gap-items-content" class="space-y-2"></div>
+      </div>
+
+      <div id="qc-visit-status-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
+      </div>
+
+      <div id="detailed-input-data-section" class="hidden bg-white p-6 rounded-2xl border shadow-sm mt-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+              <h3 class="font-black text-gray-800 flex items-center"><i class="fa-solid fa-file-lines mr-2 text-purple-500"></i>入力詳細データ確認</h3>
+              <select id="detail-period-pulldown" onchange="window.renderDetailedInputData()" class="w-full sm:w-auto p-2 border-2 rounded-xl font-bold text-xs bg-gray-50 outline-none focus:border-purple-400 transition-all"></select>
+          </div>
+          <div id="detailed-data-container" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar"></div>
+      </div>
+    </div>
+  </main>
+  
+  <div id="success-toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border-l-4 border-pink-500">
+      <i class="fa-solid fa-check-circle text-pink-400 mr-3"></i><span id="toast-message" class="font-black text-sm uppercase">COMPLETE</span>
+  </div>
+
+  <div id="image-modal" class="fixed inset-0 z-[10000] bg-black bg-opacity-90 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm" onclick="this.classList.add('hidden')">
+      <button class="absolute top-6 right-6 text-white text-4xl hover:text-red-500 transition cursor-pointer z-50"><i class="fa-solid fa-times"></i></button>
+      <img id="image-modal-content" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()">
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // グローバルスコープにFirebaseの関数を公開
+    window.collection = collection;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.onSnapshot = onSnapshot;
+    window.updateDoc = updateDoc;
+    window.deleteDoc = deleteDoc;
+    window.getDocs = getDocs;
+
+    async function connectCloud() {
+      try {
+        let config = { apiKey:"AIzaSyBdbezD4xYpqPTy9XZMttHbLBt5cXe33G8", authDomain:"self-qc.firebaseapp.com", projectId:"self-qc", storageBucket:"self-qc.firebasestorage.app", messagingSenderId:"247849012338", appId:"1:247849012338:web:833502cbdbe980a33046eb" };
+        if (typeof __firebase_config !== 'undefined') {
+            config = JSON.parse(__firebase_config);
+        }
+        const app = initializeApp(config); 
+        const auth = getAuth(app); 
+        const db = getFirestore(app); 
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'self-a-qc-manager-v1';
+        window.db = db; 
+        window.appId = appId;
+        
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token); 
+        } else {
+            await signInAnonymously(auth);
+        }
+        
+        onAuthStateChanged(auth, (user) => { 
+            if (user && !window.appState.syncStarted) { 
+                window.appState.user = user; 
+                window.appState.syncStarted = true; 
+                startSync(db, appId); 
+            } 
+        });
+      } catch (e) { 
+          console.error(e);
+          window.hideMainLoader(); 
+      }
+    }
+
+    function startSync(db, appId) {
+      onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'offices'), s => {
+        const m = new Map(); 
+        window.initialOffices.forEach(o => m.set(o.name, o)); 
+        s.docs.forEach(d => m.set(d.data().name, d.data()));
+        window.appState.offices = Array.from(m.values()); 
+        if (window.renderMasterList) window.renderMasterList(); 
+        if (window.renderSelectors) window.renderSelectors(); 
+        window.hideMainLoader();
+      }, e => {
+          console.error(e);
+          window.hideMainLoader();
+      });
+
+      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), d => {
+          if (d.exists()) {
+              window.appState.settings = d.data();
+          } else {
+              window.appState.settings = { allowInputOutsidePeriod: false, showBonusScore: false };
+          }
+          if (window.appState.activeTab === 'input' && !window.appState.office) {
+              if (window.renderSelectors) window.renderSelectors();
+          }
+          if (window.renderMasterSettings) window.renderMasterSettings(); 
+          if (window.appState.activeTab === 'ranking') {
+              if (window.renderRankingSelectors) window.renderRankingSelectors();
+              if (window.renderRankingList) window.renderRankingList();
+          }
+      }, e => console.error(e));
+
+      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules'), d => {
+          if (d.exists()) {
+              window.appState.rules = d.data();
+          } else {
+              window.appState.rules = defaultRules;
+          }
+          if (window.appState.activeTab === 'rules') {
+              if (window.renderRules) window.renderRules();
+          }
+      }, e => console.error(e));
+      
+      const setHist = (cName, hKey, fKey, lKey) => {
+        onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', cName), s => {
+          const st = window.appState; 
+          st[hKey] = {}; 
+          st[fKey] = {};
+          s.docs.forEach(d => { 
+              const v = d.data(); 
+              if (!st[hKey][v.office]) { st[hKey][v.office] = {}; st[fKey][v.office] = {}; } 
+              const l = v[lKey] || v.week; 
+              st[hKey][v.office][l] = v.score; 
+              st[fKey][v.office][l] = v; 
+          });
+          if (st.activeTab === 'dashboard') { 
+              if (window.updateStatsDisplay) window.updateStatsDisplay(); 
+              if (window.renderQualityChart) window.renderQualityChart(); 
+              if (window.renderOfficeQuickList) window.renderOfficeQuickList(); 
+              if (window.renderAutoAnalysis) window.renderAutoAnalysis(); 
+          } else if (st.activeTab === 'feedback') {
+              if (window.renderFeedbackList) window.renderFeedbackList();
+          } else if (st.activeTab === 'knowledge') {
+              if (window.renderKnowledgeGallery) window.renderKnowledgeGallery();
+          } else if (st.activeTab === 'ranking') {
+              if (window.renderRankingList) window.renderRankingList();
+          }
+          if (cName === 'team_qc_history') {
+              if (window.renderHomeKnowledgeSpace) window.renderHomeKnowledgeSpace();
+              if (st.activeTab === 'knowledge' && window.renderKnowledgeGallery) window.renderKnowledgeGallery();
+          }
+        }, e => console.error(e));
+      };
+      
+      setHist('qc_history', 'history', 'historyFull', 'week'); 
+      setHist('am_qc_history', 'amHistory', 'amHistoryFull', 'month'); 
+      setHist('team_qc_history', 'teamHistory', 'teamHistoryFull', 'month');
+    }
+
+    // モジュール化されたFirebase処理をグローバルから呼び出せるように初期化
     connectCloud();
     window.addEventListener('DOMContentLoaded', () => { 
         setTimeout(window.hideMainLoader, 2000); 
