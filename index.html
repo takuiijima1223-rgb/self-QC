@@ -1374,11 +1374,6 @@
                     </div>
                 </div>
                 <select id="ranking-sort-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm outline-none focus:border-cyan-400 transition-all h-fit">
-                    <option value="quality_with_rate">品質スコア優先 (同点は自己入力率で判定)</option>
-                    <option value="input_rate">事業所 自己入力率</option>
-                    <option value="staff">事業所 自己評価スコア</option>
-                    <option value="am">AM 評価スコア</option>
-                    <option value="qc">QC 評価スコア</option>
                 </select>
             </div>
         </div>
@@ -2155,6 +2150,7 @@
             ss.innerHTML = `
                 <option value="quality_with_rate">品質スコア優先 (同点は自己入力率で判定)</option>
                 ${showBonus ? '<option value="final">賞与用スコア優先 (品質×自己入力率)</option>' : ''}
+                <option value="gap_staff_qc">ギャップ優先 (事業所とQCの差が大きい順)</option>
                 <option value="input_rate">事業所 自己入力率</option>
                 <option value="staff">事業所 自己評価スコア</option>
                 <option value="am">AM 評価スコア</option>
@@ -2332,6 +2328,14 @@
                 const fA = a.finalScore === '--' ? -1 : a.finalScore;
                 const fB = b.finalScore === '--' ? -1 : b.finalScore;
                 if (fB !== fA) return fB - fA;
+            } else if (sortTarget === 'gap_staff_qc') {
+                const getGap = (obj) => {
+                    if (obj.staffScore === '--' || obj.qcScore === '--') return -1;
+                    return Math.abs(obj.staffScore - obj.qcScore);
+                };
+                const gapA = getGap(a);
+                const gapB = getGap(b);
+                if (gapB !== gapA) return gapB - gapA;
             } else if (sortTarget === 'input_rate') {
                 if (b.inputRate !== a.inputRate) return b.inputRate - a.inputRate;
             } else {
@@ -2357,6 +2361,8 @@
                 tgtScore = s.qualityScore + '_' + s.inputRate;
             } else if (sortTarget === 'final') {
                 tgtScore = s.finalScore;
+            } else if (sortTarget === 'gap_staff_qc') {
+                tgtScore = (s.staffScore !== '--' && s.qcScore !== '--') ? Math.abs(s.staffScore - s.qcScore) : -1;
             } else if (sortTarget === 'input_rate') {
                 tgtScore = s.inputRate;
             } else {
@@ -2428,10 +2434,10 @@
                         <div class="flex items-baseline justify-center relative z-10">
                             <span class="text-xl sm:text-2xl font-black ${getQColor(s.qualityScore)}">${s.qualityScore}</span><span class="text-[10px] font-bold text-emerald-600 ml-1">pt</span>
                         </div>
-                        <div class="flex justify-center gap-1.5 text-[9px] font-black bg-white/60 rounded py-0.5 px-1 mx-2 mt-1 relative z-10">
-                            <span class="text-pink-500" title="事業所自己評価">${s.staffScore}</span>/
-                            <span class="text-indigo-500" title="AM評価">${s.amScore}</span>/
-                            <span class="text-teal-500" title="QC評価">${s.qcScore}</span>
+                        <div class="flex flex-col gap-1 w-full px-2 mt-1.5 relative z-10">
+                            <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-pink-500 text-left">事業所</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-pink-400 h-1.5 rounded-full" style="width:${s.staffScore === '--' ? 0 : s.staffScore}%"></div></div><span class="w-6 text-right text-emerald-800">${s.staffScore}</span></div>
+                            <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-indigo-500 text-left">AM</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-indigo-400 h-1.5 rounded-full" style="width:${s.amScore === '--' ? 0 : s.amScore}%"></div></div><span class="w-6 text-right text-emerald-800">${s.amScore}</span></div>
+                            <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-teal-600 text-left">QC</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-teal-500 h-1.5 rounded-full" style="width:${s.qcScore === '--' ? 0 : s.qcScore}%"></div></div><span class="w-6 text-right text-emerald-800">${s.qcScore}</span></div>
                         </div>
                     </div>
                     <div class="${rateBg} rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm ${showBonus ? '' : 'col-span-1'}">
