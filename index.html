@@ -156,7 +156,7 @@
         {id:'am_6',t:"帳票管理",d:"【基準】実地指導も踏まえ、必要な書類が準備出来ており、すぐに取り出せるようにしているか<br>【確認】ルール通りに書類整理されているか、キレイな状態か<br><span class='text-red-400 font-bold'>【リスク: 重大事故・責任】実施指導での指摘、指導、減算、事業所の運営体制責任</span>"}
       ]},
       {cat:"実績・運営チェック",items:[
-        {id:'am_op_1',t:"生産活動/収支",d:"【基準】月次売上・粗利目標を達成し、利用者の工賃/賃金を支払える原資が確保されていること<br>【確認】月次損益表・売上管理表、生産日報<br><span class='text-red-400 font-bold'>【リスク: 経営悪化】赤字が続き、工賃未払いや事業所の閉鎖に追い込まれる</span>"},
+        {id:'am_op_1',t:"生産活動/収支",d:"【基準】月次売上・粗利目標を達成し、利用者の工賃/賃金を満額支払える原資が確保されていること<br>【確認】月次損益表・売上管理表、生産日報<br><span class='text-red-400 font-bold'>【リスク: 経営悪化】赤字が続き、工賃未払いや事業所の閉鎖に追い込まれる</span>"},
         {id:'am_op_2',t:"情報セキュリティ",d:"【基準】離席・退勤時にPCがロックされ、机上に個人情報を含む書類やUSB等が一切ないこと<br>【確認】巡回時の目視確認（PC画面・机上）<br><span class='text-red-400 font-bold'>【リスク: 情報漏洩】利用者情報の流出により、社会的信用の失墜と多額の損害賠償が発生する</span>"},
         {id:'am_op_3',t:"利用者の稼働率",d:"【基準】定員に対する利用率が目標通りであり、長期欠席者への連絡・フォロー記録があること<br>【確認】出席簿・契約者リスト、支援記録（欠席対応）<br><span class='text-red-400 font-bold'>【リスク: 収益低下】稼働率低下により事業収益が悪化し、固定費を回収できなくなる</span>"},
         {id:'am_op_4',t:"防災/安全管理",d:"【基準】避難経路（非常口前）に物がなく、転倒リスクのある配線や落下物が整理されていること<br>【確認】巡回時の目視確認（廊下・非常口・配線）<br><span class='text-red-400 font-bold'>【リスク: 人命損失】火災・地震発生時に逃げ遅れ、死傷する惨事となる</span>"}
@@ -1203,7 +1203,7 @@
         if (ms) {
             if (ms.options.length === 0) {
                 ms.innerHTML = '<option value="all" selected>全期間 (平均)</option>';
-                ms.innerHTML += '<option value="custom">手持で期間を設定...</option>';
+                ms.innerHTML += '<option value="custom">手動で期間を設定...</option>';
                 window.appState.monthsData.slice().reverse().forEach(m => { 
                     ms.innerHTML += `<option value="${m}">${m}</option>`;
                 });
@@ -1835,26 +1835,34 @@
             }
 
             html += `
-            <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-4">
-                <div class="bg-gray-100 px-4 py-2 border-b flex justify-between items-center">
-                    <span class="font-black text-xs text-gray-800"><i class="fa-solid fa-map-marker-alt text-purple-500 mr-1"></i>${o.name}</span>
-                    <div class="flex items-center gap-3">
-                        <span class="text-[9px] text-gray-500 font-bold">${dateStr}提出</span>
-                        <span class="font-black ${scoreColor} text-sm">${fullData.score}<span class="text-[9px] ml-0.5">pt</span></span>
-                    </div>
+            <div class="bg-white rounded-2xl border p-5 shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-black text-gray-800 text-sm"><i class="fa-solid fa-map-marker-alt text-yellow-500 mr-1"></i>${e.office}</h3>
+                    <span class="text-[10px] font-bold text-gray-400">${date} 実施</span>
                 </div>
-                <div class="p-4 bg-white">
-                    ${answersHtml}
-                    ${imagesHtml}
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="font-black text-xs ${scoreColor}">品質スコア: <span class="text-base">${e.score}</span>pt</span>
+                    ${gpBonusBadge}
                 </div>
-            </div>`;
+                
+                ${generalComment ? `<div class="bg-yellow-50 text-xs font-bold text-yellow-800 p-3 rounded-xl border border-yellow-200 mb-4 whitespace-pre-wrap leading-relaxed"><i class="fa-solid fa-comment-dots mr-1"></i>${generalComment}</div>` : ''}
+                
+                ${issuesSection}
+                ${qcApprovalSection}
+                
+                <div class="mt-4 pt-4 border-t flex gap-2 justify-end">
+                    <button onclick="window.toggleFeedbackCheck('${e.office}', '${e.month}', 'staff_checked', ${staffChecked})" class="flex items-center px-3 py-1.5 rounded-lg text-[10px] font-black transition-colors border ${staffBtnClass}">
+                        ${staffIcon}事業所 確認
+                    </button>
+                    <button onclick="window.toggleFeedbackCheck('${e.office}', '${e.month}', 'am_checked', ${amChecked})" class="flex items-center px-3 py-1.5 rounded-lg text-[10px] font-black transition-colors border ${amBtnClass}">
+                        ${amIcon}AM 確認
+                    </button>
+                </div>
+            </div>
+            `;
         });
 
-        if (html === '') {
-            html = `<div class="text-center py-6 text-gray-400 font-bold text-xs"><i class="fa-solid fa-inbox text-2xl mb-2 block opacity-50"></i>この期間の入力データはありません</div>`;
-        }
-
-        container.innerHTML = html;
+        c.innerHTML = html;
     };
 
     window.renderQualityChart = () => {
@@ -2443,127 +2451,6 @@
          }
     };
 
-    window.updateIssueAfterComment = async (office, month, issueIdx, comment) => {
-         const docId = `${office}_${month}`;
-         const docData = window.appState.teamHistoryFull[office]?.[month];
-         if (!docData || !docData.issues) return;
-
-         const newIssues = [...docData.issues];
-         newIssues[issueIdx].afterComment = comment;
-
-         try {
-             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                 issues: newIssues
-             });
-         } catch(e) {
-             console.error(e);
-         }
-    };
-
-    window.updateIssueReportDate = async (office, month, issueIdx, dateStr) => {
-         const docId = `${office}_${month}`;
-         const docData = window.appState.teamHistoryFull[office]?.[month];
-         if (!docData || !docData.issues) return;
-
-         const newIssues = [...docData.issues];
-         newIssues[issueIdx].after_reported_date = dateStr;
-
-         try {
-             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                 issues: newIssues
-             });
-         } catch(e) {
-             console.error(e);
-         }
-    };
-
-    window.setIssueQCStatus = async (office, month, issueIdx, status) => {
-         const docId = `${office}_${month}`;
-         const docData = window.appState.teamHistoryFull[office]?.[month];
-         if (!docData || !docData.issues) return;
-
-         const comment = document.getElementById(`issue-judge-comment-${month}-${issueIdx}`)?.value || "";
-         const judgeDate = document.getElementById(`issue-judge-date-${month}-${issueIdx}`)?.value || window.getNowLocalStr();
-
-         const newIssues = [...docData.issues];
-         newIssues[issueIdx].qc_status = status;
-         newIssues[issueIdx].qc_judge_comment = comment;
-         newIssues[issueIdx].qc_judged_date = judgeDate;
-
-         try {
-             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                 issues: newIssues
-             });
-             window.showGlobalToast("指摘ごとの判定を保存しました");
-         } catch(e) {
-             console.error(e);
-         }
-    };
-
-    window.setQCStatus = async (office, month, status) => {
-         const docId = `${office}_${month}`;
-         const comment = document.getElementById(`qc-judge-comment-${month}`)?.value || "";
-         const judgeDate = document.getElementById(`qc-judge-date-${month}`)?.value || window.getNowLocalStr();
-
-         try {
-             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                 qc_status: status,
-                 qc_judge_comment: comment,
-                 qc_judged_date: judgeDate
-             });
-             window.showGlobalToast("全体判定を保存しました");
-         } catch(e) {
-             console.error(e);
-         }
-    };
-
-    window.uploadIssueAfterImages = async (office, month, issueIdx, e) => {
-         const files = e.target.files;
-         if(!files || files.length === 0) return;
-
-         const docId = `${office}_${month}`;
-         const docData = window.appState.teamHistoryFull[office]?.[month];
-         if (!docData || !docData.issues) return;
-
-         window.showGlobalToast("画像を処理中...");
-         const newIssues = [...docData.issues];
-         const issue = newIssues[issueIdx];
-         if (!issue.afterImages) issue.afterImages = [];
-
-         for (let i = 0; i < files.length; i++) {
-             if (issue.afterImages.length >= 5) break;
-             const compressed = await window.compressImage(files[i]);
-             issue.afterImages.push(compressed);
-         }
-
-         try {
-             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                 issues: newIssues
-             });
-             window.showGlobalToast("改善後画像をアップロードしました");
-         } catch(err) {
-             console.error(err);
-             window.showGlobalToast("画像のアップロードに失敗しました");
-         }
-    };
-
-    window.removeIssueAfterImage = async (office, month, issueIdx, imgIdx) => {
-         const docId = `${office}_${month}`;
-         const docData = window.appState.teamHistoryFull[office]?.[month];
-         if (!docData || !docData.issues) return;
-
-         const newIssues = [...docData.issues];
-         newIssues[issueIdx].afterImages.splice(imgIdx, 1);
-
-         try {
-             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                 issues: newIssues
-             });
-         } catch(e) {
-             console.error(e);
-         }
-    };
-
     window.submitData = async () => {
         if (!window.appState.user) return window.showGlobalToast("認証待ちです。少し待ってから再度お試しください。");
         
@@ -2601,7 +2488,9 @@
         };
 
         let colName = "";
-        let docId = `${office}_${period}`;
+        // Firestoreのパスエラーを防ぐため、期間文字列に含まれるスラッシュをハイフンに置換します
+        let safePeriod = String(period).replace(/\//g, '-');
+        let docId = `${office}_${safePeriod}`;
 
         if (mode === 'staff') {
             colName = "qc_history";
