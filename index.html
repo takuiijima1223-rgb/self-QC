@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
     body { font-family: 'Noto Sans JP', sans-serif; background-color: #f9fafb; color: #374151; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
@@ -39,6 +40,7 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
   </style>
+  
   <script>
     const $ = id => document.getElementById(id);
     const sU = (id, cb) => { const el = $(id); if(el) cb(el); };
@@ -232,6 +234,7 @@
             window.renderRankingList();
         } else if (id === 'master') {
             window.renderMasterSettings();
+            window.renderMasterList();
         } else if (id === 'rules') {
             window.renderRules();
         }
@@ -1040,7 +1043,7 @@
         };
 
         try {
-            await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'rules'), newRules);
+            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'rules'), newRules);
             window.showGlobalToast("運用ルールを保存しました");
             window.appState.isRulesEditMode = false;
             window.renderRules();
@@ -1833,33 +1836,811 @@
 
             html += `
             <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-4">
-                <div class="bg-gray-50 px-5 py-3 border-b flex justify-between items-center">
-                    <div class="flex items-center">
-                        <span class="font-black text-sm text-gray-700">${e.month} <span class="text-[10px] text-gray-400 font-normal ml-2">${date}</span></span>
-                    </div>
-                    <div class="flex items-center">
-                        ${gpBonusBadge}
-                        <span class="font-black text-lg ${scoreColor} ml-2">${e.score}<span class="text-[10px] text-gray-400 ml-1">pt</span></span>
+                <div class="bg-gray-100 px-4 py-2 border-b flex justify-between items-center">
+                    <span class="font-black text-xs text-gray-800"><i class="fa-solid fa-map-marker-alt text-purple-500 mr-1"></i>${o.name}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[9px] text-gray-500 font-bold">${dateStr}提出</span>
+                        <span class="font-black ${scoreColor} text-sm">${fullData.score}<span class="text-[9px] ml-0.5">pt</span></span>
                     </div>
                 </div>
-                <div class="p-5">
-                    ${generalComment ? `<h4 class="text-[10px] font-black text-emerald-600 mb-2 uppercase"><i class="fa-solid fa-comment-dots mr-1"></i>総評</h4><p class="text-sm font-bold text-gray-700 leading-relaxed mb-4">${generalComment}</p>` : ''}
-                    
-                    ${issuesSection}
-                    ${qcApprovalSection}
-
-                    <div class="flex space-x-3 border-t pt-4 mt-4">
-                        <button onclick="window.toggleFeedbackCheck('${e.office}', '${e.month}', 'staff_checked', ${staffChecked})" class="flex-1 py-2.5 px-3 border-2 rounded-xl text-xs font-black transition-all flex justify-center items-center active:scale-95 ${staffBtnClass}">
-                            ${staffIcon}事業所 確認
-                        </button>
-                        <button onclick="window.toggleFeedbackCheck('${e.office}', '${e.month}', 'am_checked', ${amChecked})" class="flex-1 py-2.5 px-3 border-2 rounded-xl text-xs font-black transition-all flex justify-center items-center active:scale-95 ${amBtnClass}">
-                            ${amIcon}管理者 確認
-                        </button>
-                    </div>
+                <div class="p-4 bg-white">
+                    ${answersHtml}
+                    ${imagesHtml}
                 </div>
             </div>`;
         });
-        c.innerHTML = html;
+
+        if (html === '') {
+            html = `<div class="text-center py-6 text-gray-400 font-bold text-xs"><i class="fa-solid fa-inbox text-2xl mb-2 block opacity-50"></i>この期間の入力データはありません</div>`;
+        }
+
+        container.innerHTML = html;
+    };
+
+    window.renderQualityChart = () => {
+      const canvas = $('qcChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d'); 
+      const st = window.appState; 
+      if (st.activeTab !== 'dashboard') return; 
+      if (window.qcInstance) window.qcInstance.destroy();
+      
+      const am = st.selectedAM; 
+      const target = st.analysisTarget; 
+      if (!am) return; 
+      
+      const src = st.dataSource; 
+      const lbls = src === 'staff' ? st.weeksData.map(w => w.label) : st.monthsData;
+      const cols = ['#f06292', '#4f46e5', '#10b981', '#f59e0b', '#8b5cf6']; 
+      let ds = [], showLg = false;
+      
+      let tOffs = am === 'works' 
+        ? (target === 'all' || target === 'compare' ? st.offices : st.offices.filter(o => o.area === target.replace('am_', ''))) 
+        : (target === 'all' || target === 'compare' ? st.offices.filter(o => o.area === am) : st.offices.filter(o => o.name === target));
+      
+      if (src === 'gap') {
+        const gm = st.gapCompareMode;
+        const dAM = lbls.map(l => { let s=0, c=0; tOffs.forEach(o => { const h = st.amHistory[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; });
+        const dQC = lbls.map(l => { let s=0, c=0; tOffs.forEach(o => { const h = st.teamHistory[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; });
+        const dST = lbls.map(l => { let s=0, c=0; const wks = st.weeksData.filter(w => w.monthStr === l).map(w => w.label); tOffs.forEach(o => { const h = st.history[o.name] || {}; wks.forEach(wl => { if (h[wl] !== undefined) { s+=h[wl]; c++; } }); }); return c>0 ? Math.round(s/c) : null; });
+        
+        if (gm === 'all' || gm === 'staff_vs_am' || gm === 'am_vs_qc') ds.push({ label: '管理者', data: dAM, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.05)', fill: true, tension: 0.3, borderWidth: 4, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false });
+        if (gm === 'all' || gm === 'staff_vs_qc' || gm === 'am_vs_qc') ds.push({ label: 'QC', data: dQC, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', fill: true, tension: 0.3, borderWidth: 4, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false });
+        if (gm === 'all' || gm === 'staff_vs_am' || gm === 'staff_vs_qc') ds.push({ label: '事業所', data: dST, borderColor: '#f06292', backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 3, borderDash: [5, 5], pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false });
+        showLg = true; sU('chart-title-text', e => e.innerText = `ギャップ推移`);
+      } else {
+        const conf = window.getHConf(src);
+        if (target === 'all' || target.startsWith('am_')) {
+          const d = lbls.map(l => { let s=0, c=0; tOffs.forEach(o => { const h = conf.h[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; });
+          ds.push({ label: conf.lb, data: d, borderColor: conf.c, backgroundColor: conf.bg, fill: true, tension: 0.3, borderWidth: 4, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false }); 
+          sU('chart-title-text', e => e.innerText = `統合推移`);
+        } else if (target === 'compare') {
+          let grps = am === 'works' ? amList.map(a => ({ n: a, os: st.offices.filter(o => o.area === a) })) : tOffs.map(o => ({ n: o.name, os: [o] }));
+          grps.forEach((g, i) => { 
+              const d = lbls.map(l => { let s=0, c=0; g.os.forEach(o => { const h = conf.h[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; }); 
+              if (d.some(x => x !== null)) ds.push({ label: g.n, data: d, borderColor: cols[i % cols.length], fill: false, tension: 0.3, borderWidth: 3, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false }); 
+          });
+          showLg = true; sU('chart-title-text', e => e.innerText = `比較推移`);
+        } else {
+          const d = lbls.map(l => { const h = conf.h[target] || {}; return (h[l] !== undefined) ? h[l] : null; }); 
+          ds.push({ label: target, data: d, borderColor: conf.c, fill: true, tension: 0.3, borderWidth: 4, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false }); 
+          sU('chart-title-text', e => e.innerText = `${target}推移`);
+        }
+      }
+      
+      window.qcInstance = new Chart(ctx, { 
+          type: 'line', 
+          data: { labels: lbls, datasets: ds }, 
+          options: { 
+              responsive: true, 
+              maintainAspectRatio: false, 
+              clip: false, 
+              layout: { padding: { top: 25, right: 30, bottom: 10 } }, 
+              scales: { 
+                  y: { 
+                      min: 0, 
+                      max: 100, 
+                      ticks: { 
+                          stepSize: 20, 
+                          font: { size: 10, weight: 'bold' }, 
+                          callback: function(value) { return value > 100 ? null : value; } 
+                      } 
+                  }, 
+                  x: { ticks: { font: { size: 10 } } } 
+              }, 
+              plugins: { 
+                  legend: { display: showLg, position: 'bottom', labels: { boxWidth: 12, font: { size: 11, weight: 'bold' } } } 
+              } 
+          } 
+      });
+    };
+
+    window.renderOfficeQuickList = () => {
+      const st = window.appState; const grid = $('area-office-grid'); const am = st.selectedAM; if (!grid || !am) return; grid.innerHTML = '';
+      
+      const cb = (id, lb, sb) => { 
+          const d = document.createElement('div'); 
+          d.className = `office-card p-3 rounded-xl cursor-pointer text-center ${st.analysisTarget === id ? 'active shadow-md' : 'bg-gray-50'}`; 
+          d.innerHTML = `<p class="text-[9px] font-black text-gray-400 uppercase">${sb}</p><p class="text-xs font-black">${lb}</p>`; 
+          d.onclick = () => { 
+              st.analysisTarget = id; 
+              $('analysis-office-pulldown').value = id; 
+              window.updateStatsDisplay(); 
+              window.renderQualityChart(); 
+              window.renderOfficeQuickList(); 
+              window.renderAutoAnalysis(); 
+          }; 
+          return d; 
+      };
+      
+      grid.appendChild(cb('all', 'ALL DATA', '統合')); 
+      grid.appendChild(cb('compare', 'COMPARE', '比較'));
+      
+      const src = st.dataSource; 
+      if(src === 'gap') return; 
+      
+      const conf = window.getHConf(src);
+      const tgts = am === 'works' 
+        ? amList.map(a => ({id:'am_'+a, n:a, os: st.offices.filter(o => o.area === a)})) 
+        : st.offices.filter(o => o.area === am).map(o => ({id: o.name, n: o.name, os: [o]}));
+        
+      tgts.forEach(t => {
+        let last = '--'; 
+        for (let l of conf.l) { 
+            let s=0, c=0; 
+            t.os.forEach(o => { if (conf.h[o.name]?.[l] !== undefined) { s+=conf.h[o.name][l]; c++; } }); 
+            if (c>0) { last = Math.round(s/c); break; } 
+        }
+        
+        const d = document.createElement('div'); 
+        d.className = `office-card p-3 rounded-xl cursor-pointer ${st.analysisTarget === t.id ? 'active shadow-md' : 'bg-white shadow-sm'}`;
+        d.innerHTML = `<div class="flex justify-between items-start mb-1"><span class="text-[8px] bg-gray-100 px-1 rounded font-bold">MODE</span><span class="text-[10px] font-black ${last>=80||last==='--'?'text-emerald-500':'text-pink-500'}">${last}${last!=='--'?'pt':''}</span></div><p class="text-[11px] font-black truncate">${t.n}</p>`;
+        d.onclick = () => { 
+            st.analysisTarget = t.id; 
+            $('analysis-office-pulldown').value = t.id; 
+            window.updateStatsDisplay(); 
+            window.renderQualityChart(); 
+            window.renderOfficeQuickList(); 
+            window.renderAutoAnalysis(); 
+        }; 
+        grid.appendChild(d);
+      });
+    };
+
+    window.renderAutoAnalysis = () => {
+      const st = window.appState; 
+      const c = $('auto-analysis-content'); 
+      const pr = $('analysis-period-pulldown')?.value; 
+      if (!c || !pr) return;
+      
+      const am = st.selectedAM; 
+      if (!am) return; 
+      
+      const src = st.dataSource; 
+      const isGap = src === 'gap';
+      const tOffs = am === 'works' ? st.offices : st.offices.filter(o => o.area === am);
+      
+      if (isGap) {
+        const gm = st.gapCompareMode; 
+        let gS = []; 
+        tOffs.forEach(o => { 
+          let sS=0, sC=0, aS=0, aC=0, qS=0, qC=0; 
+          Object.values(st.history[o.name] || {}).forEach(v => { sS+=v; sC++; }); 
+          Object.values(st.amHistory[o.name] || {}).forEach(v => { aS+=v; aC++; }); 
+          Object.values(st.teamHistory[o.name] || {}).forEach(v => { qS+=v; qC++; }); 
+          
+          const sA = sC > 0 ? Math.round(sS/sC) : null; 
+          const aA = aC > 0 ? Math.round(aS/aC) : null; 
+          const qA = qC > 0 ? Math.round(qS/qC) : null;
+          
+          let gp = null;
+          if (gm === 'staff_vs_qc') { 
+              if (sA !== null && qA !== null) gp = sA - qA; 
+          } else if (gm === 'staff_vs_am') { 
+              if (sA !== null && aA !== null) gp = sA - aA; 
+          } else if (gm === 'am_vs_qc') { 
+              if (aA !== null && qA !== null) gp = aA - qA; 
+          } else { 
+              if (sA !== null) { 
+                  if (qA !== null) gp = sA - qA; 
+                  else if (aA !== null) gp = sA - aA; 
+              } 
+          }
+          if (gp !== null) gS.push({ n: o.name, gp });
+        });
+        
+        if (gS.length === 0) { 
+            c.innerHTML = '<div class="col-span-full text-center text-xs font-bold text-gray-400">データ不足</div>'; 
+            window.renderDetailedGapBreakdown([]); 
+            return; 
+        }
+        
+        gS.sort((a,b) => b.gp - a.gp); 
+        sU('auto-analysis-title-badge', e => e.innerText = 'GAP ANALYSIS');
+        
+        let h = `<div class="col-span-full bg-orange-50 p-4 rounded-xl border border-orange-100"><h4 class="text-xs font-black text-orange-700 mb-3"><i class="fa-solid fa-triangle-exclamation mr-1"></i>課題拠点 TOP3</h4><div class="space-y-2">`;
+        gS.slice(0,3).forEach(i => {
+            h += `<div class="bg-white p-3 rounded-lg flex justify-between shadow-sm"><span class="text-xs font-black text-gray-800">${i.n}</span><span class="text-orange-500 font-black">+${i.gp}pt 差</span></div>`;
+        }); 
+        h += '</div></div>'; 
+        c.innerHTML = h;
+        
+        window.renderDetailedGapBreakdown(tOffs); 
+        return;
+      }
+
+      const conf = window.getHConf(src); 
+      const iD = {}; 
+      staffCheckItems.concat(amCheckItems).forEach(x => x.items.forEach(i => iD[i.id] = i.t));
+      
+      let stats = {}; 
+      let hd = false; 
+      sU('auto-analysis-title-badge', e => e.innerText = 'AUTO ANALYSIS'); 
+      
+      tOffs.forEach(o => {
+        const full = conf.f[o.name] || {}; 
+        let list = [];
+        if (pr === 'latest') { 
+            for(let l of conf.l) { 
+                if(full[l]?.answers) { list.push(full[l]); break; } 
+            } 
+        } else if (pr === 'all') { 
+            Object.values(full).forEach(d => { if(d?.answers) list.push(d); }); 
+        }
+        list.forEach(d => { 
+            hd = true; 
+            Object.entries(d.answers).forEach(([qid, val]) => { 
+                if(!iD[qid]) return; 
+                if(!stats[qid]) stats[qid] = { s: 0, c: 0 }; 
+                stats[qid].s += val; 
+                stats[qid].c++; 
+            }); 
+        });
+      });
+      
+      if (!hd) { 
+          c.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400">データなし</div>'; 
+          return; 
+      }
+      
+      const res = Object.keys(stats).map(qid => ({ n: iD[qid], p: Math.round((stats[qid].s/(stats[qid].c*2))*100) })).sort((a,b) => b.p - a.p);
+      
+      let html = `<div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100"><h4 class="text-xs font-black text-emerald-700 mb-3">強み項目</h4><div class="space-y-2">`;
+      res.slice(0,2).forEach(i => html += `<div class="bg-white p-2 rounded text-[10px] font-black flex justify-between shadow-sm"><span>${i.n}</span><span class="text-emerald-500">${i.p}%</span></div>`);
+      html += `</div></div><div class="bg-red-50 p-4 rounded-xl border border-red-100"><h4 class="text-xs font-black text-red-700 mb-3">改善項目</h4><div class="space-y-2">`;
+      res.slice(-2).reverse().forEach(i => html += `<div class="bg-white p-2 rounded text-[10px] font-black flex justify-between shadow-sm"><span>${i.n}</span><span class="text-red-500">${i.p}%</span></div>`);
+      html += '</div></div>'; 
+      c.innerHTML = html;
+    };
+
+    window.renderDetailedGapBreakdown = (tOffs) => {
+      const c = $('gap-items-content'); 
+      if (!c) return; 
+      if (tOffs.length === 0) { c.innerHTML = ''; return; }
+      
+      const gm = window.appState.gapCompareMode; 
+      let h = '';
+      
+      staffCheckItems.concat(amCheckItems).forEach(g => {
+        let gh = `<div class="mb-4"><h4 class="text-[10px] font-black text-gray-400 tracking-widest uppercase">${g.cat}</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">`;
+        g.items.forEach(i => {
+          let sS=0, sC=0, aS=0, aC=0, qS=0, qC=0;
+          tOffs.forEach(o => {
+            Object.values(window.appState.historyFull[o.name] || {}).forEach(d => { if (d.answers[i.id] !== undefined) { sS += d.answers[i.id]; sC++; } });
+            Object.values(window.appState.amHistoryFull[o.name] || {}).forEach(d => { if (d.answers[i.id] !== undefined) { aS += d.answers[i.id]; aC++; } });
+            Object.values(window.appState.teamHistoryFull[o.name] || {}).forEach(d => { if (d.answers[i.id] !== undefined) { qS += d.answers[i.id]; qC++; } });
+          });
+          
+          const sA = sC > 0 ? Math.round((sS / (sC * 2)) * 100) : null; 
+          const aAvg = aC > 0 ? Math.round((aS / (aC * 2)) * 100) : null; 
+          const qAvg = qC > 0 ? Math.round((qS / (qC * 2)) * 100) : null;
+          
+          let gp = '--';
+          if (gm === 'staff_vs_qc') { 
+              if (sA !== null && qAvg !== null) gp = sA - qAvg; 
+          } else if (gm === 'staff_vs_am') { 
+              if (sA !== null && aAvg !== null) gp = sA - aAvg; 
+          } else if (gm === 'am_vs_qc') { 
+              if (aAvg !== null && qAvg !== null) gp = aAvg - qAvg; 
+          } else { 
+              if (sA !== null) { 
+                  if (qAvg !== null) gp = sA - qAvg; 
+                  else if (aAvg !== null) gp = sA - aAvg; 
+              } 
+          }
+          
+          let bh = '';
+          if (gm === 'all' || gm === 'staff_vs_am' || gm === 'staff_vs_qc') {
+              bh += `<div class="flex items-center text-[8px] font-bold"><span class="w-12 text-pink-500">事業所</span><div class="flex-1 gap-bar-container" style="height:6px;"><div class="gap-bar-staff" style="width:${sA||0}%"></div></div><span class="w-6 text-right">${sA!==null?sA+'%':'--'}</span></div>`;
+          }
+          if (gm === 'all' || gm === 'staff_vs_am' || gm === 'am_vs_qc') {
+              bh += `<div class="flex items-center text-[8px] font-bold"><span class="w-12 text-indigo-600">管理者</span><div class="flex-1 gap-bar-container" style="height:6px;"><div class="gap-bar-am" style="width:${aAvg||0}%"></div></div><span class="w-6 text-right">${aAvg!==null?aAvg+'%':'--'}</span></div>`;
+          }
+          if (gm === 'all' || gm === 'staff_vs_qc' || gm === 'am_vs_qc') {
+              bh += `<div class="flex items-center text-[8px] font-bold"><span class="w-12 text-emerald-600">QC</span><div class="flex-1 gap-bar-container" style="height:6px;"><div class="gap-bar-qc" style="width:${qAvg||0}%"></div></div><span class="w-6 text-right">${qAvg!==null?qAvg+'%':'--'}</span></div>`;
+          }
+
+          const gapColor = gp !== '--' && gp > 20 ? 'text-red-500' : (gp !== '--' && gp < 0 ? 'text-indigo-500' : 'text-gray-400');
+          
+          gh += `
+            <div class="bg-white p-2.5 border rounded-lg shadow-sm flex flex-col justify-center">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-[11px] font-black text-gray-800 flex-1 truncate pr-2" title="${i.t}">${i.t}</span>
+                    <div class="text-right flex items-center bg-gray-50 px-1.5 py-0.5 rounded">
+                        <span class="text-[8px] font-bold text-gray-400 mr-1">差:</span>
+                        <span class="text-xs font-black ${gapColor}">${gp > 0 && gp !== '--' ? '+' : ''}${gp}${gp !== '--' ? '%' : ''}</span>
+                    </div>
+                </div>
+                <div class="space-y-1">${bh}</div>
+            </div>`;
+        }); 
+        gh += '</div></div>'; 
+        h += gh;
+      }); 
+      c.innerHTML = h;
+    };
+
+    window.renderSelectors = () => {
+      const now = new Date();
+      const ws = $('week-pulldown'); 
+      if (ws) { 
+          ws.innerHTML = "";
+          window.appState.weeksData.forEach(w => { 
+              const deadline = new Date(w.start);
+              deadline.setDate(deadline.getDate() + 4); 
+              deadline.setHours(23, 59, 59, 999);
+              
+              let isDisabled = false;
+              let suffix = "";
+              
+              if (window.appState.currentMode === 'staff') {
+                  if (now > deadline) {
+                      isDisabled = true;
+                      suffix = " (期日超過)";
+                  } else if (now < w.start) {
+                      isDisabled = true;
+                      suffix = " (未来)";
+                  }
+              }
+              
+              if (window.appState.settings?.allowInputOutsidePeriod) {
+                  isDisabled = false;
+                  if (suffix) suffix = suffix.replace(')', ' - 制限解除中)');
+              }
+
+              if (isDisabled) {
+                  ws.innerHTML += `<option value="${w.label}" disabled>${w.label}${suffix}</option>`; 
+              } else {
+                  const endOfDay = new Date(w.end);
+                  endOfDay.setHours(23, 59, 59, 999);
+                  const isCurrent = now >= w.start && now <= endOfDay;
+                  ws.innerHTML += `<option value="${w.label}" ${isCurrent?'selected':''}>${w.label}${suffix}</option>`; 
+              }
+          }); 
+      }
+      
+      const ms = $('month-pulldown'); 
+      if (ms) { 
+          ms.innerHTML = "";
+          window.appState.monthsData.forEach(m => { 
+              const match = m.match(/(\d{4})年(\d{1,2})月度/);
+              let isDisabled = false;
+              let suffix = "";
+              let isCurrent = false;
+
+              if (match) {
+                  const y = parseInt(match[1], 10);
+                  const mon = parseInt(match[2], 10);
+                  const startOfMonth = new Date(y, mon - 1, 1);
+                  const deadline = new Date(y, mon, 0, 23, 59, 59, 999); 
+                  
+                  if (window.appState.currentMode === 'am') {
+                      if (now > deadline) {
+                          isDisabled = true;
+                          suffix = " (期日超過)";
+                      } else if (now < startOfMonth) {
+                          isDisabled = true;
+                          suffix = " (未来)";
+                      }
+                  } else if (window.appState.currentMode === 'qc') {
+                      if (now < startOfMonth) {
+                          isDisabled = true;
+                          suffix = " (未来)";
+                      }
+                  }
+
+                  if (window.appState.settings?.allowInputOutsidePeriod) {
+                      isDisabled = false;
+                      if (suffix) suffix = suffix.replace(')', ' - 制限解除中)');
+                  }
+
+                  isCurrent = now >= startOfMonth && now <= deadline;
+              }
+
+              if (isDisabled) {
+                  ms.innerHTML += `<option value="${m}" disabled>${m}${suffix}</option>`; 
+              } else {
+                  ms.innerHTML += `<option value="${m}" ${isCurrent?'selected':''}>${m}${suffix}</option>`; 
+              }
+          }); 
+      }
+      
+      const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
+      sU('week-pulldown-section', e => e.style.display = isM ? 'none' : 'block'); 
+      sU('month-pulldown-section', e => e.style.display = isM ? 'block' : 'none');
+      
+      sU('selector-title', e => e.innerText = window.appState.currentMode === 'am' ? "AM品質確認" : (window.appState.currentMode === 'qc' ? "QCチーム品質確認" : "事業所品質確認"));
+      sU('start-btn-main', e => e.className = `w-full py-5 ${window.appState.currentMode === 'qc' ? 'bg-emerald-500' : (window.appState.currentMode === 'am' ? 'bg-indigo-600' : 'brand-bg-pink')} text-white rounded-2xl font-black text-lg shadow-xl uppercase active:scale-95 transition-transform`);
+      
+      window.handleAreaFilterChange();
+    };
+
+    window.renderMasterList = () => { 
+        sU('office-count', e => e.innerText = window.appState.offices.length); 
+        const l = $('master-office-list'); 
+        if(!l) return; 
+        l.innerHTML = ''; 
+        window.appState.offices.sort((a,b) => {
+            if(a.area === b.area) return a.name.localeCompare(b.name);
+            return a.area.localeCompare(b.area);
+        }).forEach(o => { 
+            const isFixed = o.isFixed ? '<span class="bg-gray-100 text-gray-400 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold border">初期データ</span>' : '';
+            const delBtn = o.isFixed 
+                ? `<button disabled class="text-gray-300 cursor-not-allowed opacity-50"><i class="fa-solid fa-trash"></i></button>`
+                : `<button onclick="window.deleteMasterOffice('${o.name}')" class="text-red-400 hover:text-red-600 transition p-2 bg-red-50 hover:bg-red-100 rounded-lg"><i class="fa-solid fa-trash"></i></button>`;
+            
+            l.innerHTML += `
+            <tr class="border-b hover:bg-gray-50 transition">
+                <td class="p-3 font-bold text-gray-800">${o.corp}</td>
+                <td class="p-3">
+                    <div class="font-black text-gray-900">${o.name}${isFixed}</div>
+                    <div class="text-[9px] text-gray-400 mt-0.5">${o.type || '就労A型'}</div>
+                </td>
+                <td class="p-3"><span class="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-1 rounded text-[10px] font-bold">${o.area}</span></td>
+                <td class="p-3 text-center">${delBtn}</td>
+            </tr>`; 
+        }); 
+
+        const areaSelect = $('new-area');
+        if (areaSelect && areaSelect.options.length <= 1) {
+            areaSelect.innerHTML = '<option value="" disabled selected>エリア (AM) を選択</option>';
+            amList.forEach(a => {
+                areaSelect.innerHTML += `<option value="${a}">${a}</option>`;
+            });
+            areaSelect.innerHTML += `<option value="その他">その他</option>`;
+        }
+    };
+
+    window.addMasterOffice = async () => {
+        const corp = document.getElementById('new-corp').value;
+        const name = document.getElementById('new-name').value;
+        const area = document.getElementById('new-area').value;
+        const type = document.getElementById('new-type').value;
+
+        if (!corp || !name || !area) return window.showGlobalToast("必須項目を入力してください");
+
+        const newOffice = { corp, name, area, type, isFixed: false };
+        try {
+            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name), newOffice);
+            window.showGlobalToast("事業所を追加しました");
+            document.getElementById('new-corp').value = "";
+            document.getElementById('new-name').value = "";
+            document.getElementById('new-area').value = "";
+        } catch(e) {
+            console.error(e);
+            window.showGlobalToast("エラーが発生しました");
+        }
+    };
+
+    window.deleteMasterOffice = async (name) => {
+        try {
+            await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name));
+            window.showGlobalToast("削除しました");
+        } catch(e) {
+            console.error(e);
+            window.showGlobalToast("エラーが発生しました");
+        }
+    };
+
+    window.resetAllTestData = async () => {
+        const modal = document.createElement('div');
+        modal.className = "fixed inset-0 z-[20000] bg-black bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm";
+        modal.innerHTML = `
+        <div class="bg-white p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl border-t-4 border-red-500">
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-lg font-black text-gray-800 mb-2">すべての入力データをリセットします</h3>
+            <p class="text-xs font-bold text-gray-600 mb-6 leading-relaxed">事業所・AM・QCチームのすべての過去データ（写真やフィードバック含む）を削除します。<br>この操作は取り消せません。</p>
+            <div class="flex gap-3 justify-center">
+                <button id="cancel-reset-btn" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-black text-sm transition">キャンセル</button>
+                <button id="confirm-reset-btn" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm transition shadow-md">削除する</button>
+            </div>
+        </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('cancel-reset-btn').onclick = () => document.body.removeChild(modal);
+        document.getElementById('confirm-reset-btn').onclick = async () => {
+            document.body.removeChild(modal);
+            window.showGlobalToast("データを削除しています...");
+            try {
+                const cols = ['qc_history', 'am_qc_history', 'team_qc_history'];
+                for (const c of cols) {
+                    const snapshot = await window.getDocs(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', c));
+                    const deletePromises = [];
+                    snapshot.forEach(d => {
+                        deletePromises.push(window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', c, d.id)));
+                    });
+                    await Promise.all(deletePromises);
+                }
+                window.showGlobalToast("リセットが完了しました");
+            } catch(e) {
+                console.error(e);
+                window.showGlobalToast("削除中にエラーが発生しました");
+            }
+        };
+    };
+
+    window.renderMasterSettings = () => {
+        const toggleInput = document.getElementById('toggle-input-period');
+        const toggleInputText = document.getElementById('toggle-input-period-text');
+        if (toggleInput && toggleInputText) {
+            toggleInput.checked = window.appState.settings?.allowInputOutsidePeriod || false;
+            toggleInputText.innerText = toggleInput.checked ? 'ON' : 'OFF';
+            toggleInputText.className = `ml-3 text-sm font-black ${toggleInput.checked ? 'text-blue-600' : 'text-gray-500'}`;
+        }
+
+        const toggleBonus = document.getElementById('toggle-bonus-score');
+        const toggleBonusText = document.getElementById('toggle-bonus-score-text');
+        if (toggleBonus && toggleBonusText) {
+            toggleBonus.checked = window.appState.settings?.showBonusScore || false;
+            toggleBonusText.innerText = toggleBonus.checked ? 'ON' : 'OFF';
+            toggleBonusText.className = `ml-3 text-sm font-black ${toggleBonus.checked ? 'text-blue-600' : 'text-gray-500'}`;
+        }
+    };
+
+    window.toggleInputPeriodSetting = async (checked) => {
+        if (!window.appState.user) return;
+        try {
+            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
+                ...window.appState.settings,
+                allowInputOutsidePeriod: checked
+            });
+            window.showGlobalToast(`期間制限を${checked ? '解除' : '有効に'}しました`);
+        } catch(e) {
+            console.error(e);
+            window.showGlobalToast("設定の保存に失敗しました");
+        }
+    };
+
+    window.toggleBonusScoreSetting = async (checked) => {
+        if (!window.appState.user) return;
+        try {
+            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
+                ...window.appState.settings,
+                showBonusScore: checked
+            });
+            window.showGlobalToast("設定を保存しました");
+        } catch(e) {
+            console.error(e);
+            window.showGlobalToast("設定の保存に失敗しました");
+        }
+    };
+
+    window.toggleFeedbackCheck = async (office, month, field, currentValue) => {
+        const docId = `${office}_${month}`;
+        try {
+            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                [field]: !currentValue
+            });
+            window.showGlobalToast("確認状態を更新しました");
+        } catch(e) {
+            console.error(e);
+            window.showGlobalToast("エラーが発生しました");
+        }
+    };
+
+    window.toggleGPLike = async (office, month, gpId) => {
+         const docId = `${office}_${month}`;
+         const docData = window.appState.teamHistoryFull[office]?.[month];
+         if (!docData || !docData.good_practices) return;
+
+         const newGps = docData.good_practices.map(gp => {
+             if (gp.id === gpId) {
+                 return { ...gp, likes: (gp.likes || 0) + 1 };
+             }
+             return gp;
+         });
+
+         try {
+             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                 good_practices: newGps
+             });
+             window.showGlobalToast("参考になった！を送信しました");
+         } catch(e) {
+             console.error(e);
+         }
+    };
+
+    window.updateIssueAfterComment = async (office, month, issueIdx, comment) => {
+         const docId = `${office}_${month}`;
+         const docData = window.appState.teamHistoryFull[office]?.[month];
+         if (!docData || !docData.issues) return;
+
+         const newIssues = [...docData.issues];
+         newIssues[issueIdx].afterComment = comment;
+
+         try {
+             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                 issues: newIssues
+             });
+         } catch(e) {
+             console.error(e);
+         }
+    };
+
+    window.updateIssueReportDate = async (office, month, issueIdx, dateStr) => {
+         const docId = `${office}_${month}`;
+         const docData = window.appState.teamHistoryFull[office]?.[month];
+         if (!docData || !docData.issues) return;
+
+         const newIssues = [...docData.issues];
+         newIssues[issueIdx].after_reported_date = dateStr;
+
+         try {
+             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                 issues: newIssues
+             });
+         } catch(e) {
+             console.error(e);
+         }
+    };
+
+    window.setIssueQCStatus = async (office, month, issueIdx, status) => {
+         const docId = `${office}_${month}`;
+         const docData = window.appState.teamHistoryFull[office]?.[month];
+         if (!docData || !docData.issues) return;
+
+         const comment = document.getElementById(`issue-judge-comment-${month}-${issueIdx}`)?.value || "";
+         const judgeDate = document.getElementById(`issue-judge-date-${month}-${issueIdx}`)?.value || window.getNowLocalStr();
+
+         const newIssues = [...docData.issues];
+         newIssues[issueIdx].qc_status = status;
+         newIssues[issueIdx].qc_judge_comment = comment;
+         newIssues[issueIdx].qc_judged_date = judgeDate;
+
+         try {
+             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                 issues: newIssues
+             });
+             window.showGlobalToast("指摘ごとの判定を保存しました");
+         } catch(e) {
+             console.error(e);
+         }
+    };
+
+    window.setQCStatus = async (office, month, status) => {
+         const docId = `${office}_${month}`;
+         const comment = document.getElementById(`qc-judge-comment-${month}`)?.value || "";
+         const judgeDate = document.getElementById(`qc-judge-date-${month}`)?.value || window.getNowLocalStr();
+
+         try {
+             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                 qc_status: status,
+                 qc_judge_comment: comment,
+                 qc_judged_date: judgeDate
+             });
+             window.showGlobalToast("全体判定を保存しました");
+         } catch(e) {
+             console.error(e);
+         }
+    };
+
+    window.uploadIssueAfterImages = async (office, month, issueIdx, e) => {
+         const files = e.target.files;
+         if(!files || files.length === 0) return;
+
+         const docId = `${office}_${month}`;
+         const docData = window.appState.teamHistoryFull[office]?.[month];
+         if (!docData || !docData.issues) return;
+
+         window.showGlobalToast("画像を処理中...");
+         const newIssues = [...docData.issues];
+         const issue = newIssues[issueIdx];
+         if (!issue.afterImages) issue.afterImages = [];
+
+         for (let i = 0; i < files.length; i++) {
+             if (issue.afterImages.length >= 5) break;
+             const compressed = await window.compressImage(files[i]);
+             issue.afterImages.push(compressed);
+         }
+
+         try {
+             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                 issues: newIssues
+             });
+             window.showGlobalToast("改善後画像をアップロードしました");
+         } catch(err) {
+             console.error(err);
+             window.showGlobalToast("画像のアップロードに失敗しました");
+         }
+    };
+
+    window.removeIssueAfterImage = async (office, month, issueIdx, imgIdx) => {
+         const docId = `${office}_${month}`;
+         const docData = window.appState.teamHistoryFull[office]?.[month];
+         if (!docData || !docData.issues) return;
+
+         const newIssues = [...docData.issues];
+         newIssues[issueIdx].afterImages.splice(imgIdx, 1);
+
+         try {
+             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                 issues: newIssues
+             });
+         } catch(e) {
+             console.error(e);
+         }
+    };
+
+    window.submitData = async () => {
+        if (!window.appState.user) return window.showGlobalToast("認証待ちです。少し待ってから再度お試しください。");
+        
+        const mode = window.appState.currentMode;
+        const office = window.appState.office;
+        const period = mode === 'staff' ? window.appState.inputWeek : window.appState.inputMonth;
+        const answers = window.appState.answers;
+
+        let totalPoints = 0;
+        let maxPoints = 0;
+
+        let hqExcludedItems = new Set();
+        if (mode === 'qc' && window.appState.issues) {
+            window.appState.issues.forEach(issue => {
+                if (issue.responsibility === 'hq' && issue.relatedItemId) {
+                    hqExcludedItems.add(issue.relatedItemId);
+                }
+            });
+        }
+
+        for (let key in answers) {
+            if (hqExcludedItems.has(key)) continue; // 本社対応のものはスコア計算から除外
+            totalPoints += answers[key];
+            maxPoints += 2; // 各項目の最大点は2点
+        }
+
+        let score = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
+
+        const data = {
+            office: office,
+            timestamp: new Date().toISOString(),
+            answers: answers,
+            score: score,
+            user_id: window.appState.user.uid
+        };
+
+        let colName = "";
+        let docId = `${office}_${period}`;
+
+        if (mode === 'staff') {
+            colName = "qc_history";
+            data.week = period;
+            if (window.appState.isLastWeekOfMonth) {
+                data.officeImages = window.appState.officeImages;
+                data.carImages = window.appState.carImages;
+            }
+        } else if (mode === 'am') {
+            colName = "am_qc_history";
+            data.month = period;
+        } else if (mode === 'qc') {
+            colName = "team_qc_history";
+            data.month = period;
+            data.comment = document.getElementById('qc-comment-input')?.value || "";
+            data.issues = window.appState.issues;
+            data.good_practices = window.appState.good_practices;
+            
+            const gpBonus = parseInt(document.getElementById('gp-bonus-input')?.value || "0", 10);
+            data.gp_bonus = gpBonus;
+            
+            // GPボーナスを加算（最大100点）
+            score = Math.min(100, score + gpBonus);
+            data.score = score;
+            data.staff_checked = false; // 新規入力時は未確認状態
+            data.am_checked = false;
+        }
+
+        try {
+            window.showGlobalToast("データをクラウドに送信中...");
+            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', colName, docId), data);
+            window.showGlobalToast("データの送信が完了しました！");
+            setTimeout(() => {
+                window.switchTab('home');
+            }, 1000);
+        } catch (e) {
+            console.error(e);
+            window.showGlobalToast("送信に失敗しました");
+        }
     };
 
     window.renderHomeKnowledgeSpace = () => {
@@ -2463,440 +3244,6 @@
 
         container.innerHTML = html;
     };
-
-    window.renderQualityChart = () => {
-      const canvas = $('qcChart');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d'); 
-      const st = window.appState; 
-      if (st.activeTab !== 'dashboard') return; 
-      if (window.qcInstance) window.qcInstance.destroy();
-      
-      const am = st.selectedAM; 
-      const target = st.analysisTarget; 
-      if (!am) return; 
-      
-      const src = st.dataSource; 
-      const lbls = src === 'staff' ? st.weeksData.map(w => w.label) : st.monthsData;
-      const cols = ['#f06292', '#4f46e5', '#10b981', '#f59e0b', '#8b5cf6']; 
-      let ds = [], showLg = false;
-      
-      let tOffs = am === 'works' 
-        ? (target === 'all' || target === 'compare' ? st.offices : st.offices.filter(o => o.area === target.replace('am_', ''))) 
-        : (target === 'all' || target === 'compare' ? st.offices.filter(o => o.area === am) : st.offices.filter(o => o.name === target));
-      
-      if (src === 'gap') {
-        const gm = st.gapCompareMode;
-        const dAM = lbls.map(l => { let s=0, c=0; tOffs.forEach(o => { const h = st.amHistory[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; });
-        const dQC = lbls.map(l => { let s=0, c=0; tOffs.forEach(o => { const h = st.teamHistory[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; });
-        const dST = lbls.map(l => { let s=0, c=0; const wks = st.weeksData.filter(w => w.monthStr === l).map(w => w.label); tOffs.forEach(o => { const h = st.history[o.name] || {}; wks.forEach(wl => { if (h[wl] !== undefined) { s+=h[wl]; c++; } }); }); return c>0 ? Math.round(s/c) : null; });
-        
-        if (gm === 'all' || gm === 'staff_vs_am' || gm === 'am_vs_qc') ds.push({ label: '管理者', data: dAM, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.05)', fill: true, tension: 0.3, borderWidth: 4, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false });
-        if (gm === 'all' || gm === 'staff_vs_qc' || gm === 'am_vs_qc') ds.push({ label: 'QC', data: dQC, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', fill: true, tension: 0.3, borderWidth: 4, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false });
-        if (gm === 'all' || gm === 'staff_vs_am' || gm === 'staff_vs_qc') ds.push({ label: '事業所', data: dST, borderColor: '#f06292', backgroundColor: 'transparent', fill: false, tension: 0.3, borderWidth: 3, borderDash: [5, 5], pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false });
-        showLg = true; sU('chart-title-text', e => e.innerText = `ギャップ推移`);
-      } else {
-        const conf = window.getHConf(src);
-        if (target === 'all' || target.startsWith('am_')) {
-          const d = lbls.map(l => { let s=0, c=0; tOffs.forEach(o => { const h = conf.h[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; });
-          ds.push({ label: conf.lb, data: d, borderColor: conf.c, backgroundColor: conf.bg, fill: true, tension: 0.3, borderWidth: 4, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false }); 
-          sU('chart-title-text', e => e.innerText = `統合推移`);
-        } else if (target === 'compare') {
-          let grps = am === 'works' ? amList.map(a => ({ n: a, os: st.offices.filter(o => o.area === a) })) : tOffs.map(o => ({ n: o.name, os: [o] }));
-          grps.forEach((g, i) => { 
-              const d = lbls.map(l => { let s=0, c=0; g.os.forEach(o => { const h = conf.h[o.name] || {}; if (h[l] !== undefined) { s+=h[l]; c++; } }); return c>0 ? Math.round(s/c) : null; }); 
-              if (d.some(x => x !== null)) ds.push({ label: g.n, data: d, borderColor: cols[i % cols.length], fill: false, tension: 0.3, borderWidth: 3, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false }); 
-          });
-          showLg = true; sU('chart-title-text', e => e.innerText = `比較推移`);
-        } else {
-          const d = lbls.map(l => { const h = conf.h[target] || {}; return (h[l] !== undefined) ? h[l] : null; }); 
-          ds.push({ label: target, data: d, borderColor: conf.c, fill: true, tension: 0.3, borderWidth: 4, pointRadius: 5, hitRadius: 15, spanGaps: true, clip: false }); 
-          sU('chart-title-text', e => e.innerText = `${target}推移`);
-        }
-      }
-      
-      window.qcInstance = new Chart(ctx, { 
-          type: 'line', 
-          data: { labels: lbls, datasets: ds }, 
-          options: { 
-              responsive: true, 
-              maintainAspectRatio: false, 
-              clip: false, 
-              layout: { padding: { top: 25, right: 30, bottom: 10 } }, 
-              scales: { 
-                  y: { 
-                      min: 0, 
-                      max: 100, 
-                      ticks: { 
-                          stepSize: 20, 
-                          font: { size: 10, weight: 'bold' }, 
-                          callback: function(value) { return value > 100 ? null : value; } 
-                      } 
-                  }, 
-                  x: { ticks: { font: { size: 10 } } } 
-              }, 
-              plugins: { 
-                  legend: { display: showLg, position: 'bottom', labels: { boxWidth: 12, font: { size: 11, weight: 'bold' } } } 
-              } 
-          } 
-      });
-    };
-
-    window.renderOfficeQuickList = () => {
-      const st = window.appState; const grid = $('area-office-grid'); const am = st.selectedAM; if (!grid || !am) return; grid.innerHTML = '';
-      
-      const cb = (id, lb, sb) => { 
-          const d = document.createElement('div'); 
-          d.className = `office-card p-3 rounded-xl cursor-pointer text-center ${st.analysisTarget === id ? 'active shadow-md' : 'bg-gray-50'}`; 
-          d.innerHTML = `<p class="text-[9px] font-black text-gray-400 uppercase">${sb}</p><p class="text-xs font-black">${lb}</p>`; 
-          d.onclick = () => { 
-              st.analysisTarget = id; 
-              $('analysis-office-pulldown').value = id; 
-              window.updateStatsDisplay(); 
-              window.renderQualityChart(); 
-              window.renderOfficeQuickList(); 
-              window.renderAutoAnalysis(); 
-          }; 
-          return d; 
-      };
-      
-      grid.appendChild(cb('all', 'ALL DATA', '統合')); 
-      grid.appendChild(cb('compare', 'COMPARE', '比較'));
-      
-      const src = st.dataSource; 
-      if(src === 'gap') return; 
-      
-      const conf = window.getHConf(src);
-      const tgts = am === 'works' 
-        ? amList.map(a => ({id:'am_'+a, n:a, os: st.offices.filter(o => o.area === a)})) 
-        : st.offices.filter(o => o.area === am).map(o => ({id: o.name, n: o.name, os: [o]}));
-        
-      tgts.forEach(t => {
-        let last = '--'; 
-        for (let l of conf.l) { 
-            let s=0, c=0; 
-            t.os.forEach(o => { if (conf.h[o.name]?.[l] !== undefined) { s+=conf.h[o.name][l]; c++; } }); 
-            if (c>0) { last = Math.round(s/c); break; } 
-        }
-        
-        const d = document.createElement('div'); 
-        d.className = `office-card p-3 rounded-xl cursor-pointer ${st.analysisTarget === t.id ? 'active shadow-md' : 'bg-white shadow-sm'}`;
-        d.innerHTML = `<div class="flex justify-between items-start mb-1"><span class="text-[8px] bg-gray-100 px-1 rounded font-bold">MODE</span><span class="text-[10px] font-black ${last>=80||last==='--'?'text-emerald-500':'text-pink-500'}">${last}${last!=='--'?'pt':''}</span></div><p class="text-[11px] font-black truncate">${t.n}</p>`;
-        d.onclick = () => { 
-            st.analysisTarget = t.id; 
-            $('analysis-office-pulldown').value = t.id; 
-            window.updateStatsDisplay(); 
-            window.renderQualityChart(); 
-            window.renderOfficeQuickList(); 
-            window.renderAutoAnalysis(); 
-        }; 
-        grid.appendChild(d);
-      });
-    };
-
-    window.renderAutoAnalysis = () => {
-      const st = window.appState; 
-      const c = $('auto-analysis-content'); 
-      const pr = $('analysis-period-pulldown')?.value; 
-      if (!c || !pr) return;
-      
-      const am = st.selectedAM; 
-      if (!am) return; 
-      
-      const src = st.dataSource; 
-      const isGap = src === 'gap';
-      const tOffs = am === 'works' ? st.offices : st.offices.filter(o => o.area === am);
-      
-      if (isGap) {
-        const gm = st.gapCompareMode; 
-        let gS = []; 
-        tOffs.forEach(o => { 
-          let sS=0, sC=0, aS=0, aC=0, qS=0, qC=0; 
-          Object.values(st.history[o.name] || {}).forEach(v => { sS+=v; sC++; }); 
-          Object.values(st.amHistory[o.name] || {}).forEach(v => { aS+=v; aC++; }); 
-          Object.values(st.teamHistory[o.name] || {}).forEach(v => { qS+=v; qC++; }); 
-          
-          const sA = sC > 0 ? Math.round(sS/sC) : null; 
-          const aA = aC > 0 ? Math.round(aS/aC) : null; 
-          const qA = qC > 0 ? Math.round(qS/qC) : null;
-          
-          let gp = null;
-          if (gm === 'staff_vs_qc') { 
-              if (sA !== null && qA !== null) gp = sA - qA; 
-          } else if (gm === 'staff_vs_am') { 
-              if (sA !== null && aA !== null) gp = sA - aA; 
-          } else if (gm === 'am_vs_qc') { 
-              if (aA !== null && qA !== null) gp = aA - qA; 
-          } else { 
-              if (sA !== null) { 
-                  if (qA !== null) gp = sA - qA; 
-                  else if (aA !== null) gp = sA - aA; 
-              } 
-          }
-          if (gp !== null) gS.push({ n: o.name, gp });
-        });
-        
-        if (gS.length === 0) { 
-            c.innerHTML = '<div class="col-span-full text-center text-xs font-bold text-gray-400">データ不足</div>'; 
-            window.renderDetailedGapBreakdown([]); 
-            return; 
-        }
-        
-        gS.sort((a,b) => b.gp - a.gp); 
-        sU('auto-analysis-title-badge', e => e.innerText = 'GAP ANALYSIS');
-        
-        let h = `<div class="col-span-full bg-orange-50 p-4 rounded-xl border border-orange-100"><h4 class="text-xs font-black text-orange-700 mb-3"><i class="fa-solid fa-triangle-exclamation mr-1"></i>課題拠点 TOP3</h4><div class="space-y-2">`;
-        gS.slice(0,3).forEach(i => {
-            h += `<div class="bg-white p-3 rounded-lg flex justify-between shadow-sm"><span class="text-xs font-black text-gray-800">${i.n}</span><span class="text-orange-500 font-black">+${i.gp}pt 差</span></div>`;
-        }); 
-        h += '</div></div>'; 
-        c.innerHTML = h;
-        
-        window.renderDetailedGapBreakdown(tOffs); 
-        return;
-      }
-
-      const conf = window.getHConf(src); 
-      const iD = {}; 
-      staffCheckItems.concat(amCheckItems).forEach(x => x.items.forEach(i => iD[i.id] = i.t));
-      
-      let stats = {}; 
-      let hd = false; 
-      sU('auto-analysis-title-badge', e => e.innerText = 'AUTO ANALYSIS'); 
-      
-      tOffs.forEach(o => {
-        const full = conf.f[o.name] || {}; 
-        let list = [];
-        if (pr === 'latest') { 
-            for(let l of conf.l) { 
-                if(full[l]?.answers) { list.push(full[l]); break; } 
-            } 
-        } else if (pr === 'all') { 
-            Object.values(full).forEach(d => { if(d?.answers) list.push(d); }); 
-        }
-        list.forEach(d => { 
-            hd = true; 
-            Object.entries(d.answers).forEach(([qid, val]) => { 
-                if(!iD[qid]) return; 
-                if(!stats[qid]) stats[qid] = { s: 0, c: 0 }; 
-                stats[qid].s += val; 
-                stats[qid].c++; 
-            }); 
-        });
-      });
-      
-      if (!hd) { 
-          c.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400">データなし</div>'; 
-          return; 
-      }
-      
-      const res = Object.keys(stats).map(qid => ({ n: iD[qid], p: Math.round((stats[qid].s/(stats[qid].c*2))*100) })).sort((a,b) => b.p - a.p);
-      
-      let html = `<div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100"><h4 class="text-xs font-black text-emerald-700 mb-3">強み項目</h4><div class="space-y-2">`;
-      res.slice(0,2).forEach(i => html += `<div class="bg-white p-2 rounded text-[10px] font-black flex justify-between shadow-sm"><span>${i.n}</span><span class="text-emerald-500">${i.p}%</span></div>`);
-      html += `</div></div><div class="bg-red-50 p-4 rounded-xl border border-red-100"><h4 class="text-xs font-black text-red-700 mb-3">改善項目</h4><div class="space-y-2">`;
-      res.slice(-2).reverse().forEach(i => html += `<div class="bg-white p-2 rounded text-[10px] font-black flex justify-between shadow-sm"><span>${i.n}</span><span class="text-red-500">${i.p}%</span></div>`);
-      html += '</div></div>'; 
-      c.innerHTML = html;
-    };
-
-    window.renderDetailedGapBreakdown = (tOffs) => {
-      const c = $('gap-items-content'); 
-      if (!c) return; 
-      if (tOffs.length === 0) { c.innerHTML = ''; return; }
-      
-      const gm = window.appState.gapCompareMode; 
-      let h = '';
-      
-      staffCheckItems.concat(amCheckItems).forEach(g => {
-        let gh = `<div class="mb-4"><h4 class="text-[10px] font-black text-gray-400 tracking-widest uppercase">${g.cat}</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">`;
-        g.items.forEach(i => {
-          let sS=0, sC=0, aS=0, aC=0, qS=0, qC=0;
-          tOffs.forEach(o => {
-            Object.values(window.appState.historyFull[o.name] || {}).forEach(d => { if (d.answers[i.id] !== undefined) { sS += d.answers[i.id]; sC++; } });
-            Object.values(window.appState.amHistoryFull[o.name] || {}).forEach(d => { if (d.answers[i.id] !== undefined) { aS += d.answers[i.id]; aC++; } });
-            Object.values(window.appState.teamHistoryFull[o.name] || {}).forEach(d => { if (d.answers[i.id] !== undefined) { qS += d.answers[i.id]; qC++; } });
-          });
-          
-          const sA = sC > 0 ? Math.round((sS / (sC * 2)) * 100) : null; 
-          const aAvg = aC > 0 ? Math.round((aS / (aC * 2)) * 100) : null; 
-          const qAvg = qC > 0 ? Math.round((qS / (qC * 2)) * 100) : null;
-          
-          let gp = '--';
-          if (gm === 'staff_vs_qc') { 
-              if (sA !== null && qAvg !== null) gp = sA - qAvg; 
-          } else if (gm === 'staff_vs_am') { 
-              if (sA !== null && aAvg !== null) gp = sA - aAvg; 
-          } else if (gm === 'am_vs_qc') { 
-              if (aAvg !== null && qAvg !== null) gp = aAvg - qAvg; 
-          } else { 
-              if (sA !== null) { 
-                  if (qAvg !== null) gp = sA - qAvg; 
-                  else if (aAvg !== null) gp = sA - aAvg; 
-              } 
-          }
-          
-          let bh = '';
-          if (gm === 'all' || gm === 'staff_vs_am' || gm === 'staff_vs_qc') {
-              bh += `<div class="flex items-center text-[8px] font-bold"><span class="w-12 text-pink-500">事業所</span><div class="flex-1 gap-bar-container" style="height:6px;"><div class="gap-bar-staff" style="width:${sA||0}%"></div></div><span class="w-6 text-right">${sA!==null?sA+'%':'--'}</span></div>`;
-          }
-          if (gm === 'all' || gm === 'staff_vs_am' || gm === 'am_vs_qc') {
-              bh += `<div class="flex items-center text-[8px] font-bold"><span class="w-12 text-indigo-600">管理者</span><div class="flex-1 gap-bar-container" style="height:6px;"><div class="gap-bar-am" style="width:${aAvg||0}%"></div></div><span class="w-6 text-right">${aAvg!==null?aAvg+'%':'--'}</span></div>`;
-          }
-          if (gm === 'all' || gm === 'staff_vs_qc' || gm === 'am_vs_qc') {
-              bh += `<div class="flex items-center text-[8px] font-bold"><span class="w-12 text-emerald-600">QC</span><div class="flex-1 gap-bar-container" style="height:6px;"><div class="gap-bar-qc" style="width:${qAvg||0}%"></div></div><span class="w-6 text-right">${qAvg!==null?qAvg+'%':'--'}</span></div>`;
-          }
-
-          const gapColor = gp !== '--' && gp > 20 ? 'text-red-500' : (gp !== '--' && gp < 0 ? 'text-indigo-500' : 'text-gray-400');
-          
-          gh += `
-            <div class="bg-white p-2.5 border rounded-lg shadow-sm flex flex-col justify-center">
-                <div class="flex justify-between items-center mb-1.5">
-                    <span class="text-[11px] font-black text-gray-800 flex-1 truncate pr-2" title="${i.t}">${i.t}</span>
-                    <div class="text-right flex items-center bg-gray-50 px-1.5 py-0.5 rounded">
-                        <span class="text-[8px] font-bold text-gray-400 mr-1">差:</span>
-                        <span class="text-xs font-black ${gapColor}">${gp > 0 && gp !== '--' ? '+' : ''}${gp}${gp !== '--' ? '%' : ''}</span>
-                    </div>
-                </div>
-                <div class="space-y-1">${bh}</div>
-            </div>`;
-        }); 
-        gh += '</div></div>'; 
-        h += gh;
-      }); 
-      c.innerHTML = h;
-    };
-
-    window.renderSelectors = () => {
-      const now = new Date();
-      const ws = $('week-pulldown'); 
-      if (ws) { 
-          ws.innerHTML = "";
-          window.appState.weeksData.forEach(w => { 
-              const deadline = new Date(w.start);
-              deadline.setDate(deadline.getDate() + 4); 
-              deadline.setHours(23, 59, 59, 999);
-              
-              let isDisabled = false;
-              let suffix = "";
-              
-              if (window.appState.currentMode === 'staff') {
-                  if (now > deadline) {
-                      isDisabled = true;
-                      suffix = " (期日超過)";
-                  } else if (now < w.start) {
-                      isDisabled = true;
-                      suffix = " (未来)";
-                  }
-              }
-              
-              if (window.appState.settings?.allowInputOutsidePeriod) {
-                  isDisabled = false;
-                  if (suffix) suffix = suffix.replace(')', ' - 制限解除中)');
-              }
-
-              if (isDisabled) {
-                  ws.innerHTML += `<option value="${w.label}" disabled>${w.label}${suffix}</option>`; 
-              } else {
-                  const endOfDay = new Date(w.end);
-                  endOfDay.setHours(23, 59, 59, 999);
-                  const isCurrent = now >= w.start && now <= endOfDay;
-                  ws.innerHTML += `<option value="${w.label}" ${isCurrent?'selected':''}>${w.label}${suffix}</option>`; 
-              }
-          }); 
-      }
-      
-      const ms = $('month-pulldown'); 
-      if (ms) { 
-          ms.innerHTML = "";
-          window.appState.monthsData.forEach(m => { 
-              const match = m.match(/(\d{4})年(\d{1,2})月度/);
-              let isDisabled = false;
-              let suffix = "";
-              let isCurrent = false;
-
-              if (match) {
-                  const y = parseInt(match[1], 10);
-                  const mon = parseInt(match[2], 10);
-                  const startOfMonth = new Date(y, mon - 1, 1);
-                  const deadline = new Date(y, mon, 0, 23, 59, 59, 999); 
-                  
-                  if (window.appState.currentMode === 'am') {
-                      if (now > deadline) {
-                          isDisabled = true;
-                          suffix = " (期日超過)";
-                      } else if (now < startOfMonth) {
-                          isDisabled = true;
-                          suffix = " (未来)";
-                      }
-                  } else if (window.appState.currentMode === 'qc') {
-                      if (now < startOfMonth) {
-                          isDisabled = true;
-                          suffix = " (未来)";
-                      }
-                  }
-
-                  if (window.appState.settings?.allowInputOutsidePeriod) {
-                      isDisabled = false;
-                      if (suffix) suffix = suffix.replace(')', ' - 制限解除中)');
-                  }
-
-                  isCurrent = now >= startOfMonth && now <= deadline;
-              }
-
-              if (isDisabled) {
-                  ms.innerHTML += `<option value="${m}" disabled>${m}${suffix}</option>`; 
-              } else {
-                  ms.innerHTML += `<option value="${m}" ${isCurrent?'selected':''}>${m}${suffix}</option>`; 
-              }
-          }); 
-      }
-      
-      const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
-      sU('week-pulldown-section', e => e.style.display = isM ? 'none' : 'block'); 
-      sU('month-pulldown-section', e => e.style.display = isM ? 'block' : 'none');
-      
-      sU('selector-title', e => e.innerText = window.appState.currentMode === 'am' ? "AM品質確認" : (window.appState.currentMode === 'qc' ? "QCチーム品質確認" : "事業所品質確認"));
-      sU('start-btn-main', e => e.className = `w-full py-5 ${window.appState.currentMode === 'qc' ? 'bg-emerald-500' : (window.appState.currentMode === 'am' ? 'bg-indigo-600' : 'brand-bg-pink')} text-white rounded-2xl font-black text-lg shadow-xl uppercase active:scale-95 transition-transform`);
-      
-      window.handleAreaFilterChange();
-    };
-
-    window.renderMasterList = () => { 
-        sU('office-count', e => e.innerText = window.appState.offices.length); 
-        const l = $('master-office-list'); 
-        if(!l) return; 
-        l.innerHTML = ''; 
-        window.appState.offices.sort((a,b) => {
-            if(a.area === b.area) return a.name.localeCompare(b.name);
-            return a.area.localeCompare(b.area);
-        }).forEach(o => { 
-            const isFixed = o.isFixed ? '<span class="bg-gray-100 text-gray-400 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold border">初期データ</span>' : '';
-            const delBtn = o.isFixed 
-                ? `<button disabled class="text-gray-300 cursor-not-allowed opacity-50"><i class="fa-solid fa-trash"></i></button>`
-                : `<button onclick="window.deleteMasterOffice('${o.name}')" class="text-red-400 hover:text-red-600 transition p-2 bg-red-50 hover:bg-red-100 rounded-lg"><i class="fa-solid fa-trash"></i></button>`;
-            
-            l.innerHTML += `
-            <tr class="border-b hover:bg-gray-50 transition">
-                <td class="p-3 font-bold text-gray-800">${o.corp}</td>
-                <td class="p-3">
-                    <div class="font-black text-gray-900">${o.name}${isFixed}</div>
-                    <div class="text-[9px] text-gray-400 mt-0.5">${o.type || '就労A型'}</div>
-                </td>
-                <td class="p-3"><span class="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-1 rounded text-[10px] font-bold">${o.area}</span></td>
-                <td class="p-3 text-center">${delBtn}</td>
-            </tr>`; 
-        }); 
-
-        const areaSelect = $('new-area');
-        if (areaSelect && areaSelect.options.length <= 1) {
-            areaSelect.innerHTML = '<option value="" disabled selected>エリア (AM) を選択</option>';
-            amList.forEach(a => {
-                areaSelect.innerHTML += `<option value="${a}">${a}</option>`;
-            });
-            areaSelect.innerHTML += `<option value="その他">その他</option>`;
-        }
-    };
   </script>
 </head>
 <body>
@@ -3289,7 +3636,6 @@
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // グローバルスコープにFirebaseの関数を公開
     window.collection = collection;
     window.doc = doc;
     window.setDoc = setDoc;
@@ -3407,7 +3753,6 @@
       setHist('team_qc_history', 'teamHistory', 'teamHistoryFull', 'month');
     }
 
-    // モジュール化されたFirebase処理をグローバルから呼び出せるように初期化
     connectCloud();
     window.addEventListener('DOMContentLoaded', () => { 
         setTimeout(window.hideMainLoader, 2000); 
