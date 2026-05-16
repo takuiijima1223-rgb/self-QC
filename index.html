@@ -838,7 +838,9 @@
                 deadline_date: "",
                 afterImages: [],
                 responsibility: "office",
-                relatedItemId: ""
+                relatedItemId: "",
+                resolved: false,
+                resolved_at: null
             });
         }
         window.renderIssues();
@@ -1678,22 +1680,10 @@
             filtered = filtered.filter(o => o.area === selA);
         }
 
-        const qcData = window.appState.teamHistoryFull || {};
-        const unreadOffices = new Set();
-        Object.keys(qcData).forEach(officeName => {
-            Object.values(qcData[officeName]).forEach(doc => {
-                if ((doc.comment || (doc.issues && doc.issues.length > 0)) && !doc.staff_checked) {
-                    unreadOffices.add(officeName);
-                }
-            });
-        });
-
         const currentVal = os.value;
         os.innerHTML = '<option value="" selected>- 新着一覧 / 事業所を選択 -</option>';
         filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(o => { 
-            const isUnread = unreadOffices.has(o.name);
-            const mark = isUnread ? ' 🔴未確認あり' : '';
-            os.innerHTML += `<option value="${o.name}">【${o.corp}】 ${o.name}${mark}</option>`; 
+            os.innerHTML += `<option value="${o.name}">【${o.corp}】 ${o.name}</option>`; 
         });
 
         if (currentVal && filtered.find(o => o.name === currentVal)) {
@@ -1773,8 +1763,7 @@
                 
                 recentEntries.forEach(entry => {
                     const date = new Date(entry.timestamp).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    const isStaffChecked = entry.staff_checked;
-                    const badge = !isStaffChecked ? `<span class="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm ml-2 animate-pulse">未確認</span>` : '';
+                    const badge = `<span class="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm ml-2 animate-pulse">新着</span>`;
                     let issueCount = entry.issues ? entry.issues.length : 0;
                     let issueBadge = issueCount > 0 ? `<span class="text-[9px] text-red-600 bg-red-100 px-1.5 rounded border border-red-200 ml-1">指摘 ${issueCount}件</span>` : '';
 
@@ -1828,15 +1817,6 @@
             const scoreColor = e.score >= 80 ? 'text-emerald-500' : (e.score >= 50 ? 'text-yellow-500' : 'text-red-500');
             const generalComment = e.comment ? e.comment.replace(/\n/g, '<br>') : '';
 
-            const staffChecked = e.staff_checked || false;
-            const amChecked = e.am_checked || false;
-
-            const staffBtnClass = staffChecked ? "bg-pink-100 text-pink-600 border-pink-200" : "bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100";
-            const amBtnClass = amChecked ? "bg-indigo-100 text-indigo-600 border-indigo-200" : "bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100";
-
-            const staffIcon = staffChecked ? '<i class="fa-solid fa-check-circle mr-1"></i>' : '<i class="fa-regular fa-circle mr-1"></i>';
-            const amIcon = amChecked ? '<i class="fa-solid fa-check-circle mr-1"></i>' : '<i class="fa-regular fa-circle mr-1"></i>';
-
             let gpBonusBadge = '';
             if (e.gp_bonus && e.gp_bonus > 0) {
                 gpBonusBadge = `<span class="text-[10px] font-black text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full ml-2 border border-yellow-200 shadow-sm"><i class="fa-solid fa-arrow-up mr-0.5"></i>GP加点 +${e.gp_bonus}pt</span>`;
@@ -1869,9 +1849,65 @@
                         ? `<span class="text-[9px] text-gray-500 ml-1"><i class="fa-solid fa-link mr-0.5"></i>関連: ${window.getCheckItemName(issue.relatedItemId)}</span>`
                         : '';
                     
+                    const isResolved = issue.resolved || false;
+                    
                     let deadlineStr = '';
                     if (issue.deadline_date) {
-                        deadlineStr = `<div class="mb-1"><span class="text-[10px] font-black text-orange-600 bg-orange-50 border-orange-200 px-2 py-0.5 rounded border inline-block"><i class="fa-regular fa-calendar-check mr-1"></i>改善期限: ${issue.deadline_date.replace(/-/g, '/')}</span></div>`;
+                        let overBadge = '';
+                        if (!isResolved) {
+                            const dDate = new Date(issue.deadline_date);
+                            dDate.setHours(23,59,59,999);
+                            const now = new Date();
+                            if (now > dDate) {
+                                const diffDays = Math.ceil((now - dDate) / (1000 * 60 * 60 * 24));
+                                overBadge = `<span class="ml-2 text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse">${diffDays}日 超過中</span>`;
+                            } else if (dDate.toLocaleDateString() === now.toLocaleDateString()) {
+                                overBadge = `<span class="ml-2 text-[9px] font-black bg-yellow-500 text-white px-1.5 py-0.5 rounded shadow-sm">本日期限</span>`;
+                            }
+                        }
+                        deadlineStr = `<div class="mb-1.5 flex items-center"><span class="text-[10px] font-black text-orange-600 bg-orange-50 border-orange-200 px-2 py-0.5 rounded border inline-flex items-center"><i class="fa-regular fa-calendar-check mr-1"></i>改善期限: ${issue.deadline_date.replace(/-/g, '/')}</span>${overBadge}</div>`;
+                    }
+                    
+                    let resolutionSection = '';
+                    
+                    if (isResolved) {
+                        const resolvedAt = issue.resolved_at ? new Date(issue.resolved_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                        
+                        let speedBadge = '';
+                        if (issue.deadline_date && issue.resolved_at) {
+                            const dDate = new Date(issue.deadline_date);
+                            dDate.setHours(0,0,0,0);
+                            const rDate = new Date(issue.resolved_at);
+                            rDate.setHours(0,0,0,0);
+                            
+                            const diffDays = Math.round((rDate - dDate) / (1000 * 60 * 60 * 24));
+                            
+                            if (diffDays === 0) {
+                                speedBadge = `<span class="ml-2 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 font-bold">期限内 (当日完了)</span>`;
+                            } else if (diffDays < 0) {
+                                speedBadge = `<span class="ml-2 text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 font-bold">期限内 (${Math.abs(diffDays)}日前倒し)</span>`;
+                            } else {
+                                speedBadge = `<span class="ml-2 text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded border border-red-200 font-bold">期限超過 (${diffDays}日遅れ)</span>`;
+                            }
+                        }
+
+                        resolutionSection = `
+                            <div class="mt-3 flex items-center justify-between bg-emerald-50 p-2 sm:p-2.5 rounded-lg border border-emerald-200 shadow-sm flex-wrap gap-2">
+                                <div class="flex items-center flex-wrap">
+                                    <div class="text-emerald-700 text-[10px] font-black flex items-center mr-2"><i class="fa-solid fa-check-circle mr-1.5 text-emerald-500 text-sm"></i>事業所にて改善完了</div>
+                                    <div class="flex items-center mt-1 sm:mt-0"><span class="text-emerald-600 font-bold text-[10px] bg-white px-1.5 py-0.5 rounded border border-emerald-100 shadow-sm">${resolvedAt}</span>${speedBadge}</div>
+                                </div>
+                                <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, true); event.stopPropagation();" class="text-[9px] text-emerald-600 hover:text-emerald-800 underline font-bold px-2 whitespace-nowrap">未完了に戻す</button>
+                            </div>
+                        `;
+                    } else {
+                        resolutionSection = `
+                            <div class="mt-3 flex justify-end">
+                                <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, false); event.stopPropagation();" class="flex items-center bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-pink-200 hover:border-pink-300 shadow-sm">
+                                    <i class="fa-regular fa-square-check mr-1.5 text-lg"></i>事業所が完了チェックをする
+                                </button>
+                            </div>
+                        `;
                     }
                     
                     issuesSection += `
@@ -1879,7 +1915,7 @@
                         <div class="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 relative">
                             <img src="${issue.beforeImage}" class="rounded-lg w-full h-full object-cover border shadow-sm cursor-pointer hover:opacity-80 transition" onclick="window.openImageModal('${issue.beforeImage}')">
                         </div>
-                        <div class="flex-1 min-w-0">
+                        <div class="flex-1 min-w-0 flex flex-col">
                             <div class="flex items-center flex-wrap gap-1 mb-1.5">
                                 <span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded font-black shadow">指摘 ${numStr}</span>
                                 ${respBadge}
@@ -1887,6 +1923,7 @@
                             ${relatedItemText ? `<div class="mb-1.5 truncate w-full">${relatedItemText}</div>` : ''}
                             ${deadlineStr}
                             <div class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap mt-1">${issueComment}</div>
+                            <div class="mt-auto">${resolutionSection}</div>
                         </div>
                     </div>`;
                 });
@@ -1929,20 +1966,35 @@
                 
                 ${issuesSection}
                 ${qcApprovalSection}
-                
-                <div class="mt-4 pt-4 border-t flex gap-2 justify-end">
-                    <button onclick="window.toggleFeedbackCheck('${e.office}', '${e.month}', 'staff_checked', ${staffChecked})" class="flex items-center px-3 py-1.5 rounded-lg text-[10px] font-black transition-colors border ${staffBtnClass}">
-                        ${staffIcon}事業所 確認
-                    </button>
-                    <button onclick="window.toggleFeedbackCheck('${e.office}', '${e.month}', 'am_checked', ${amChecked})" class="flex items-center px-3 py-1.5 rounded-lg text-[10px] font-black transition-colors border ${amBtnClass}">
-                        ${amIcon}AM 確認
-                    </button>
-                </div>
             </div>
             `;
         });
 
         c.innerHTML = html;
+    };
+
+    window.toggleIssueResolution = async (office, month, issueIndex, currentStatus) => {
+        if (!window.appState.user) return window.showGlobalToast("認証待ちです");
+        const docId = `${office}_${month}`;
+        
+        try {
+            const docData = window.appState.teamHistoryFull[office][month];
+            if (!docData || !docData.issues) return;
+            
+            const updatedIssues = [...docData.issues];
+            if (updatedIssues[issueIndex]) {
+                updatedIssues[issueIndex].resolved = !currentStatus;
+                updatedIssues[issueIndex].resolved_at = !currentStatus ? new Date().toISOString() : null;
+            }
+            
+            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                issues: updatedIssues
+            });
+            window.showGlobalToast(currentStatus ? "未完了に戻しました" : "改善完了にしました！");
+        } catch(e) {
+            console.error(e);
+            window.showGlobalToast("エラーが発生しました");
+        }
     };
 
     window.renderSelectors = () => {
@@ -2166,19 +2218,6 @@
         }
     };
 
-    window.toggleFeedbackCheck = async (office, month, field, currentValue) => {
-        const docId = `${office}_${month}`;
-        try {
-            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                [field]: !currentValue
-            });
-            window.showGlobalToast("確認状態を更新しました");
-        } catch(e) {
-            console.error(e);
-            window.showGlobalToast("エラーが発生しました");
-        }
-    };
-
     window.submitData = async () => {
         if (!window.appState.user) return window.showGlobalToast("認証待ちです。少し待ってから再度お試しください。");
         
@@ -2249,8 +2288,6 @@
             data.gp_bonus = gpBonus;
             score = Math.min(100, score + gpBonus);
             data.score = score;
-            data.staff_checked = false;
-            data.am_checked = false;
         }
 
         try {
