@@ -47,7 +47,7 @@
     // ▼ GAS(Google Apps Script)のWebアプリURL ▼
     // スプレッドシート連携用のURLをここに貼り付けます
     // ==========================================
-    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzqzDW5PFbzYW2fdW-fc-wecGF4e8vOoYHr7srAx9SsDlOuB85H_HYJGWNYTYyLtxoa/exec"; 
+    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxSKBHrmI2TaYuZTplpSl-t0Bq-2JzV2eej81YtusnLM5R431jezxOB4ET6JswJtND5/exec"; 
 
     window.getNowLocalStr = () => {
         const d = new Date();
@@ -133,7 +133,8 @@
         carImages: { front: null, back: null, inside1: null, inside2: null },
         officeImages: { entrance: null, workspace: null, interview: null, office: null },
         settings: {}, rules: defaultRules, isRulesEditMode: false,
-        masterAuthenticated: false, amAuthenticated: false, qcAuthenticated: false, pendingAuthTarget: null
+        masterAuthenticated: false, amAuthenticated: false, qcAuthenticated: false, pendingAuthTarget: null,
+        activeUploads: 0
     };
     
     const getCircledNumber = (index) => {
@@ -733,13 +734,13 @@
                 <div class="border-t pt-4">
                     <label class="text-[10px] font-black text-red-500 flex justify-between items-end mb-3">
                         <span><i class="fa-solid fa-camera mr-1"></i>指摘事項 (写真と改善要求)</span>
-                        <span id="issue-count" class="text-gray-400 font-bold">0 / 20件</span>
+                        <span id="issue-count" class="text-gray-400 font-bold">0 / 5件</span>
                     </label>
                     <div id="issues-container" class="space-y-3 mb-4"></div>
                     <div id="issue-dropzone" class="border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-100 transition" onclick="document.getElementById('issue-image-input').click()">
                         <input type="file" id="issue-image-input" accept="image/*" multiple class="hidden" onchange="window.handleIssueImageSelect(event)">
                         <i class="fa-solid fa-images text-3xl text-gray-300 mb-2"></i>
-                        <p class="text-[11px] text-gray-500 font-bold">タップまたは写真をドロップして指摘を追加<br>(最大20件)</p>
+                        <p class="text-[11px] text-gray-500 font-bold">タップまたは写真をドロップして指摘を追加<br>(最大5件)</p>
                     </div>
                 </div>
             </div>
@@ -767,6 +768,58 @@
       }
     };
 
+    window.uploadImageToDriveAsync = async (base64, folderType, filenamePrefix, callback) => {
+        if (!GAS_WEBHOOK_URL) {
+            callback(base64);
+            return;
+        }
+        
+        window.appState.activeUploads = (window.appState.activeUploads || 0) + 1;
+        window.updateProgressDisplay();
+        
+        try {
+            const timestamp = new Date().getTime();
+            const officeName = window.appState.office || "Unknown";
+            const filename = `${officeName}_${filenamePrefix}_${timestamp}.jpg`;
+            
+            const payload = {
+                action: "upload_image",
+                folderType: folderType,
+                filename: filename,
+                base64: base64
+            };
+            
+            const response = await fetch(GAS_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            if (result.status === 'success') {
+                callback(result.url);
+            } else {
+                console.warn("GAS Upload Error:", result);
+                if (result.message && result.message.includes('権限')) {
+                    window.showGlobalToast("GAS側のDrive権限エラーです");
+                } else if (result.message && (result.message.includes('アクセスが拒否されました') || result.message.includes('Access denied'))) {
+                    window.showGlobalToast("GASの実行権限エラー: 「自分」として実行するようにデプロイ設定を変更してください");
+                } else {
+                    window.showGlobalToast("保存エラー: " + (result.message || "不明なエラー"));
+                }
+                callback(base64); 
+            }
+        } catch (e) {
+            console.warn("GAS Fetch Warn:", e);
+            callback(base64); 
+        } finally {
+            window.appState.activeUploads = Math.max(0, window.appState.activeUploads - 1);
+            window.updateProgressDisplay();
+        }
+    };
+
     window.handleOfficeImageSelect = async (key, e) => {
         const file = e.target.files?.[0];
         if(!file) return;
@@ -777,9 +830,15 @@
             window.renderOfficeImagePreviews();
             window.updateProgressDisplay();
             sU(`office-input-${key}`, el => el.value = '');
-            window.showGlobalToast("写真をセットしました");
+            
+            window.showGlobalToast("写真をバックグラウンドで保存中...");
+            window.uploadImageToDriveAsync(compressed, "office", `事業所_${key}`, (url) => {
+                if(window.appState.officeImages[key] === compressed) {
+                    window.appState.officeImages[key] = url;
+                }
+            });
         } catch (error) {
-            console.error(error);
+            console.warn("Image Process Warn:", error);
             window.showGlobalToast("画像の処理に失敗しました");
             sU(`office-input-${key}`, el => el.value = '');
         }
@@ -820,9 +879,15 @@
             window.renderCarImagePreviews();
             window.updateProgressDisplay();
             sU(`car-input-${key}`, el => el.value = '');
-            window.showGlobalToast("写真をセットしました");
+            
+            window.showGlobalToast("写真をバックグラウンドで保存中...");
+            window.uploadImageToDriveAsync(compressed, "car", `社用車_${key}`, (url) => {
+                if(window.appState.carImages[key] === compressed) {
+                    window.appState.carImages[key] = url;
+                }
+            });
         } catch (error) {
-            console.error(error);
+            console.warn("Image Process Warn:", error);
             window.showGlobalToast("画像の処理に失敗しました");
             sU(`car-input-${key}`, el => el.value = '');
         }
@@ -859,17 +924,18 @@
         
         const currentCount = window.appState.issues.length;
         let addCount = files.length;
-        if (currentCount + addCount > 20) {
-            window.showGlobalToast("指摘事項は最大20件までです");
-            addCount = 20 - currentCount;
+        if (currentCount + addCount > 5) {
+            window.showGlobalToast("指摘事項は最大5件までです");
+            addCount = 5 - currentCount;
         }
         if (addCount <= 0) return;
 
-        window.showGlobalToast("写真を読み込み中...");
+        window.showGlobalToast("写真をバックグラウンドで保存中...");
         for (let i = 0; i < addCount; i++) {
             const compressed = await window.compressImage(files[i]);
+            const issueId = Date.now() + i;
             window.appState.issues.push({
-                id: Date.now() + i,
+                id: issueId,
                 beforeImage: compressed,
                 comment: "",
                 deadline_date: "",
@@ -879,8 +945,15 @@
                 resolved: false,
                 resolved_at: null
             });
+            window.renderIssues();
+            
+            window.uploadImageToDriveAsync(compressed, "qc_issue", `QC指摘`, (url) => {
+                const targetIssue = window.appState.issues.find(iss => iss.id === issueId);
+                if (targetIssue && targetIssue.beforeImage === compressed) {
+                    targetIssue.beforeImage = url;
+                }
+            });
         }
-        window.renderIssues();
         sU('issue-image-input', el => el.value = '');
     };
 
@@ -890,14 +963,83 @@
         const countLabel = $('issue-count');
         const issues = window.appState.issues || [];
         
-        if (countLabel) countLabel.innerText = `${issues.length} / 20件`;
+        if (countLabel) countLabel.innerText = `${issues.length} / 5件`;
         
         if (issues.length > 0) {
             let html = '';
             issues.forEach((issue, idx) => {
                 const numStr = getCircledNumber(idx);
+                
+                let deadlineStr = '';
+                const isResolved = issue.resolved || false;
+                
+                if (issue.deadline_date) {
+                    let overBadge = '';
+                    if (!isResolved) {
+                        const dDate = new Date(issue.deadline_date);
+                        dDate.setHours(23,59,59,999);
+                        const now = new Date();
+                        if (now > dDate) {
+                            const diffDays = Math.ceil((now - dDate) / (1000 * 60 * 60 * 24));
+                            overBadge = `<span class="ml-2 text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse">${diffDays}日 超過中</span>`;
+                        } else if (dDate.toLocaleDateString() === now.toLocaleDateString()) {
+                            overBadge = `<span class="ml-2 text-[9px] font-black bg-yellow-500 text-white px-1.5 py-0.5 rounded shadow-sm">本日期限</span>`;
+                        }
+                    }
+                    deadlineStr = `<div class="mb-1.5 flex items-center"><span class="text-[10px] font-black text-orange-600 bg-orange-50 border-orange-200 px-2 py-0.5 rounded border inline-flex items-center"><i class="fa-regular fa-calendar-check mr-1"></i>改善期限: ${issue.deadline_date.replace(/-/g, '/')}</span>${overBadge}</div>`;
+                }
+
+                let resolutionSection = '';
+                if (isResolved) {
+                    const resolvedAt = issue.resolved_at ? new Date(issue.resolved_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                    
+                    let speedBadge = '';
+                    if (issue.deadline_date && issue.resolved_at) {
+                        const dDate = new Date(issue.deadline_date);
+                        dDate.setHours(0,0,0,0);
+                        const rDate = new Date(issue.resolved_at);
+                        rDate.setHours(0,0,0,0);
+                        
+                        const diffDays = Math.round((rDate - dDate) / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays === 0) {
+                            speedBadge = `<span class="ml-2 text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 font-bold">期限内 (当日完了)</span>`;
+                        } else if (diffDays < 0) {
+                            speedBadge = `<span class="ml-2 text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 font-bold">期限内 (${Math.abs(diffDays)}日前倒し)</span>`;
+                        } else {
+                            speedBadge = `<span class="ml-2 text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded border border-red-200 font-bold">期限超過 (${diffDays}日遅れ)</span>`;
+                        }
+                    }
+
+                    resolutionSection = `
+                        <div class="mt-3 flex items-center justify-between bg-emerald-50 p-2 sm:p-2.5 rounded-lg border border-emerald-200 shadow-sm flex-wrap gap-2">
+                            <div class="flex items-center flex-wrap">
+                                <div class="text-emerald-700 text-[10px] font-black flex items-center mr-2"><i class="fa-solid fa-check-circle mr-1.5 text-emerald-500 text-sm"></i>事業所にて改善完了</div>
+                                <div class="flex items-center mt-1 sm:mt-0"><span class="text-emerald-600 font-bold text-[10px] bg-white px-1.5 py-0.5 rounded border border-emerald-100 shadow-sm">${resolvedAt}</span>${speedBadge}</div>
+                            </div>
+                            <button onclick="window.toggleIssueResolution('${window.appState.office}', '${window.appState.inputMonth}', ${idx}, true); event.stopPropagation();" class="text-[9px] text-emerald-600 hover:text-emerald-800 underline font-bold px-2 whitespace-nowrap">未完了に戻す</button>
+                        </div>
+                    `;
+                } else {
+                    resolutionSection = `
+                        <div class="mt-3 flex justify-end">
+                            <button onclick="window.toggleIssueResolution('${window.appState.office}', '${window.appState.inputMonth}', ${idx}, false); event.stopPropagation();" class="flex items-center bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-pink-200 hover:border-pink-300 shadow-sm">
+                                <i class="fa-regular fa-square-check mr-1.5 text-lg"></i>事業所が完了チェックをする
+                            </button>
+                        </div>
+                    `;
+                }
+
+                const respBadge = issue.responsibility === 'hq' 
+                    ? `<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black border border-indigo-200 ml-1">本社対応</span>`
+                    : `<span class="text-[9px] bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded font-black border border-pink-200 ml-1">事業所対応</span>`;
+
+                const relatedItemText = issue.relatedItemId 
+                    ? `<span class="text-[9px] text-gray-500 ml-1"><i class="fa-solid fa-link mr-0.5"></i>関連: ${window.getCheckItemName(issue.relatedItemId)}</span>`
+                    : '';
+
                 html += `
-                <div class="flex gap-3 bg-gray-50 p-3 rounded-xl border">
+                <div class="flex gap-3 bg-gray-50 p-3 rounded-xl border mb-3">
                     <div class="relative w-24 h-24 flex-shrink-0">
                         <img src="${issue.beforeImage}" class="rounded-lg w-full h-full object-cover shadow-sm border cursor-pointer hover:opacity-80 transition" onclick="window.openImageModal('${issue.beforeImage}')">
                         <button class="absolute -top-2 -right-2 bg-gray-900 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-500 transition text-xs shadow z-10" onclick="window.removeIssue(${idx})">
@@ -906,7 +1048,7 @@
                         <span class="absolute top-1 left-1 bg-red-500 text-white text-[10px] px-1.5 rounded font-black shadow z-10">指摘 ${numStr}</span>
                     </div>
                     <div class="flex-1 flex flex-col gap-2 min-w-0">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center flex-wrap gap-1">
                             <select onchange="window.updateIssueResponsibility(${idx}, this.value)" class="text-[10px] border rounded p-1 font-bold outline-none ${issue.responsibility === 'hq' ? 'text-indigo-700 border-indigo-300 bg-indigo-50' : 'text-pink-700 border-pink-300 bg-pink-50'}">
                                 <option value="office" ${issue.responsibility !== 'hq' ? 'selected' : ''}>事業所対応</option>
                                 <option value="hq" ${issue.responsibility === 'hq' ? 'selected' : ''}>本社対応</option>
@@ -917,16 +1059,14 @@
                             </select>
                         </div>
                         <textarea class="w-full flex-1 border rounded-lg p-2 text-xs font-bold bg-white focus:border-emerald-500 outline-none resize-none" placeholder="指摘事項 ${numStr} の具体的な内容や改善コメント..." onchange="window.updateIssueComment(${idx}, this.value)">${issue.comment}</textarea>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-bold text-red-500"><i class="fa-regular fa-calendar-check mr-1"></i>改善期限:</span>
-                            <input type="date" class="text-[10px] border rounded p-1 bg-white text-gray-700" value="${issue.deadline_date || ''}" onchange="window.updateIssueDeadline(${idx}, this.value)">
-                        </div>
+                        ${deadlineStr}
+                        <!-- input mode specific view -> hide resolution btn in input mode -->
                     </div>
                 </div>
                 `;
             });
             container.innerHTML = html;
-            if (issues.length >= 20) dropzone.classList.add('hidden');
+            if (issues.length >= 5) dropzone.classList.add('hidden');
             else dropzone.classList.remove('hidden');
         } else {
             container.innerHTML = '';
@@ -1046,7 +1186,11 @@
       sU('progress-text', e => e.innerText = pct+"%"); 
       const b = $('submit-btn');
       if (b) {
-        if (pct >= 100) { 
+        if (window.appState.activeUploads > 0) {
+          b.disabled = true; 
+          b.className = "w-full py-4 bg-gray-400 text-white rounded-xl font-black shadow-xl"; 
+          b.innerText = `写真をアップロード中... (${window.appState.activeUploads}件)`; 
+        } else if (pct >= 100) { 
           b.disabled = false; 
           let bc = 'brand-bg-pink'; 
           if (window.appState.currentMode === 'am') bc = 'bg-indigo-600'; 
@@ -1063,9 +1207,8 @@
 
     (function() {
       const res = []; 
-      // 査定期間に合わせて3月始まりに変更
-      let s = new Date(2026, 2, 2); // 2026年3月2日(月) 始まり
-      const e = new Date(2027, 2, 1); // 2027年2月28日の週まで
+      let s = new Date(2026, 2, 2); 
+      const e = new Date(2027, 2, 1); 
       let cm = 3, wn = 1;
       
       while (s < e) {
@@ -1125,7 +1268,7 @@
             window.appState.isRulesEditMode = false;
             window.renderRules();
         } catch(e) {
-            console.error(e);
+            console.warn("Rules Save Warn:", e);
             window.showGlobalToast("保存に失敗しました");
         }
     };
@@ -2029,7 +2172,7 @@
             });
             window.showGlobalToast(currentStatus ? "未完了に戻しました" : "改善完了にしました！");
         } catch(e) {
-            console.error(e);
+            console.warn("Update Warn:", e);
             window.showGlobalToast("エラーが発生しました");
         }
     };
@@ -2109,7 +2252,7 @@
             await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name), newOfficeData);
             window.showGlobalToast(`エリアを変更しました`);
         } catch(e) {
-            console.error(e);
+            console.warn("Update Warn:", e);
             window.showGlobalToast("エラーが発生しました");
             window.renderMasterList();
         }
@@ -2131,7 +2274,7 @@
             document.getElementById('new-name').value = "";
             document.getElementById('new-area').value = "";
         } catch(e) {
-            console.error(e);
+            console.warn("Add Warn:", e);
             window.showGlobalToast("エラーが発生しました");
         }
     };
@@ -2141,7 +2284,7 @@
             await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name));
             window.showGlobalToast("削除しました");
         } catch(e) {
-            console.error(e);
+            console.warn("Delete Warn:", e);
             window.showGlobalToast("エラーが発生しました");
         }
     };
@@ -2180,7 +2323,7 @@
                 }
                 window.showGlobalToast("リセットが完了しました");
             } catch(e) {
-                console.error(e);
+                console.warn("Reset Warn:", e);
                 window.showGlobalToast("削除中にエラーが発生しました");
             }
         };
@@ -2206,7 +2349,6 @@
         const toggleCar = document.getElementById('toggle-car-check');
         const toggleCarText = document.getElementById('toggle-car-check-text');
         if (toggleCar && toggleCarText) {
-            // デフォルトはON (true) と想定
             toggleCar.checked = window.appState.settings?.requireCarImages !== false; 
             toggleCarText.innerText = toggleCar.checked ? 'ON' : 'OFF';
             toggleCarText.className = `ml-3 text-sm font-black ${toggleCar.checked ? 'text-blue-600' : 'text-gray-500'}`;
@@ -2222,7 +2364,7 @@
             });
             window.showGlobalToast(`期間制限を${checked ? '解除' : '有効に'}しました`);
         } catch(e) {
-            console.error(e);
+            console.warn("Settings Warn:", e);
             window.showGlobalToast("設定の保存に失敗しました");
         }
     };
@@ -2236,7 +2378,7 @@
             });
             window.showGlobalToast("設定を保存しました");
         } catch(e) {
-            console.error(e);
+            console.warn("Settings Warn:", e);
             window.showGlobalToast("設定の保存に失敗しました");
         }
     };
@@ -2250,7 +2392,7 @@
             });
             window.showGlobalToast("設定を保存しました");
         } catch(e) {
-            console.error(e);
+            console.warn("Settings Warn:", e);
             window.showGlobalToast("設定の保存に失敗しました");
         }
     };
@@ -2345,6 +2487,9 @@
                 const officeInfo = window.appState.offices.find(o => o.name === office);
                 const areaName = officeInfo ? officeInfo.area : "不明";
 
+                // 指摘事項のコメントを抽出（最大5件）
+                const issuesComments = (window.appState.issues || []).map(i => i.comment || "");
+
                 const gasData = {
                     timestamp: new Date().toISOString(),
                     team: teamName,
@@ -2353,20 +2498,20 @@
                     office: office,
                     score: score,
                     comment: data.comment || "", // QCフィードバック総評
+                    issuesComments: issuesComments, // 指摘事項コメント（配列）
                     answers: answers // 質問の回答データ(2,1,0,-1)
                 };
                 
                 fetch(GAS_WEBHOOK_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'text/plain'
                     },
                     body: JSON.stringify(gasData)
                 }).then(() => {
                     console.log("GAS転送完了");
                 }).catch(e => {
-                    console.error("GAS転送エラー:", e);
+                    console.warn("GAS転送Warn:", e);
                 });
             }
             
@@ -2375,7 +2520,7 @@
                 window.switchTab('home');
             }, 1000);
         } catch (e) {
-            console.error(e);
+            console.warn("Submit Warn:", e);
             window.showGlobalToast("送信に失敗しました");
         }
     };
@@ -2704,7 +2849,7 @@
             } 
         });
       } catch (e) { 
-          console.error(e);
+          console.warn("Init Warn:", e);
           window.hideMainLoader(); 
       }
     }
@@ -2719,7 +2864,7 @@
         if (window.renderSelectors) window.renderSelectors(); 
         window.hideMainLoader();
       }, e => {
-          console.error(e);
+          console.warn("Offices Sync Warn:", e);
           window.hideMainLoader();
       });
 
@@ -2737,7 +2882,7 @@
               if (window.renderRankingSelectors) window.renderRankingSelectors();
               if (window.renderRankingList) window.renderRankingList();
           }
-      }, e => console.error(e));
+      }, e => console.warn("Settings Sync Warn:", e));
 
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'rules'), d => {
           if (d.exists()) {
@@ -2748,7 +2893,7 @@
           if (window.appState.activeTab === 'rules') {
               if (window.renderRules) window.renderRules();
           }
-      }, e => console.error(e));
+      }, e => console.warn("Rules Sync Warn:", e));
       
       const setHist = (cName, hKey, fKey, lKey) => {
         onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', cName), s => {
@@ -2767,7 +2912,7 @@
           } else if (st.activeTab === 'ranking') {
               if (window.renderRankingList) window.renderRankingList();
           }
-        }, e => console.error(e));
+        }, e => console.warn("Hist Sync Warn:", e));
       };
       
       setHist('qc_history', 'history', 'historyFull', 'week'); 
