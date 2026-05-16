@@ -164,13 +164,9 @@
     const amCheckItems = [
       {cat:"書類・法令チェック（監査・コンプライアンス）",items:[
         {id:'am_1',t:"個別支援計画の期限",d:"【基準】全利用者の計画書が有効期限内であり、署名・捺印等の形式不備が一切ないこと<br>【確認】全利用者の計画書ファイル（原案・本案の日付確認）<br><span class='text-red-400 font-bold'>【リスク: 報酬返還】運営基準違反となり、実地指導で多額の返金を求められる最大のリスク</span>"},
-        {id:'am_2',t:"モニタリング実施",d:"【基準】当月対象者全員に対し、面談実施・記録作成・関係機関への報告が完了していること<br>【確認】モニタリング記録・報告書（実施日・報告日の確認）<br><span class='text-red-400 font-bold'>【リスク: 指導是正】支援プロセスが形骸化しているとみなされ、行政から強い指導を受ける</span>"},
-        {id:'am_3',t:"実績記録票と日報の整合",d:"【基準】「実績記録票」の提供時間と「日報」の記録時間が、1分単位で完全に一致していること<br>【確認】サービス提供実績記録票、業務日報・ケース記録<br><span class='text-red-400 font-bold'>【リスク: 不正請求認定】架空請求を疑われ、監査での指定取り消しや営業停止処分の原因となる</span>"},
+        {id:'am_2',t:"モニタリング実施",d:"【基準】当月対象者全員に対し、面談実施・記録作成・関係機関への報告が完了していること<br>【確認】当月分、または前月分で確認する。モニタリング記録・報告書（実施日・報告日の確認）<br><span class='text-red-400 font-bold'>【リスク: 指導是正】支援プロセスが形骸化しているとみなされ、行政から強い指導を受ける</span>"},
+        {id:'am_3',t:"実績記録票と日報の整合",d:"【基準】「実績記録票」の提供時間と「日報」の記録時間が、1分単位で完全に一致していること<br>【確認】当月分、または前月分で確認する。サービス提供実績記録票、業務日報・ケース記録<br><span class='text-red-400 font-bold'>【リスク: 不正請求認定】架空請求を疑われ、監査での指定取り消しや営業停止処分の原因となる</span>"},
         {id:'am_6',t:"帳票管理",d:"【基準】実地指導も踏まえ、必要な書類が準備出来ており、すぐに取り出せるようにしているか<br>【確認】ルール通りに書類整理されているか、キレイな状態か<br><span class='text-red-400 font-bold'>【リスク: 重大事故・責任】実施指導での指摘、指導、減算、事業所の運営体制責任</span>"}
-      ]},
-      {cat:"実績・運営チェック",items:[
-        {id:'am_op_1',t:"生産活動/収支",d:"【基準】月次売上・粗利目標を達成し、利用者の工賃/賃金を満額支払える原資が確保されていること<br>【確認】月次損益表・売上管理表、生産日報<br><span class='text-red-400 font-bold'>【リスク: 経営悪化】赤字が続き、工賃未払いや事業所の閉鎖に追い込まれる</span>"},
-        {id:'am_op_3',t:"利用者の稼働率",d:"【基準】定員に対する利用率が目標通りであり、長期欠席者への連絡・フォロー記録があること<br>【確認】出席簿・契約者リスト、支援記録（欠席対応）<br><span class='text-red-400 font-bold'>【リスク: 収益低下】稼働率低下により事業収益が悪化し、固定費を回収できなくなる</span>"}
       ]},
       {cat:"印象評価（組織風土・接遇）",items:[
         {id:'am_imp_1',t:"挨拶・活気（聴覚）",d:"【基準】明るく元気な挨拶があり、職員同士の私語や、利用者への威圧的/子ども扱いする言葉がないこと。<br>【確認】入室時の挨拶、職員間の会話・言葉遣い<br><span class='text-red-400 font-bold'>【リスク: 虐待の温床】閉鎖的で暗い職場は、心理的安全性を下げ、虐待やハラスメントを誘発する</span>"},
@@ -1028,28 +1024,29 @@
 
     (function() {
       const res = []; 
-      let s = new Date(2026, 2, 30); 
-      const e = new Date(2027, 3, 4); 
-      let cm = 4, wn = 1;
+      // 査定期間に合わせて3月始まりに変更
+      let s = new Date(2026, 2, 2); // 2026年3月2日(月) 始まり
+      const e = new Date(2027, 2, 1); // 2027年2月28日の週まで
+      let cm = 3, wn = 1;
       
       while (s < e) {
         let end = new Date(s); 
         end.setDate(end.getDate() + 6); 
         const sm = s.getMonth() + 1; 
-        let lm = (s.getFullYear() === 2026 && sm === 3) ? 4 : sm;
         
+        let lm = sm;
         if (lm !== cm) { cm = lm; wn = 1; } 
         
         let ns = new Date(s); 
         ns.setDate(ns.getDate() + 7); 
-        const isLW = lm !== ((ns.getFullYear() === 2026 && (ns.getMonth() + 1) === 3) ? 4 : ns.getMonth() + 1);
+        const isLW = lm !== (ns.getMonth() + 1);
         
         res.push({ 
             label: lm+"月"+wn+"W ("+(sm+"/"+s.getDate()+"～"+(end.getMonth()+1)+"/"+end.getDate())+")", 
             start: new Date(s), 
             end: new Date(end), 
             isLastWeekOfMonth: isLW, 
-            monthStr: `${lm <= 3 ? 2027 : 2026}年${lm}月度` 
+            monthStr: `${s.getFullYear()}年${lm}月度` 
         });
         
         s.setDate(s.getDate() + 7); 
@@ -1057,8 +1054,8 @@
       }
       window.appState.weeksData = res;
       window.appState.monthsData = [
-          { m: 4, y: 2026 }, { m: 5, y: 2026 }, { m: 6, y: 2026 }, { m: 7, y: 2026 }, { m: 8, y: 2026 }, { m: 9, y: 2026 }, 
-          { m: 10, y: 2026 }, { m: 11, y: 2026 }, { m: 12, y: 2026 }, { m: 1, y: 2027 }, { m: 2, y: 2027 }, { m: 3, y: 2027 }
+          { m: 3, y: 2026 }, { m: 4, y: 2026 }, { m: 5, y: 2026 }, { m: 6, y: 2026 }, { m: 7, y: 2026 }, { m: 8, y: 2026 }, 
+          { m: 9, y: 2026 }, { m: 10, y: 2026 }, { m: 11, y: 2026 }, { m: 12, y: 2026 }, { m: 1, y: 2027 }, { m: 2, y: 2027 }
       ].map(i => `${i.y}年${i.m}月度`);
     })();
 
@@ -1244,6 +1241,17 @@
         if (ms) {
             if (ms.options.length === 0) {
                 ms.innerHTML = '<option value="all" selected>全期間 (平均)</option>';
+                
+                const years = new Set();
+                window.appState.monthsData.forEach(m => {
+                    const match = m.match(/(\d{4})年/);
+                    if(match) years.add(parseInt(match[1], 10));
+                });
+                Array.from(years).sort().forEach(y => {
+                    ms.innerHTML += `<option value="half_${y}_1">査定期間: ${y}年 上期 (3月〜8月)</option>`;
+                    ms.innerHTML += `<option value="half_${y}_2">査定期間: ${y}年 下期 (9月〜2月)</option>`;
+                });
+
                 ms.innerHTML += '<option value="custom">手動で期間を設定...</option>';
                 window.appState.monthsData.slice().reverse().forEach(m => { 
                     ms.innerHTML += `<option value="${m}">${m}</option>`;
@@ -1256,8 +1264,9 @@
             const showBonus = window.appState.settings?.showBonusScore || false;
             const currentSort = ss.value;
             ss.innerHTML = `
-                ${showBonus ? '<option value="final">賞与用スコア優先 (品質×自己入力率)</option>' : ''}
+                ${showBonus ? '<option value="final">賞与用スコア優先 (QC評価 × 各入力率)</option>' : ''}
                 <option value="input_rate">事業所 自己入力率</option>
+                <option value="am_input_rate">AM 入力率</option>
                 <option value="am">AM 評価スコア</option>
                 <option value="qc">QC 評価スコア</option>
                 <option value="gap_am_qc">AM・QC評価ギャップ (差が大きい順)</option>
@@ -1282,6 +1291,7 @@
         let customStart = null;
         let customEnd = null;
         let hasCustomDate = false;
+        let effectiveMonthMode = selMonth;
         
         if (selMonth === 'custom') {
             const startVal = $('ranking-custom-start').value;
@@ -1297,9 +1307,30 @@
                 customEnd = new Date(endVal);
                 customEnd.setHours(23, 59, 59, 999);
             }
+            effectiveMonthMode = hasCustomDate ? 'custom' : 'all';
+        } else if (selMonth.startsWith('half_')) {
+            const parts = selMonth.split('_');
+            const year = parseInt(parts[1], 10);
+            const isFirstHalf = parts[2] === '1';
+            
+            if (isFirstHalf) {
+                customStart = new Date(year, 2, 1); // 3月1日
+                customEnd = new Date(year, 8, 0, 23, 59, 59); // 8月末日
+            } else {
+                customStart = new Date(year, 8, 1); // 9月1日
+                customEnd = new Date(year + 1, 2, 0, 23, 59, 59); // 翌年2月末日
+            }
+            hasCustomDate = true;
+            effectiveMonthMode = 'custom';
         }
-        
-        const effectiveMonthMode = (selMonth === 'custom' && !hasCustomDate) ? 'all' : selMonth;
+
+        let hasDataMonths = new Set();
+        let hasDataWeeks = new Set();
+        window.appState.offices.forEach(o => {
+            Object.keys(window.appState.historyFull[o.name] || {}).forEach(k => hasDataWeeks.add(k));
+            Object.keys(window.appState.amHistoryFull[o.name] || {}).forEach(k => hasDataMonths.add(k));
+            Object.keys(window.appState.teamHistoryFull[o.name] || {}).forEach(k => hasDataMonths.add(k));
+        });
 
         let scores = [];
         let expectedStaffCount = 0;
@@ -1311,11 +1342,56 @@
             if (effectiveMonthMode === 'custom') {
                 if (customStart && new Date(w.end) < customStart) return;
                 if (customEnd && new Date(w.start) > customEnd) return;
-            }
-
-            if (now >= w.start) {
+                
+                // 査定期間などは進行中の按分を適用する
+                if (now >= w.start || hasDataWeeks.has(w.label)) {
+                    expectedStaffCount++;
+                    validWeeks.push(w.label);
+                }
+            } else if (effectiveMonthMode === 'all') {
+                // 全期間も進行中の按分を適用する
+                if (now >= w.start || hasDataWeeks.has(w.label)) {
+                    expectedStaffCount++;
+                    validWeeks.push(w.label);
+                }
+            } else {
+                // 単月（〇月度）指定の場合は、按分せずにその月の全週を分母とする
                 expectedStaffCount++;
                 validWeeks.push(w.label);
+            }
+        });
+
+        let expectedMonthCount = 0;
+        const validMonths = [];
+        window.appState.monthsData.forEach(m => {
+            if (effectiveMonthMode !== 'all' && effectiveMonthMode !== 'custom' && m !== effectiveMonthMode) return;
+            const match = m.match(/(\d{4})年(\d{1,2})月度/);
+            if (match) {
+                const y = parseInt(match[1], 10);
+                const mon = parseInt(match[2], 10);
+                const startOfMonth = new Date(y, mon - 1, 1);
+                const endOfMonth = new Date(y, mon, 0, 23, 59, 59, 999);
+                
+                if (effectiveMonthMode === 'custom') {
+                    if (customStart && endOfMonth < customStart) return;
+                    if (customEnd && startOfMonth > customEnd) return;
+                    
+                    // 査定期間などは進行中の按分を適用する
+                    if (now >= startOfMonth || hasDataMonths.has(m)) {
+                        expectedMonthCount++;
+                        validMonths.push(m);
+                    }
+                } else if (effectiveMonthMode === 'all') {
+                    // 全期間も進行中の按分を適用する
+                    if (now >= startOfMonth || hasDataMonths.has(m)) {
+                        expectedMonthCount++;
+                        validMonths.push(m);
+                    }
+                } else {
+                    // 単月（〇月度）指定の場合は、按分せずに分母とする
+                    expectedMonthCount++;
+                    validMonths.push(m);
+                }
             }
         });
 
@@ -1333,46 +1409,20 @@
             });
             
             const amHistory = window.appState.amHistoryFull[o.name] || {};
-            if (effectiveMonthMode === 'all') {
-                Object.values(amHistory).forEach(d => {
-                    if (d.score !== undefined) { amSum += d.score; amCount++; }
-                });
-            } else if (effectiveMonthMode === 'custom') {
-                Object.values(amHistory).forEach(d => {
-                    if (d.score !== undefined && d.timestamp) {
-                         const ts = new Date(d.timestamp);
-                         if (customStart && ts < customStart) return;
-                         if (customEnd && ts > customEnd) return;
-                         amSum += d.score; amCount++;
-                    }
-                });
-            } else {
-                if (amHistory[effectiveMonthMode] && amHistory[effectiveMonthMode].score !== undefined) {
-                    amSum += amHistory[effectiveMonthMode].score;
+            validMonths.forEach(mLabel => {
+                if (amHistory[mLabel] && amHistory[mLabel].score !== undefined) {
+                    amSum += amHistory[mLabel].score;
                     amCount++;
                 }
-            }
+            });
             
             const qcHistory = window.appState.teamHistoryFull[o.name] || {};
-            if (effectiveMonthMode === 'all') {
-                Object.values(qcHistory).forEach(d => {
-                    if (d.score !== undefined) { qcSum += d.score; qcCount++; }
-                });
-            } else if (effectiveMonthMode === 'custom') {
-                Object.values(qcHistory).forEach(d => {
-                    if (d.score !== undefined && d.timestamp) {
-                         const ts = new Date(d.timestamp);
-                         if (customStart && ts < customStart) return;
-                         if (customEnd && ts > customEnd) return;
-                         qcSum += d.score; qcCount++;
-                    }
-                });
-            } else {
-                if (qcHistory[effectiveMonthMode] && qcHistory[effectiveMonthMode].score !== undefined) {
-                    qcSum += qcHistory[effectiveMonthMode].score;
+            validMonths.forEach(mLabel => {
+                if (qcHistory[mLabel] && qcHistory[mLabel].score !== undefined) {
+                    qcSum += qcHistory[mLabel].score;
                     qcCount++;
                 }
-            }
+            });
 
             const staffScore = actualStaffCount > 0 ? Math.round(staffSum / actualStaffCount) : '--';
             const amScore = amCount > 0 ? Math.round(amSum / amCount) : '--';
@@ -1386,13 +1436,16 @@
 
             const qualityScore = totalValCount > 0 ? Math.round(totalSum / totalValCount) : '--';
             const inputRate = expectedStaffCount > 0 ? Math.round((actualStaffCount / expectedStaffCount) * 100) : 0;
-            const finalScore = qualityScore !== '--' ? Math.round(qualityScore * (inputRate / 100)) : '--';
+            const amInputRate = expectedMonthCount > 0 ? Math.round((amCount / expectedMonthCount) * 100) : 0;
+            const finalScore = qcScore !== '--' ? Math.round(qcScore * (inputRate / 100) * (amInputRate / 100)) : '--';
 
-            if (totalValCount > 0 || expectedStaffCount > 0) {
+            if (totalValCount > 0 || expectedStaffCount > 0 || expectedMonthCount > 0) {
                 scores.push({
                     name: o.name, corp: o.corp, area: o.area,
                     staffScore, amScore, qcScore, qualityScore,
-                    inputRate, actualStaffCount, expectedStaffCount, finalScore
+                    inputRate, actualStaffCount, expectedStaffCount,
+                    amInputRate, actualAmCount: amCount, expectedMonthCount,
+                    finalScore
                 });
             }
         });
@@ -1412,6 +1465,8 @@
                 if (fB !== fA) return fB - fA;
             } else if (sortTarget === 'input_rate') {
                 if (b.inputRate !== a.inputRate) return b.inputRate - a.inputRate;
+            } else if (sortTarget === 'am_input_rate') {
+                if (b.amInputRate !== a.amInputRate) return b.amInputRate - a.amInputRate;
             } else if (sortTarget === 'gap_am_qc') {
                 const getGap = (obj) => (obj.amScore === '--' || obj.qcScore === '--') ? -1 : Math.abs(obj.amScore - obj.qcScore);
                 const gapA = getGap(a);
@@ -1432,6 +1487,7 @@
             let tgtScore;
             if (sortTarget === 'final') tgtScore = s.finalScore;
             else if (sortTarget === 'input_rate') tgtScore = s.inputRate;
+            else if (sortTarget === 'am_input_rate') tgtScore = s.amInputRate;
             else if (sortTarget === 'gap_am_qc') tgtScore = (s.amScore !== '--' && s.qcScore !== '--') ? Math.abs(s.amScore - s.qcScore) : -1;
             else tgtScore = s[sortTarget + 'Score'];
 
@@ -1461,17 +1517,8 @@
             const rateColor = s.inputRate >= 90 ? 'text-emerald-600' : (s.inputRate >= 50 ? 'text-yellow-600' : 'text-red-600');
             const rateBg = s.inputRate >= 90 ? 'bg-emerald-50' : (s.inputRate >= 50 ? 'bg-yellow-50' : 'bg-red-50');
 
-            const gridColsClass = showBonus ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2";
-            const qualityColSpan = showBonus ? "col-span-2 sm:col-span-1" : "col-span-1";
-            
-            let bonusScoreHtml = showBonus ? `
-                <div class="bg-gray-50 rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm relative">
-                    <p class="text-[9px] text-gray-500 font-bold mb-1">賞与用スコア</p>
-                    <div class="flex items-baseline justify-center">
-                        <span class="text-sm font-black text-pink-600">${s.finalScore}</span><span class="text-[10px] font-bold text-pink-400 ml-0.5">pt</span>
-                    </div>
-                    <p class="text-[8px] font-bold text-gray-400 mt-0.5">品質 × 入力率</p>
-                </div>` : '';
+            const amRateColor = s.amInputRate >= 90 ? 'text-emerald-600' : (s.amInputRate >= 50 ? 'text-yellow-600' : 'text-red-600');
+            const amRateBg = s.amInputRate >= 90 ? 'bg-emerald-50' : (s.amInputRate >= 50 ? 'bg-yellow-50' : 'bg-red-50');
 
             let gapBadgeHtml = '';
             if (sortTarget === 'gap_am_qc' && tgtScore !== -1) {
@@ -1489,24 +1536,76 @@
             let iconColorClass = 'text-emerald-200 opacity-30';
             let titleColorClass = 'text-emerald-800';
             let unitColorClass = 'text-emerald-600';
+            let mainBarHtml = '';
+            let bonusScoreHtml = '';
 
-            if (sortTarget === 'am') {
-                mainScoreLabel = 'AM 評価スコア';
-                mainScoreValue = s.amScore;
-                iconHtml = '<i class="fa-solid fa-user-tie"></i>';
-                bgClass = 'bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200';
-                iconColorClass = 'text-indigo-200 opacity-30';
-                titleColorClass = 'text-indigo-800';
-                unitColorClass = 'text-indigo-600';
-            } else if (sortTarget === 'qc') {
-                mainScoreLabel = 'QC 評価スコア';
-                mainScoreValue = s.qcScore;
-                iconHtml = '<i class="fa-solid fa-clipboard-check"></i>';
-                bgClass = 'bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200';
-                iconColorClass = 'text-teal-200 opacity-30';
-                titleColorClass = 'text-teal-800';
-                unitColorClass = 'text-teal-600';
+            if (sortTarget === 'final') {
+                mainScoreLabel = '賞与用スコア';
+                mainScoreValue = s.finalScore;
+                iconHtml = '<i class="fa-solid fa-gift"></i>';
+                bgClass = 'bg-gradient-to-br from-pink-50 to-pink-100 border-pink-200';
+                iconColorClass = 'text-pink-200 opacity-30';
+                titleColorClass = 'text-pink-800';
+                unitColorClass = 'text-pink-600';
+                
+                mainBarHtml = `
+                    <div class="mt-2 relative z-10 bg-white/60 rounded-lg p-1.5 border border-pink-100 mx-2 shadow-sm">
+                        <p class="text-[8px] font-black text-pink-700 mb-0.5 text-center">【計算式】</p>
+                        <p class="text-[9px] font-bold text-pink-800 flex justify-center items-center gap-1">
+                            <span title="QC評価">QC</span> <i class="fa-solid fa-times text-[7px]"></i>
+                            <span title="事業所 自己入力率">事率</span> <i class="fa-solid fa-times text-[7px]"></i>
+                            <span title="AM 入力率">AM率</span>
+                        </p>
+                    </div>`;
+
+                bonusScoreHtml = `
+                    <div class="col-span-2 sm:col-span-1 bg-teal-50 rounded-xl p-2 border border-teal-200 flex flex-col justify-center shadow-sm relative">
+                        <p class="text-[9px] text-teal-600 font-bold mb-1">QC 評価スコア</p>
+                        <div class="flex items-baseline justify-center">
+                            <span class="text-sm font-black text-teal-700">${s.qcScore}</span><span class="text-[10px] font-bold text-teal-500 ml-0.5">pt</span>
+                        </div>
+                        <p class="text-[8px] font-bold text-teal-400 mt-0.5">ベースの評価点</p>
+                    </div>`;
+            } else {
+                if (sortTarget === 'am') {
+                    mainScoreLabel = 'AM 評価スコア';
+                    mainScoreValue = s.amScore;
+                    iconHtml = '<i class="fa-solid fa-user-tie"></i>';
+                    bgClass = 'bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200';
+                    iconColorClass = 'text-indigo-200 opacity-30';
+                    titleColorClass = 'text-indigo-800';
+                    unitColorClass = 'text-indigo-600';
+                } else if (sortTarget === 'qc') {
+                    mainScoreLabel = 'QC 評価スコア';
+                    mainScoreValue = s.qcScore;
+                    iconHtml = '<i class="fa-solid fa-clipboard-check"></i>';
+                    bgClass = 'bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200';
+                    iconColorClass = 'text-teal-200 opacity-30';
+                    titleColorClass = 'text-teal-800';
+                    unitColorClass = 'text-teal-600';
+                }
+
+                mainBarHtml = `
+                    <div class="flex flex-col gap-1 w-full px-2 mt-1.5 relative z-10">
+                        <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-pink-500 text-left">事業所</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-pink-400 h-1.5 rounded-full" style="width:${s.staffScore === '--' ? 0 : s.staffScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.staffScore}</span></div>
+                        <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-indigo-500 text-left">AM</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-indigo-400 h-1.5 rounded-full" style="width:${s.amScore === '--' ? 0 : s.amScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.amScore}</span></div>
+                        <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-teal-600 text-left">QC</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-teal-500 h-1.5 rounded-full" style="width:${s.qcScore === '--' ? 0 : s.qcScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.qcScore}</span></div>
+                    </div>`;
+
+                if (showBonus) {
+                    bonusScoreHtml = `
+                    <div class="col-span-2 sm:col-span-1 bg-gray-50 rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm relative">
+                        <p class="text-[9px] text-gray-500 font-bold mb-1">賞与用スコア</p>
+                        <div class="flex items-baseline justify-center">
+                            <span class="text-sm font-black text-pink-600">${s.finalScore}</span><span class="text-[10px] font-bold text-pink-400 ml-0.5">pt</span>
+                        </div>
+                        <p class="text-[8px] font-bold text-gray-400 mt-0.5">QC × 事業所率 × AM率</p>
+                    </div>`;
+                }
             }
+
+            const gridColsClass = showBonus || sortTarget === 'final' ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3";
+            const qualityColSpan = "col-span-2 sm:col-span-1";
 
             html += `
             <div class="bg-white rounded-2xl border ${rowClass} p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center gap-4 mb-3">
@@ -1525,16 +1624,17 @@
                         <div class="flex items-baseline justify-center relative z-10">
                             <span class="text-xl sm:text-2xl font-black ${getQColor(mainScoreValue)}">${mainScoreValue}</span><span class="text-[10px] font-bold ${unitColorClass} ml-1">pt</span>
                         </div>
-                        <div class="flex flex-col gap-1 w-full px-2 mt-1.5 relative z-10">
-                            <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-pink-500 text-left">事業所</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-pink-400 h-1.5 rounded-full" style="width:${s.staffScore === '--' ? 0 : s.staffScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.staffScore}</span></div>
-                            <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-indigo-500 text-left">AM</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-indigo-400 h-1.5 rounded-full" style="width:${s.amScore === '--' ? 0 : s.amScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.amScore}</span></div>
-                            <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-teal-600 text-left">QC</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-teal-500 h-1.5 rounded-full" style="width:${s.qcScore === '--' ? 0 : s.qcScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.qcScore}</span></div>
-                        </div>
+                        ${mainBarHtml}
                     </div>
-                    <div class="${rateBg} rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm ${showBonus ? '' : 'col-span-1'}">
-                        <p class="text-[9px] text-gray-500 font-bold mb-1">自己入力率</p>
+                    <div class="${rateBg} rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm col-span-1">
+                        <p class="text-[9px] text-gray-500 font-bold mb-1">事業所 自己入力率</p>
                         <p class="text-sm font-black ${rateColor}">${s.inputRate}<span class="text-[10px] font-normal ml-0.5">%</span></p>
                         <p class="text-[9px] font-bold text-gray-400 mt-0.5">(${s.actualStaffCount}/${s.expectedStaffCount}回)</p>
+                    </div>
+                    <div class="${amRateBg} rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm col-span-1">
+                        <p class="text-[9px] text-gray-500 font-bold mb-1">AM 入力率</p>
+                        <p class="text-sm font-black ${amRateColor}">${s.amInputRate}<span class="text-[10px] font-normal ml-0.5">%</span></p>
+                        <p class="text-[9px] font-bold text-gray-400 mt-0.5">(${s.actualAmCount}/${s.expectedMonthCount}回)</p>
                     </div>
                     ${bonusScoreHtml}
                 </div>
@@ -1647,23 +1747,28 @@
             const as = $('feedback-area-pulldown');
             const selA = (as && as.value) ? as.value : 'all';
 
+            const now = new Date();
+            const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+
             Object.keys(qcData).forEach(officeName => {
                 const officeInfo = window.appState.offices.find(o => o.name === officeName);
                 if (selA !== 'all' && officeInfo && officeInfo.area !== selA) return;
 
                 Object.values(qcData[officeName]).forEach(doc => {
                     if (doc.comment || (doc.issues && doc.issues.length > 0) || (doc.good_practices && doc.good_practices.length > 0)) {
-                        recentEntries.push({ ...doc, office: officeName });
+                        const docDate = new Date(doc.timestamp);
+                        if (docDate >= twentyFourHoursAgo) {
+                            recentEntries.push({ ...doc, office: officeName });
+                        }
                     }
                 });
             });
 
             recentEntries.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-            recentEntries = recentEntries.slice(0, 10);
 
             if (recentEntries.length > 0) {
                 let recentHtml = `<div class="bg-pink-50 p-4 rounded-xl border border-pink-100 mb-4">
-                    <h3 class="text-sm font-black text-pink-700 mb-3"><i class="fa-solid fa-bell mr-1"></i>新着のQCフィードバック</h3>
+                    <h3 class="text-sm font-black text-pink-700 mb-3"><i class="fa-solid fa-bell mr-1"></i>新着のQCフィードバック <span class="text-[10px] text-pink-500 font-normal ml-2">(24時間以内)</span></h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
                 
                 recentEntries.forEach(entry => {
@@ -1693,7 +1798,7 @@
                 
                 if(c) c.innerHTML = recentHtml + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>上から選択するか、プルダウンで事業所を指定してください</p></div>';
             } else {
-                if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>事業所を選択するとフィードバックが表示されます</p></div>';
+                if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>過去24時間以内の新着フィードバックはありません<br><span class="text-xs font-normal mt-2 block">過去の履歴は、上部プルダウンから事業所を選択して確認できます。</span></p></div>';
             }
             return;
         }
@@ -2139,7 +2244,8 @@
             data.comment = document.getElementById('qc-comment-input')?.value || "";
             data.issues = window.appState.issues;
             
-            const gpBonus = parseInt(document.getElementById('gp-bonus-input')?.value || "0", 10);
+            const gpBonusInput = document.getElementById('gp-bonus-input');
+            const gpBonus = gpBonusInput ? parseInt(gpBonusInput.value || "0", 10) : 0;
             data.gp_bonus = gpBonus;
             score = Math.min(100, score + gpBonus);
             data.score = score;
@@ -2291,7 +2397,7 @@
                 <div>
                     <h3 class="text-sm font-black text-blue-800 mb-1">賞与用スコアの表示（管理者用）</h3>
                     <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
-                        ONにすると、ランキング画面に「品質スコア×入力率」で計算された賞与用スコアが表示されます。
+                        ONにすると、ランキング画面に「QC評価スコア × 事業所入力率 × AM入力率」で計算された賞与用スコアが表示されます。
                     </p>
                 </div>
                 <div class="flex-shrink-0">
@@ -2386,7 +2492,10 @@
             <div class="bg-cyan-50 border border-cyan-100 p-3 rounded-xl mb-4">
                 <p class="text-[11px] text-cyan-800 font-bold leading-relaxed">
                     <i class="fa-solid fa-circle-info mr-1"></i>基本ランキングは<span class="text-pink-600 font-black">「品質スコア（平均点）」</span>で順位付けされます（同点時は自己入力率が高い事業所が上位）。<br>
-                    <span id="ranking-bonus-desc" class="hidden mt-1 block">賞与評価用として、未入力による減点を加味した <span class="bg-white px-1 rounded text-red-500">賞与用スコア (品質×自己入力率)</span> も算出しています。</span>
+                    <span id="ranking-bonus-desc" class="hidden mt-1 block">
+                        賞与評価用として、未入力による減点を加味した <span class="bg-white px-1 rounded text-red-500">賞与用スコア (QC評価 × 自己入力率 × AM入力率)</span> も算出しています。<br>
+                        <span class="text-[10px] text-gray-500 font-normal mt-1 block">※プルダウンから「査定期間」を選択すると、進行中の期間でも現在までの経過分で自動按分され、現時点での評価が確認できます。</span>
+                    </span>
                 </p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
