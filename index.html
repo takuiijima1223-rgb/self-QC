@@ -133,7 +133,7 @@
         carImages: { front: null, back: null, inside1: null, inside2: null },
         officeImages: { entrance: null, workspace: null, interview: null, office: null },
         settings: {}, rules: defaultRules, isRulesEditMode: false,
-        masterAuthenticated: false
+        masterAuthenticated: false, amAuthenticated: false, qcAuthenticated: false, pendingAuthTarget: null
     };
     
     const getCircledNumber = (index) => {
@@ -204,15 +204,21 @@
         t.classList.remove('hidden'); 
         setTimeout(() => t.classList.add('hidden'), 3000); 
     };
+
+    window.showPasswordModal = (target, titleStr) => {
+        window.appState.pendingAuthTarget = target;
+        const modal = $('password-modal');
+        if (modal) {
+            $('master-password-input').value = '';
+            $('password-modal-title').innerText = titleStr + 'へのアクセス';
+            modal.classList.remove('hidden');
+            setTimeout(() => $('master-password-input').focus(), 100);
+        }
+    };
     
     window.switchTab = (id) => {
         if (id === 'master' && !window.appState.masterAuthenticated) {
-            const modal = $('password-modal');
-            if (modal) {
-                $('master-password-input').value = '';
-                modal.classList.remove('hidden');
-                setTimeout(() => $('master-password-input').focus(), 100);
-            }
+            window.showPasswordModal('master', 'マスタ設定');
             return;
         }
         window.actuallySwitchTab(id);
@@ -267,10 +273,27 @@
 
     window.verifyPassword = () => {
         const pwd = $('master-password-input').value;
-        if (pwd === '1223') {
-            window.appState.masterAuthenticated = true;
+        const target = window.appState.pendingAuthTarget;
+        
+        // ▼ 各モードの暗証番号設定（必要に応じて別々に変更可能です）
+        const passwords = {
+            'master': '1223',
+            'am': '1010',
+            'qc': '2020'
+        };
+
+        if (pwd === passwords[target]) {
+            if (target === 'master') {
+                window.appState.masterAuthenticated = true;
+                window.actuallySwitchTab('master');
+            } else if (target === 'am') {
+                window.appState.amAuthenticated = true;
+                initMode('am');
+            } else if (target === 'qc') {
+                window.appState.qcAuthenticated = true;
+                initMode('qc');
+            }
             $('password-modal').classList.add('hidden');
-            window.actuallySwitchTab('master');
             window.showGlobalToast("ロックを解除しました");
         } else {
             window.showGlobalToast("暗証番号が正しくありません");
@@ -289,8 +312,22 @@
     };
     
     window.startInputMode = () => initMode('staff'); 
-    window.startAMCheckMode = () => initMode('am'); 
-    window.startQCCheckMode = () => initMode('qc');
+    
+    window.startAMCheckMode = () => {
+        if (!window.appState.amAuthenticated) {
+            window.showPasswordModal('am', 'AM入力');
+            return;
+        }
+        initMode('am');
+    };
+    
+    window.startQCCheckMode = () => {
+        if (!window.appState.qcAuthenticated) {
+            window.showPasswordModal('qc', 'QCチーム入力');
+            return;
+        }
+        initMode('qc');
+    };
     
     window.handleAreaFilterChange = () => {
       const af = $('area-filter-pulldown'); 
@@ -2617,8 +2654,8 @@
           <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
               <i class="fa-solid fa-lock"></i>
           </div>
-          <h3 class="text-lg font-black text-gray-800 mb-2">暗証番号の入力</h3>
-          <p class="text-xs font-bold text-gray-500 mb-6 leading-relaxed">マスタ設定にアクセスするには<br>4桁の暗証番号が必要です。</p>
+          <h3 class="text-lg font-black text-gray-800 mb-2" id="password-modal-title">暗証番号の入力</h3>
+          <p class="text-xs font-bold text-gray-500 mb-6 leading-relaxed">アクセスするには<br>4桁の暗証番号が必要です。</p>
           <input type="password" id="master-password-input" class="w-full p-4 border-2 rounded-xl text-center font-black text-2xl tracking-widest outline-none focus:border-orange-500 mb-6" placeholder="****" maxlength="4" onkeyup="if(event.key==='Enter') window.verifyPassword()">
           <div class="flex gap-3 justify-center">
               <button onclick="window.closePasswordModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-black text-sm transition">キャンセル</button>
