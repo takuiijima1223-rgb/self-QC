@@ -47,7 +47,7 @@
     // ▼ GAS(Google Apps Script)のWebアプリURL ▼
     // スプレッドシート連携用のURLをここに貼り付けます
     // ==========================================
-    const GAS_WEBHOOK_URL = ""; 
+    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzqzDW5PFbzYW2fdW-fc-wecGF4e8vOoYHr7srAx9SsDlOuB85H_HYJGWNYTYyLtxoa/exec"; 
 
     window.getNowLocalStr = () => {
         const d = new Date();
@@ -2295,20 +2295,28 @@
             await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', colName, docId), data);
             
             // ==========================================
-            // GASへデータ送信
+            // GASへデータ送信 (スプレッドシート連携)
             // ==========================================
-            if (GAS_WEBHOOK_URL) {
+            // 事業所入力モードで、かつ「月末週」ではない場合は、GASには送信しない
+            const shouldSendToGAS = GAS_WEBHOOK_URL && (mode !== 'staff' || window.appState.isLastWeekOfMonth);
+            
+            if (shouldSendToGAS) {
+                let teamName = "事業所";
+                if (mode === 'am') teamName = "AM";
+                if (mode === 'qc') teamName = "QCチーム";
+
+                const officeInfo = window.appState.offices.find(o => o.name === office);
+                const areaName = officeInfo ? officeInfo.area : "不明";
+
                 const gasData = {
                     timestamp: new Date().toISOString(),
-                    mode: mode,
-                    office: office,
+                    team: teamName,
                     period: period,
+                    area: areaName,
+                    office: office,
                     score: score,
-                    comment: data.comment || "",
-                    answers: JSON.stringify(answers),
-                    // 写真データをJSON文字列にしてGASへ送る
-                    officeImages: mode === 'staff' && window.appState.isLastWeekOfMonth ? JSON.stringify(data.officeImages || {}) : "",
-                    carImages: mode === 'staff' && window.appState.isLastWeekOfMonth && window.appState.settings?.requireCarImages !== false ? JSON.stringify(data.carImages || {}) : ""
+                    comment: data.comment || "", // QCフィードバック総評
+                    answers: answers // 質問の回答データ(2,1,0,-1)
                 };
                 
                 fetch(GAS_WEBHOOK_URL, {
@@ -2319,9 +2327,9 @@
                     },
                     body: JSON.stringify(gasData)
                 }).then(() => {
-                    console.log("GAS転送リクエスト送信完了");
+                    console.log("GAS転送完了");
                 }).catch(e => {
-                    console.error("GASへの転送エラー:", e);
+                    console.error("GAS転送エラー:", e);
                 });
             }
             
