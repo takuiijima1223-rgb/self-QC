@@ -1382,13 +1382,13 @@
                 if (customStart && new Date(w.end) < customStart) return;
                 if (customEnd && new Date(w.start) > customEnd) return;
                 
-                // 査定期間などは進行中の按分を適用する
-                if (now >= w.start || hasDataWeeks.has(w.label)) {
+                // 査定期間は、未来のテストデータに影響されず、純粋に「現在の日付」だけで按分する
+                if (now >= w.start) {
                     expectedStaffCount++;
                     validWeeks.push(w.label);
                 }
             } else if (effectiveMonthMode === 'all') {
-                // 全期間も進行中の按分を適用する
+                // 全期間は進行中の按分を適用しつつ、未来のテストデータも表示できるようにする
                 if (now >= w.start || hasDataWeeks.has(w.label)) {
                     expectedStaffCount++;
                     validWeeks.push(w.label);
@@ -1415,13 +1415,13 @@
                     if (customStart && endOfMonth < customStart) return;
                     if (customEnd && startOfMonth > customEnd) return;
                     
-                    // 査定期間などは進行中の按分を適用する
-                    if (now >= startOfMonth || hasDataMonths.has(m)) {
+                    // 査定期間は、未来のテストデータに影響されず、純粋に「現在の日付」だけで按分する
+                    if (now >= startOfMonth) {
                         expectedMonthCount++;
                         validMonths.push(m);
                     }
                 } else if (effectiveMonthMode === 'all') {
-                    // 全期間も進行中の按分を適用する
+                    // 全期間は進行中の按分を適用しつつ、未来のテストデータも表示できるようにする
                     if (now >= startOfMonth || hasDataMonths.has(m)) {
                         expectedMonthCount++;
                         validMonths.push(m);
