@@ -45,9 +45,8 @@
 
     // ==========================================
     // ▼ GAS(Google Apps Script)のWebアプリURL ▼
-    // スプレッドシート連携用のURLをここに貼り付けます
     // ==========================================
-    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxSKBHrmI2TaYuZTplpSl-t0Bq-2JzV2eej81YtusnLM5R431jezxOB4ET6JswJtND5/exec"; 
+    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxoLVrI3mhvh9pnBxXs6xLYk-JaXN5_4z56u66VKroqACUTZN2N0ejwe5ZWVyAENJoW/exec"; 
 
     window.getNowLocalStr = () => {
         const d = new Date();
@@ -236,9 +235,12 @@
         window.actuallySwitchTab(id);
     };
 
+    window.renderHomeKnowledgeSpace = () => {
+        // ナレッジ共有機能は削除しました
+    };
+
     window.actuallySwitchTab = (id) => {
       window.appState.activeTab = id;
-      // ダッシュボードを削除したのでリストから外す
       ['home', 'input', 'master', 'feedback', 'knowledge', 'ranking', 'rules', 'kaizen'].forEach(v => { 
           sU('view-'+v, el => el.classList.add('hidden')); 
           sU('tab-'+v, el => { if(el) el.classList.remove('tab-active', 'text-pink-500'); }); 
@@ -264,8 +266,6 @@
         } else if (id === 'feedback') {
             window.renderFeedbackSelectors();
             window.renderFeedbackList();
-        } else if (id === 'knowledge') {
-            window.renderKnowledgeGallery();
         } else if (id === 'ranking') {
             window.renderRankingSelectors();
             window.renderRankingList();
@@ -276,8 +276,8 @@
             window.renderRules();
         } else if (id === 'kaizen') {
             window.renderKaizenList();
-            $('kaizen-form-container').classList.add('hidden');
-            $('kaizen-list-container').classList.remove('hidden');
+            sU('kaizen-form-container', el => el.classList.add('hidden'));
+            sU('kaizen-list-container', el => el.classList.remove('hidden'));
         }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -291,12 +291,8 @@
         const pwd = $('master-password-input').value;
         const target = window.appState.pendingAuthTarget;
         
-        // ▼ 各モードの暗証番号設定（必要に応じて別々に変更可能です）
-        const passwords = {
-            'master': '1223',
-            'am': '1010',
-            'qc': '2020'
-        };
+        // ▼ 各モードの暗証番号設定
+        const passwords = { 'master': '1223', 'am': '1010', 'qc': '2020' };
 
         if (pwd === passwords[target]) {
             if (target === 'master') {
@@ -417,9 +413,6 @@
                 
                 ws.innerHTML += `<option value="${w.label}" ${isDisabled?'disabled':''} ${isCurrent?'selected':''}>${w.label}${suffix}</option>`; 
             }); 
-            if (!foundSelected && ws.options.length > 0) {
-                // 有効な最初の選択肢をデフォルトにするなどの調整（ブラウザが自動で行う）
-            }
         }
         
         const ms = $('month-pulldown'); 
@@ -835,7 +828,7 @@
                 } else if (result.message && (result.message.includes('アクセスが拒否されました') || result.message.includes('Access denied'))) {
                     window.showGlobalToast("GASの実行権限エラー: 「自分」として実行するようにデプロイ設定を変更してください");
                 } else {
-                    window.showGlobalToast("保存エラー: " + (result.message || "不明なエラー"));
+                    console.warn("保存エラー: " + (result.message || "不明なエラー"));
                 }
                 callback(base64); 
             }
@@ -2220,6 +2213,89 @@
         }
     };
 
+    window.setKaizenFilter = (filter) => {
+        window.appState.kaizenFilter = filter;
+        window.renderKaizenList();
+    };
+
+    window.renderKaizenList = () => {
+        const c = $('kaizen-list-container');
+        if(!c) return;
+        const proposals = window.appState.kaizenProposals || [];
+        const filter = window.appState.kaizenFilter || 'unresolved';
+        
+        let filteredProposals = proposals;
+        if (filter === 'unresolved') {
+            filteredProposals = proposals.filter(p => p.status === 'pending' || p.status === 'in_progress');
+        } else if (filter === 'resolved') {
+            filteredProposals = proposals.filter(p => p.status === 'completed' || p.status === 'rejected');
+        }
+
+        filteredProposals.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        const unresolvedCount = proposals.filter(p => p.status === 'pending' || p.status === 'in_progress').length;
+        const resolvedCount = proposals.filter(p => p.status === 'completed' || p.status === 'rejected').length;
+
+        let filterHtml = `
+            <div class="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
+                <button onclick="window.setKaizenFilter('unresolved')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'unresolved' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
+                    未完了 <span class="ml-1 ${filter === 'unresolved' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${unresolvedCount}</span>
+                </button>
+                <button onclick="window.setKaizenFilter('resolved')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'resolved' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
+                    完了・見送り <span class="ml-1 ${filter === 'resolved' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${resolvedCount}</span>
+                </button>
+                <button onclick="window.setKaizenFilter('all')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'all' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
+                    すべて <span class="ml-1 ${filter === 'all' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${proposals.length}</span>
+                </button>
+            </div>
+        `;
+
+        if (filteredProposals.length === 0) {
+            c.innerHTML = filterHtml + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-folder-open text-3xl mb-3 block opacity-50"></i>該当する提案はありません</p></div>';
+            return;
+        }
+
+        let html = filterHtml + '<div class="space-y-4">';
+        filteredProposals.forEach(p => {
+            const d = new Date(p.timestamp).toLocaleDateString('ja-JP');
+            
+            let badgeClass = 'bg-gray-100 text-gray-600';
+            if (p.status === 'in_progress') { badgeClass = 'bg-blue-100 text-blue-600 border-blue-200'; }
+            if (p.status === 'completed') { badgeClass = 'bg-emerald-100 text-emerald-600 border-emerald-200'; }
+            if (p.status === 'rejected') { badgeClass = 'bg-red-100 text-red-600 border-red-200'; }
+
+            const statusSelector = `
+                <select onchange="window.updateKaizenStatus('${p.id}', this.value)" class="text-[10px] font-black border rounded p-1 outline-none shadow-sm ${badgeClass} ${p.status === 'pending' ? 'ring-2 ring-red-400 ring-offset-1 animate-pulse' : ''}">
+                    <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>確認中 (未対応)</option>
+                    <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>対応中</option>
+                    <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>完了</option>
+                    <option value="rejected" ${p.status === 'rejected' ? 'selected' : ''}>見送り</option>
+                </select>
+            `;
+
+            html += `
+            <div class="bg-white p-4 rounded-xl border shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-black text-gray-800">${p.office}</span>
+                        <span class="text-[9px] bg-purple-50 text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded font-bold">${p.category}</span>
+                    </div>
+                    ${statusSelector}
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 mb-3">
+                    <p class="text-xs text-gray-700 font-bold whitespace-pre-wrap leading-relaxed">${p.detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] text-gray-400 font-bold">${d} 提案</span>
+                    <span class="text-[10px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200"><i class="fa-regular fa-calendar mr-1"></i>希望納期: ${p.deadline ? p.deadline.replace(/-/g, '/') : '指定なし'}</span>
+                </div>
+            </div>
+            `;
+        });
+        html += '</div>';
+        c.innerHTML = html;
+    };
+
     window.renderSelectors = () => {
       const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
       sU('week-pulldown-section', e => e.style.display = isM ? 'none' : 'block'); 
@@ -2592,10 +2668,6 @@
         }
     };
 
-    window.renderHomeKnowledgeSpace = () => {
-        // ナレッジ共有機能は削除しました
-    };
-
     window.showKaizenForm = () => {
         $('kaizen-list-container').classList.add('hidden');
         $('kaizen-form-container').classList.remove('hidden');
@@ -2686,13 +2758,13 @@
         let filterHtml = `
             <div class="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
                 <button onclick="window.setKaizenFilter('unresolved')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'unresolved' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    未完了 <span class="ml-1 ${filter === 'unresolved' ? 'bg-purple-500' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${unresolvedCount}</span>
+                    未完了 <span class="ml-1 ${filter === 'unresolved' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${unresolvedCount}</span>
                 </button>
                 <button onclick="window.setKaizenFilter('resolved')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'resolved' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    完了・見送り <span class="ml-1 ${filter === 'resolved' ? 'bg-purple-500' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${resolvedCount}</span>
+                    完了・見送り <span class="ml-1 ${filter === 'resolved' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${resolvedCount}</span>
                 </button>
                 <button onclick="window.setKaizenFilter('all')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'all' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    すべて <span class="ml-1 ${filter === 'all' ? 'bg-purple-500' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${proposals.length}</span>
+                    すべて <span class="ml-1 ${filter === 'all' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${proposals.length}</span>
                 </button>
             </div>
         `;
@@ -2798,7 +2870,7 @@
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">点数ランキング</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Ranking</p></div>
           </div>
           <div onclick="window.switchTab('master')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-orange-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">マスタ設定</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Settings</p></div>
           </div>
           <div onclick="window.switchTab('kaizen')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
