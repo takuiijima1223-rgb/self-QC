@@ -133,7 +133,7 @@
         officeImages: { entrance: null, workspace: null, interview: null, office: null },
         settings: {}, rules: defaultRules, isRulesEditMode: false,
         masterAuthenticated: false, amAuthenticated: false, qcAuthenticated: false, pendingAuthTarget: null,
-        activeUploads: 0, kaizenProposals: [], kaizenFilter: 'unresolved'
+        activeUploads: 0
     };
     
     const getCircledNumber = (index) => {
@@ -241,7 +241,7 @@
 
     window.actuallySwitchTab = (id) => {
       window.appState.activeTab = id;
-      ['home', 'input', 'master', 'feedback', 'knowledge', 'ranking', 'rules', 'kaizen'].forEach(v => { 
+      ['home', 'input', 'master', 'feedback', 'knowledge', 'ranking', 'rules'].forEach(v => { 
           sU('view-'+v, el => el.classList.add('hidden')); 
           sU('tab-'+v, el => { if(el) el.classList.remove('tab-active', 'text-pink-500'); }); 
       });
@@ -274,10 +274,6 @@
             window.renderMasterList();
         } else if (id === 'rules') {
             window.renderRules();
-        } else if (id === 'kaizen') {
-            window.renderKaizenList();
-            sU('kaizen-form-container', el => el.classList.add('hidden'));
-            sU('kaizen-list-container', el => el.classList.remove('hidden'));
         }
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1075,7 +1071,7 @@
                         </div>
                         ${relatedItemText ? `<div class="mb-1.5 truncate w-full">${relatedItemText}</div>` : ''}
                         ${deadlineStr}
-                        <div class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap mt-1">${issueComment}</div>
+                        <div class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap mt-1">${issue.comment}</div>
                         <div class="mt-auto">${resolutionSection}</div>
                     </div>
                 </div>
@@ -2208,89 +2204,6 @@
         }
     };
 
-    window.setKaizenFilter = (filter) => {
-        window.appState.kaizenFilter = filter;
-        window.renderKaizenList();
-    };
-
-    window.renderKaizenList = () => {
-        const c = $('kaizen-list-container');
-        if(!c) return;
-        const proposals = window.appState.kaizenProposals || [];
-        const filter = window.appState.kaizenFilter || 'unresolved';
-        
-        let filteredProposals = proposals;
-        if (filter === 'unresolved') {
-            filteredProposals = proposals.filter(p => p.status === 'pending' || p.status === 'in_progress');
-        } else if (filter === 'resolved') {
-            filteredProposals = proposals.filter(p => p.status === 'completed' || p.status === 'rejected');
-        }
-
-        filteredProposals.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        const unresolvedCount = proposals.filter(p => p.status === 'pending' || p.status === 'in_progress').length;
-        const resolvedCount = proposals.filter(p => p.status === 'completed' || p.status === 'rejected').length;
-
-        let filterHtml = `
-            <div class="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
-                <button onclick="window.setKaizenFilter('unresolved')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'unresolved' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    未完了 <span class="ml-1 ${filter === 'unresolved' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${unresolvedCount}</span>
-                </button>
-                <button onclick="window.setKaizenFilter('resolved')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'resolved' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    完了・見送り <span class="ml-1 ${filter === 'resolved' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${resolvedCount}</span>
-                </button>
-                <button onclick="window.setKaizenFilter('all')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'all' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    すべて <span class="ml-1 ${filter === 'all' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${proposals.length}</span>
-                </button>
-            </div>
-        `;
-
-        if (filteredProposals.length === 0) {
-            c.innerHTML = filterHtml + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-folder-open text-3xl mb-3 block opacity-50"></i>該当する提案はありません</p></div>';
-            return;
-        }
-
-        let html = filterHtml + '<div class="space-y-4">';
-        filteredProposals.forEach(p => {
-            const d = new Date(p.timestamp).toLocaleDateString('ja-JP');
-            
-            let badgeClass = 'bg-gray-100 text-gray-600';
-            if (p.status === 'in_progress') { badgeClass = 'bg-blue-100 text-blue-600 border-blue-200'; }
-            if (p.status === 'completed') { badgeClass = 'bg-emerald-100 text-emerald-600 border-emerald-200'; }
-            if (p.status === 'rejected') { badgeClass = 'bg-red-100 text-red-600 border-red-200'; }
-
-            const statusSelector = `
-                <select onchange="window.updateKaizenStatus('${p.id}', this.value)" class="text-[10px] font-black border rounded p-1 outline-none shadow-sm ${badgeClass} ${p.status === 'pending' ? 'ring-2 ring-red-400 ring-offset-1 animate-pulse' : ''}">
-                    <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>確認中 (未対応)</option>
-                    <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>対応中</option>
-                    <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>完了</option>
-                    <option value="rejected" ${p.status === 'rejected' ? 'selected' : ''}>見送り</option>
-                </select>
-            `;
-
-            html += `
-            <div class="bg-white p-4 rounded-xl border shadow-sm hover:shadow-md transition">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-black text-gray-800">${p.office}</span>
-                        <span class="text-[9px] bg-purple-50 text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded font-bold">${p.category}</span>
-                    </div>
-                    ${statusSelector}
-                </div>
-                <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 mb-3">
-                    <p class="text-xs text-gray-700 font-bold whitespace-pre-wrap leading-relaxed">${p.detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-[10px] text-gray-400 font-bold">${d} 提案</span>
-                    <span class="text-[10px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200"><i class="fa-regular fa-calendar mr-1"></i>希望納期: ${p.deadline ? p.deadline.replace(/-/g, '/') : '指定なし'}</span>
-                </div>
-            </div>
-            `;
-        });
-        html += '</div>';
-        c.innerHTML = html;
-    };
-
     window.renderSelectors = () => {
       const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
       sU('week-pulldown-section', e => e.style.display = isM ? 'none' : 'block'); 
@@ -2667,157 +2580,6 @@
             window.showGlobalToast("送信に失敗しました");
         }
     };
-
-    window.showKaizenForm = () => {
-        $('kaizen-list-container').classList.add('hidden');
-        $('kaizen-form-container').classList.remove('hidden');
-        
-        const os = $('kaizen-office');
-        if (os) {
-            os.innerHTML = '<option value="" disabled selected>- 対象の事業所を選択 -</option>';
-            window.appState.offices.sort((a,b)=>a.name.localeCompare(b.name)).forEach(o => {
-                os.innerHTML += `<option value="${o.name}">${o.name}</option>`;
-            });
-        }
-    };
-
-    window.cancelKaizenForm = () => {
-        $('kaizen-form-container').classList.add('hidden');
-        $('kaizen-list-container').classList.remove('hidden');
-    };
-
-    window.submitKaizen = async () => {
-        const office = $('kaizen-office').value;
-        const category = $('kaizen-category').value;
-        const detail = $('kaizen-detail').value;
-        const deadline = $('kaizen-deadline').value;
-
-        if (!office || !category || !detail) return window.showGlobalToast("必須項目を入力してください");
-        
-        const payload = {
-            office, category, detail, deadline,
-            status: 'pending',
-            timestamp: new Date().toISOString(),
-            user_id: window.appState.user?.uid || "unknown"
-        };
-
-        try {
-            window.showGlobalToast("提案を送信中...");
-            try {
-                const docRef = window.doc(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'kaizen_proposals'));
-                await window.setDoc(docRef, payload);
-            } catch (dbErr) {
-                console.warn("クラウド保存スキップ (外部公開環境のため):", dbErr);
-            }
-            window.showGlobalToast("提案を送信しました！");
-            
-            $('kaizen-office').value = '';
-            $('kaizen-category').value = '';
-            $('kaizen-detail').value = '';
-            $('kaizen-deadline').value = '';
-            
-            window.cancelKaizenForm();
-        } catch (e) {
-            console.warn(e);
-            window.showGlobalToast("送信に失敗しました");
-        }
-    };
-
-    window.updateKaizenStatus = async (id, newStatus) => {
-        try {
-            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'kaizen_proposals', id), {
-                status: newStatus,
-                updated_at: new Date().toISOString()
-            });
-            window.showGlobalToast("ステータスを更新しました");
-        } catch (e) {
-            console.warn(e);
-            window.showGlobalToast("更新に失敗しました");
-        }
-    };
-
-    window.setKaizenFilter = (filter) => {
-        window.appState.kaizenFilter = filter;
-        window.renderKaizenList();
-    };
-
-    window.renderKaizenList = () => {
-        const c = $('kaizen-list-container');
-        if(!c) return;
-        const proposals = window.appState.kaizenProposals || [];
-        const filter = window.appState.kaizenFilter || 'unresolved';
-        
-        let filteredProposals = proposals;
-        if (filter === 'unresolved') {
-            filteredProposals = proposals.filter(p => p.status === 'pending' || p.status === 'in_progress');
-        } else if (filter === 'resolved') {
-            filteredProposals = proposals.filter(p => p.status === 'completed' || p.status === 'rejected');
-        }
-
-        filteredProposals.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        const unresolvedCount = proposals.filter(p => p.status === 'pending' || p.status === 'in_progress').length;
-        const resolvedCount = proposals.filter(p => p.status === 'completed' || p.status === 'rejected').length;
-
-        let filterHtml = `
-            <div class="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
-                <button onclick="window.setKaizenFilter('unresolved')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'unresolved' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    未完了 <span class="ml-1 ${filter === 'unresolved' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${unresolvedCount}</span>
-                </button>
-                <button onclick="window.setKaizenFilter('resolved')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'resolved' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    完了・見送り <span class="ml-1 ${filter === 'resolved' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${resolvedCount}</span>
-                </button>
-                <button onclick="window.setKaizenFilter('all')" class="whitespace-nowrap px-4 py-2 rounded-full text-[10px] sm:text-xs font-black transition-colors ${filter === 'all' ? 'bg-purple-600 text-white shadow-sm' : 'bg-white text-gray-500 border hover:bg-gray-50'}">
-                    すべて <span class="ml-1 ${filter === 'all' ? 'bg-purple-500 text-white' : 'bg-gray-200 text-gray-600'} px-1.5 py-0.5 rounded-full text-[9px]">${proposals.length}</span>
-                </button>
-            </div>
-        `;
-
-        if (filteredProposals.length === 0) {
-            c.innerHTML = filterHtml + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-folder-open text-3xl mb-3 block opacity-50"></i>該当する提案はありません</p></div>';
-            return;
-        }
-
-        let html = filterHtml + '<div class="space-y-4">';
-        filteredProposals.forEach(p => {
-            const d = new Date(p.timestamp).toLocaleDateString('ja-JP');
-            
-            let badgeClass = 'bg-gray-100 text-gray-600';
-            if (p.status === 'in_progress') { badgeClass = 'bg-blue-100 text-blue-600 border-blue-200'; }
-            if (p.status === 'completed') { badgeClass = 'bg-emerald-100 text-emerald-600 border-emerald-200'; }
-            if (p.status === 'rejected') { badgeClass = 'bg-red-100 text-red-600 border-red-200'; }
-
-            const statusSelector = `
-                <select onchange="window.updateKaizenStatus('${p.id}', this.value)" class="text-[10px] font-black border rounded p-1 outline-none shadow-sm ${badgeClass} ${p.status === 'pending' ? 'ring-2 ring-red-400 ring-offset-1 animate-pulse' : ''}">
-                    <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>確認中 (未対応)</option>
-                    <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>対応中</option>
-                    <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>完了</option>
-                    <option value="rejected" ${p.status === 'rejected' ? 'selected' : ''}>見送り</option>
-                </select>
-            `;
-
-            html += `
-            <div class="bg-white p-4 rounded-xl border shadow-sm hover:shadow-md transition">
-                <div class="flex justify-between items-start mb-2">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-black text-gray-800">${p.office}</span>
-                        <span class="text-[9px] bg-purple-50 text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded font-bold">${p.category}</span>
-                    </div>
-                    ${statusSelector}
-                </div>
-                <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 mb-3">
-                    <p class="text-xs text-gray-700 font-bold whitespace-pre-wrap leading-relaxed">${p.detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-[10px] text-gray-400 font-bold">${d} 提案</span>
-                    <span class="text-[10px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200"><i class="fa-regular fa-calendar mr-1"></i>希望納期: ${p.deadline ? p.deadline.replace(/-/g, '/') : '指定なし'}</span>
-                </div>
-            </div>
-            `;
-        });
-        html += '</div>';
-        c.innerHTML = html;
-    };
   </script>
 </head>
 <body>
@@ -2845,7 +2607,6 @@
           <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase">入力</button>
           <button onclick="window.switchTab('ranking')" id="tab-ranking" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">ランキング</button>
           <button onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">FB共有</button>
-          <button onclick="window.switchTab('kaizen')" id="tab-kaizen" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">改善提案</button>
           <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">マスタ</button>
       </nav>
   </header>
@@ -2877,7 +2638,8 @@
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">マスタ設定</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Settings</p></div>
           </div>
-          <div onclick="window.switchTab('kaizen')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
+          <!-- 改善提案アイコン（UIのみ残し、クリックイベントを削除） -->
+          <div class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm transition-all cursor-default opacity-50">
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-lightbulb"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">改善提案</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Kaizen</p></div>
           </div>
@@ -2888,57 +2650,6 @@
       </div>
     </div>
     
-    <div id="view-kaizen" class="hidden space-y-6 view-content">
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border shadow-sm">
-            <div class="flex justify-between items-center mb-2">
-                <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-lightbulb text-purple-500 mr-2"></i>改善提案ボード</h2>
-                <button onclick="window.showKaizenForm()" class="bg-purple-600 hover:bg-purple-700 text-white text-[10px] sm:text-xs font-black px-3 py-2 rounded-xl shadow-sm transition"><i class="fa-solid fa-plus mr-1"></i>新規作成</button>
-            </div>
-            <p class="text-[10px] sm:text-xs text-gray-500 font-bold">品質向上に向けた現場の「困りごと」や「提案」を共有します。</p>
-        </div>
-
-        <div id="kaizen-list-container" class="space-y-4"></div>
-
-        <div id="kaizen-form-container" class="hidden bg-white p-5 sm:p-6 rounded-2xl border shadow-sm">
-            <h3 class="text-sm font-black text-purple-800 mb-3 border-b pb-2"><i class="fa-solid fa-pen mr-2"></i>新しい改善提案を作成</h3>
-            
-            <div class="bg-red-50 text-red-600 p-3 rounded-xl border border-red-100 text-[10px] font-bold mb-5 leading-relaxed">
-                <i class="fa-solid fa-triangle-exclamation mr-1"></i>【注意】ここは「品質改善・環境改善」に関する提案窓口です。<br>
-                ※人事相談（人間関係、シフト等）や、通常の備品購入依頼は、ここではなく所定の別ルートで申請してください。
-            </div>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] font-black text-gray-600 block mb-1">対象事業所 <span class="text-red-500">*</span></label>
-                    <select id="kaizen-office" class="w-full p-2.5 border rounded-xl text-xs font-bold bg-gray-50 focus:bg-white focus:border-purple-400 outline-none"></select>
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-gray-600 block mb-1">提案の種別 <span class="text-red-500">*</span></label>
-                    <select id="kaizen-category" class="w-full p-2.5 border rounded-xl text-xs font-bold bg-gray-50 focus:bg-white focus:border-purple-400 outline-none">
-                        <option value="" disabled selected>- 選択してください -</option>
-                        <option value="設備・修繕">設備・修繕</option>
-                        <option value="衛生・5S">衛生・5S</option>
-                        <option value="業務効率化">業務効率化</option>
-                        <option value="その他">その他</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-gray-600 block mb-1">具体的な内容（課題とどうしたいか） <span class="text-red-500">*</span></label>
-                    <textarea id="kaizen-detail" rows="4" class="w-full p-2.5 border rounded-xl text-xs font-bold bg-gray-50 focus:bg-white focus:border-purple-400 outline-none" placeholder="例：〇〇の棚が壊れており危険なため、新しいものに交換してほしいです。"></textarea>
-                </div>
-                <div>
-                    <label class="text-[10px] font-black text-gray-600 block mb-1">希望する納期・対応時期 (任意)</label>
-                    <input type="date" id="kaizen-deadline" class="w-full p-2.5 border rounded-xl text-xs font-bold bg-gray-50 focus:bg-white focus:border-purple-400 outline-none">
-                </div>
-            </div>
-
-            <div class="flex gap-3 mt-6">
-                <button onclick="window.cancelKaizenForm()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-black text-xs transition">キャンセル</button>
-                <button onclick="window.submitKaizen()" class="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-xs shadow-md transition">提案を送信する</button>
-            </div>
-        </div>
-    </div>
-
     <div id="view-rules" class="hidden space-y-6 view-content">
         <div class="flex justify-between items-center mb-2">
             <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-book-open text-blue-500 mr-2"></i>運用ルール / 目的</h2>
@@ -3264,13 +2975,6 @@
           }
       }, e => console.warn("Rules Sync Warn:", e));
 
-      onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'kaizen_proposals'), s => {
-          window.appState.kaizenProposals = s.docs.map(d => ({ id: d.id, ...d.data() }));
-          if (window.appState.activeTab === 'kaizen') {
-              if (window.renderKaizenList) window.renderKaizenList();
-          }
-      }, e => console.warn("Kaizen Sync Warn:", e));
-      
       const setHist = (cName, hKey, fKey, lKey) => {
         onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', cName), s => {
           const st = window.appState; 
