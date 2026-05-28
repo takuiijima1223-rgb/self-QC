@@ -241,7 +241,7 @@
 
     window.actuallySwitchTab = (id) => {
       window.appState.activeTab = id;
-      ['home', 'input', 'master', 'feedback', 'knowledge', 'ranking', 'rules'].forEach(v => { 
+      ['home', 'input', 'master', 'feedback', 'knowledge', 'ranking', 'rules', 'kaizen'].forEach(v => { 
           sU('view-'+v, el => el.classList.add('hidden')); 
           sU('tab-'+v, el => { if(el) el.classList.remove('tab-active', 'text-pink-500'); }); 
       });
@@ -1408,7 +1408,7 @@
                     ms.innerHTML += `<option value="half_${y}_2">査定期間: ${y}年 下期 (9月〜2月)</option>`;
                 });
 
-                ms.innerHTML += '<option value="custom">手動で期間を設定...</option>';
+                ms.innerHTML += '<option value="custom">手持で期間を設定...</option>';
                 window.appState.monthsData.slice().reverse().forEach(m => { 
                     ms.innerHTML += `<option value="${m}">${m}</option>`;
                 });
@@ -2585,8 +2585,7 @@
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">マスタ設定</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Settings</p></div>
           </div>
-          <!-- 改善提案アイコン（UIのみ残し、クリックイベントを削除） -->
-          <div class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm transition-all cursor-default opacity-50">
+          <div onclick="window.switchTab('kaizen')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all cursor-pointer">
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-lightbulb"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">改善提案</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Kaizen</p></div>
           </div>
@@ -2597,6 +2596,21 @@
       </div>
     </div>
     
+    <div id="view-kaizen" class="hidden space-y-6 view-content">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-lightbulb text-purple-500 mr-2"></i>改善提案</h2>
+        </div>
+        <div class="bg-white p-6 sm:p-8 rounded-2xl border shadow-sm text-center">
+            <p class="text-sm sm:text-base font-bold text-gray-700 mb-6 leading-relaxed">
+                品質向上に向けた現場の「困りごと」や「提案」は、<br>以下のGoogleフォームから送信してください。
+            </p>
+            
+            <a href="https://forms.gle/7HC5MpVuLN25Cesb6" target="_blank" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-black px-8 py-4 rounded-xl shadow-md transition active:scale-95">
+                <i class="fa-solid fa-external-link-alt mr-2"></i>Googleフォームを開く
+            </a>
+        </div>
+    </div>
+
     <div id="view-rules" class="hidden space-y-6 view-content">
         <div class="flex justify-between items-center mb-2">
             <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-book-open text-blue-500 mr-2"></i>運用ルール / 目的</h2>
