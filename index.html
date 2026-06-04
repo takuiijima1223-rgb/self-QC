@@ -43,6 +43,9 @@
         }); 
     };
 
+    // ==========================================
+    // ▼ GAS(Google Apps Script)のWebアプリURL ▼
+    // ==========================================
     const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxoLVrI3mhvh9pnBxXs6xLYk-JaXN5_4z56u66VKroqACUTZN2N0ejwe5ZWVyAENJoW/exec"; 
 
     window.getNowLocalStr = () => {
@@ -456,6 +459,28 @@
         }
     };
 
+    window.restoreUI = (pastData) => {
+        // ボタンの色を復元
+        Object.keys(window.appState.answers).forEach(id => {
+            const val = window.appState.answers[id];
+            const b = $(`btn-${id}-${val}`); 
+            if (b) { 
+                if(val === 2) b.classList.add('selected-good'); 
+                else if(val === 1) b.classList.add('selected-warn'); 
+                else if(val === 0) b.classList.add('selected-error'); 
+                else if(val === -1) b.classList.add('selected-na'); 
+            }
+        });
+
+        // QCチームの総評コメントを復元
+        if (window.appState.currentMode === 'qc' && pastData) {
+            const commentInput = $('qc-comment-input');
+            if (commentInput && pastData.comment) {
+                commentInput.value = pastData.comment;
+            }
+        }
+    };
+
     window.handleOfficeSelect = () => {
       const o = $('office-pulldown')?.value; 
       const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
@@ -479,27 +504,44 @@
       window.appState.office = o; 
       window.appState.inputWeek = w; 
       window.appState.inputMonth = m; 
-      window.appState.answers = {};
       
       if (!isM) { 
           const wi = window.appState.weeksData.find(x => x.label === w); 
           window.appState.isLastWeekOfMonth = wi ? wi.isLastWeekOfMonth : false; 
       }
 
+      // 入力データをリセットしてから、過去データがあれば復元する
+      window.appState.answers = {};
+      window.appState.issues = [];
+      window.appState.good_practices = [];
+
       let isAlreadyCompleted = false;
+      let pastData = null;
       const mode = window.appState.currentMode;
+      
       if (mode === 'staff') {
-          isAlreadyCompleted = window.appState.historyFull[o] && window.appState.historyFull[o][w] !== undefined;
+          pastData = window.appState.historyFull[o] && window.appState.historyFull[o][w];
       } else if (mode === 'am') {
-          isAlreadyCompleted = window.appState.amHistoryFull[o] && window.appState.amHistoryFull[o][m] !== undefined;
+          pastData = window.appState.amHistoryFull[o] && window.appState.amHistoryFull[o][m];
       } else if (mode === 'qc') {
-          isAlreadyCompleted = window.appState.teamHistoryFull[o] && window.appState.teamHistoryFull[o][m] !== undefined;
+          pastData = window.appState.teamHistoryFull[o] && window.appState.teamHistoryFull[o][m];
+      }
+      
+      isAlreadyCompleted = !!pastData;
+
+      // 過去データのメモリへの復元
+      if (pastData) {
+          if (pastData.answers) window.appState.answers = JSON.parse(JSON.stringify(pastData.answers));
+          if (mode === 'qc') {
+              if (pastData.issues) window.appState.issues = JSON.parse(JSON.stringify(pastData.issues));
+              if (pastData.good_practices) window.appState.good_practices = JSON.parse(JSON.stringify(pastData.good_practices));
+          }
       }
       
       const alertContainer = $('already-completed-alert');
       if (alertContainer) {
           if (isAlreadyCompleted) {
-              alertContainer.innerHTML = `<div class="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mb-4 flex items-start gap-3 shadow-sm"><i class="fa-solid fa-circle-info text-yellow-500 mt-0.5"></i><div><p class="text-xs font-black text-yellow-800 mb-1">この期間はすでに入力済みです</p><p class="text-[10px] font-bold text-yellow-700 leading-relaxed">再度送信すると、以前のデータが上書きされます。修正が必要な場合のみ入力してください。</p></div></div>`;
+              alertContainer.innerHTML = `<div class="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mb-4 flex items-start gap-3 shadow-sm"><i class="fa-solid fa-clock-rotate-left text-yellow-500 mt-0.5"></i><div><p class="text-xs font-black text-yellow-800 mb-1">過去の入力データを復元しました</p><p class="text-[10px] font-bold text-yellow-700 leading-relaxed">この期間はすでに入力済みです。再度送信するとデータが上書きされます。修正が必要な場合のみ編集して送信してください。</p></div></div>`;
               alertContainer.classList.remove('hidden');
           } else {
               alertContainer.innerHTML = '';
@@ -516,6 +558,7 @@
       });
       
       window.renderCheckForms(); 
+      window.restoreUI(pastData);
       window.updateProgressDisplay();
     };
 
@@ -604,8 +647,8 @@
             </div>
           `;
           cc.classList.remove('hidden');
-          window.appState.issues = [];
-          window.appState.good_practices = [];
+          if (!window.appState.issues) window.appState.issues = [];
+          if (!window.appState.good_practices) window.appState.good_practices = [];
           window.renderIssues();
           
           const dropzone = $('issue-dropzone');
@@ -2573,6 +2616,7 @@
     window.getDocs = getDocs;
 
     async function connectCloud() {
+      // 外部環境などでFirebase接続が遅延・失敗しても画面が作れるように初回描画しておく
       if (window.renderMasterList) window.renderMasterList(); 
       if (window.renderSelectors) window.renderSelectors(); 
 
@@ -2617,7 +2661,7 @@
         if (window.renderSelectors) window.renderSelectors(); 
         window.hideMainLoader();
       }, e => {
-          console.warn("Offices Sync Warn:", e);
+          console.warn("Offices Sync Warn (外部公開環境のためスキップ):", e);
           window.appState.offices = [...window.initialOffices];
           if (window.renderMasterList) window.renderMasterList(); 
           if (window.renderSelectors) window.renderSelectors(); 
