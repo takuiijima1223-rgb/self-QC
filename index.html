@@ -43,9 +43,6 @@
         }); 
     };
 
-    // ==========================================
-    // ▼ GAS(Google Apps Script)のWebアプリURL ▼
-    // ==========================================
     const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxoLVrI3mhvh9pnBxXs6xLYk-JaXN5_4z56u66VKroqACUTZN2N0ejwe5ZWVyAENJoW/exec"; 
 
     window.getNowLocalStr = () => {
@@ -129,8 +126,6 @@
         history: {}, historyFull: {}, amHistory: {}, amHistoryFull: {}, teamHistory: {}, teamHistoryFull: {}, 
         currentMode: 'staff', selectedAM: "", analysisTarget: "all", weeksData: [], monthsData: [], 
         isLastWeekOfMonth: false, dataSource: 'staff', gapCompareMode: 'all', issues: [], good_practices: [],
-        carImages: { front: null, back: null, inside1: null, inside2: null },
-        officeImages: { entrance: null, workspace: null, interview: null, office: null },
         settings: {}, rules: defaultRules, isRulesEditMode: false,
         masterAuthenticated: false, amAuthenticated: false, qcAuthenticated: false, pendingAuthTarget: null,
         activeUploads: 0
@@ -241,7 +236,7 @@
 
     window.actuallySwitchTab = (id) => {
       window.appState.activeTab = id;
-      ['home', 'input', 'master', 'feedback', 'knowledge', 'ranking', 'rules', 'kaizen'].forEach(v => { 
+      ['home', 'input', 'master', 'feedback', 'knowledge', 'ranking', 'rules', 'kaizen', 'photos'].forEach(v => { 
           sU('view-'+v, el => el.classList.add('hidden')); 
           sU('tab-'+v, el => { if(el) el.classList.remove('tab-active', 'text-pink-500'); }); 
       });
@@ -314,8 +309,6 @@
         window.appState.currentMode = mode; 
         window.appState.office = null; 
         window.appState.answers = {}; 
-        window.appState.carImages = { front: null, back: null, inside1: null, inside2: null };
-        window.appState.officeImages = { entrance: null, workspace: null, interview: null, office: null };
         window.switchTab('input'); 
     };
     
@@ -487,8 +480,6 @@
       window.appState.inputWeek = w; 
       window.appState.inputMonth = m; 
       window.appState.answers = {};
-      window.appState.carImages = { front: null, back: null, inside1: null, inside2: null };
-      window.appState.officeImages = { entrance: null, workspace: null, interview: null, office: null };
       
       if (!isM) { 
           const wi = window.appState.weeksData.find(x => x.label === w); 
@@ -548,7 +539,7 @@
       c.innerHTML = isLW ? `<div class="bg-indigo-50 p-4 rounded-xl text-indigo-700 text-xs font-bold mb-4">月末週のため月次項目が追加されています</div>` : '';
       
       itemsToRender.forEach(g => {
-        if (g.items.length === 0) return; // 項目が空になったカテゴリは非表示
+        if (g.items.length === 0) return; 
         
         const div = document.createElement('div'); 
         div.className = "bg-white rounded-2xl shadow-sm border mb-4 overflow-hidden";
@@ -590,156 +581,6 @@
         div.innerHTML = html; 
         c.appendChild(div);
       });
-
-      if (!isM && isLW) {
-          const officeDiv = document.createElement('div');
-          officeDiv.className = "bg-white rounded-2xl shadow-sm border mb-4 overflow-hidden";
-          let officeHtml = `
-          <div class="bg-pink-500 px-4 py-2 text-[10px] text-white font-black uppercase flex items-center"><i class="fa-solid fa-building mr-2"></i>事業所内チェック (写真提出)</div>
-          <div class="p-5 border-b">
-              <div class="mb-4">
-                  <p class="text-xs text-gray-800 font-bold mb-2">【ルールと評価の視点】</p>
-                  <div class="text-[10px] text-gray-600 space-y-2 bg-gray-50 p-3 rounded-xl border">
-                      <p><strong>1. 玄関（事業所の「顔」としての基本マナー）</strong><br>
-                      <span class="text-pink-600 font-bold">【撮影】</span>下駄箱全体と、玄関マット周辺が写るように撮影。<br>
-                      <span class="text-pink-600 font-bold">【視点】</span>靴の整頓、清潔感、安全性（避難の妨げになる荷物がないか）</p>
-                      
-                      <p><strong>2. 事業所（利用者が作業する場所）</strong><br>
-                      <span class="text-pink-600 font-bold">【撮影】</span>作業スペース全体（机の配置や通路幅）がわかるように撮影。<br>
-                      <span class="text-pink-600 font-bold">【視点】</span>整理整頓、安全性（動線）、衛生面</p>
-                      
-                      <p><strong>3. 面談室（プライバシーと安心感の確保）</strong><br>
-                      <span class="text-pink-600 font-bold">【撮影】</span>面談テーブルの上と、部屋の四隅が写るように撮影。<br>
-                      <span class="text-pink-600 font-bold">【視点】</span>情報管理（個人情報放置ゼロ）、環境設定、清潔感</p>
-                      
-                      <p><strong>4. 事務室（職員の事務作業スペース）</strong><br>
-                      <span class="text-pink-600 font-bold">【撮影】</span>職員のデスク周り全体と、書類棚周辺が写るように撮影。<br>
-                      <span class="text-pink-600 font-bold">【視点】</span>情報セキュリティ（クリアデスク）、整理整頓、配線・足元</p>
-                  </div>
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-          `;
-
-          const officeSections = [
-              { key: 'entrance', label: '① 玄関', desc: '下駄箱全体と玄関マット周辺' },
-              { key: 'workspace', label: '② 事業所', desc: '作業スペース全体の配置・通路' },
-              { key: 'interview', label: '③ 面談室', desc: 'テーブルと部屋の四隅' },
-              { key: 'office', label: '④ 事務室', desc: 'デスク周り全体と書類棚周辺' }
-          ];
-
-          officeSections.forEach(s => {
-              officeHtml += `
-              <div class="flex flex-col border border-gray-200 rounded-xl bg-gray-50 p-2.5">
-                  <span class="text-[10px] font-black text-gray-700 mb-0.5">${s.label}</span>
-                  <span class="text-[8px] text-gray-500 mb-2 leading-tight h-6">${s.desc}</span>
-                  
-                  <div id="office-dropzone-${s.key}" class="flex-1 border-2 border-dashed border-gray-300 bg-white rounded-lg flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-gray-100 transition min-h-[80px]" onclick="document.getElementById('office-input-${s.key}').click()">
-                      <input type="file" id="office-input-${s.key}" accept="image/*" class="hidden" onchange="window.handleOfficeImageSelect('${s.key}', event)">
-                      <i class="fa-solid fa-camera text-gray-300 text-lg mb-1"></i>
-                      <span class="text-[8px] font-bold text-gray-400 text-center leading-tight">タップまたは<br>ドロップ</span>
-                  </div>
-
-                  <div id="office-preview-container-${s.key}" class="hidden relative w-full aspect-square mt-auto">
-                      <img id="office-preview-${s.key}" class="rounded-lg w-full h-full object-cover border shadow-sm cursor-pointer" onclick="window.openImageModal(this.src)">
-                      <button class="absolute -top-1.5 -right-1.5 bg-gray-900 bg-opacity-80 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-500 transition text-[10px] shadow-sm" onclick="window.removeOfficeImage('${s.key}')">
-                          <i class="fa-solid fa-times"></i>
-                      </button>
-                  </div>
-              </div>
-              `;
-          });
-
-          officeHtml += `</div></div>`;
-          officeDiv.innerHTML = officeHtml;
-          c.appendChild(officeDiv);
-
-          setTimeout(() => {
-              ['entrance', 'workspace', 'interview', 'office'].forEach(key => {
-                  const dropzone = $(`office-dropzone-${key}`);
-                  if (dropzone) {
-                      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('bg-gray-200'); dropzone.classList.remove('bg-white'); });
-                      dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('bg-gray-200'); dropzone.classList.add('bg-white'); });
-                      dropzone.addEventListener('drop', (e) => {
-                          e.preventDefault();
-                          dropzone.classList.remove('bg-gray-200'); dropzone.classList.add('bg-white');
-                          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                              window.handleOfficeImageSelect(key, { target: { files: [e.dataTransfer.files[0]] } });
-                          }
-                      });
-                  }
-              });
-              window.renderOfficeImagePreviews();
-          }, 0);
-      }
-
-      if (!isM && isLW && window.appState.settings?.requireCarImages !== false) {
-          const carDiv = document.createElement('div');
-          carDiv.className = "bg-white rounded-2xl shadow-sm border mb-4 overflow-hidden";
-          let carHtml = `
-          <div class="bg-gray-800 px-4 py-2 text-[10px] text-white font-black uppercase flex items-center"><i class="fa-solid fa-car mr-2"></i>社用車管理 (QCチーム指定項目)</div>
-          <div class="p-5 border-b">
-              <div class="mb-4">
-                  <p class="text-xs text-gray-800 font-bold mb-1">【ルール】撮影箇所を指定する</p>
-                  <p class="text-[10px] text-gray-500 mb-3">評価のブレをなくすため、毎月同じアングルでの写真提出をルール化します。</p>
-                  <div class="bg-emerald-50 text-emerald-700 p-2.5 rounded-lg text-[10px] font-bold border border-emerald-100 mb-4 leading-relaxed">
-                      <i class="fa-solid fa-circle-info mr-1"></i>減点ではなく「品質向上」を目的にする<br>
-                      <span class="text-emerald-600 font-normal">チェックの目的は「減点して叱るため」ではなく、「事業所のサービスの質と安全を守るため」です。</span>
-                  </div>
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-          `;
-
-          const carSections = [
-              { key: 'front', label: '外観 (正面)', desc: '斜め前から、キズの有無がわかるように' },
-              { key: 'back', label: '外観 (後ろ)', desc: '後ろから全体が写るように' },
-              { key: 'inside1', label: '車内① (前席)', desc: 'ドアを開け、足元とシートが写るように' },
-              { key: 'inside2', label: '車内② (後部・荷室)', desc: '荷室の整理整頓状況が写るように' }
-          ];
-
-          carSections.forEach(s => {
-              carHtml += `
-              <div class="flex flex-col border border-gray-200 rounded-xl bg-gray-50 p-2.5">
-                  <span class="text-[10px] font-black text-gray-700 mb-0.5">${s.label}</span>
-                  <span class="text-[8px] text-gray-500 mb-2 leading-tight h-6">${s.desc}</span>
-                  
-                  <div id="car-dropzone-${s.key}" class="flex-1 border-2 border-dashed border-gray-300 bg-white rounded-lg flex flex-col items-center justify-center p-2 cursor-pointer hover:bg-gray-100 transition min-h-[80px]" onclick="document.getElementById('car-input-${s.key}').click()">
-                      <input type="file" id="car-input-${s.key}" accept="image/*" class="hidden" onchange="window.handleCarImageSelect('${s.key}', event)">
-                      <i class="fa-solid fa-camera text-gray-300 text-lg mb-1"></i>
-                      <span class="text-[8px] font-bold text-gray-400 text-center leading-tight">タップまたは<br>ドロップ</span>
-                  </div>
-
-                  <div id="car-preview-container-${s.key}" class="hidden relative w-full aspect-square mt-auto">
-                      <img id="car-preview-${s.key}" class="rounded-lg w-full h-full object-cover border shadow-sm cursor-pointer" onclick="window.openImageModal(this.src)">
-                      <button class="absolute -top-1.5 -right-1.5 bg-gray-900 bg-opacity-80 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-500 transition text-[10px] shadow-sm" onclick="window.removeCarImage('${s.key}')">
-                          <i class="fa-solid fa-times"></i>
-                      </button>
-                  </div>
-              </div>
-              `;
-          });
-
-          carHtml += `</div></div>`;
-          carDiv.innerHTML = carHtml;
-          c.appendChild(carDiv);
-
-          setTimeout(() => {
-              ['front', 'back', 'inside1', 'inside2'].forEach(key => {
-                  const dropzone = $(`car-dropzone-${key}`);
-                  if (dropzone) {
-                      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('bg-gray-200'); dropzone.classList.remove('bg-white'); });
-                      dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('bg-gray-200'); dropzone.classList.add('bg-white'); });
-                      dropzone.addEventListener('drop', (e) => {
-                          e.preventDefault();
-                          dropzone.classList.remove('bg-gray-200'); dropzone.classList.add('bg-white');
-                          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                              window.handleCarImageSelect(key, { target: { files: [e.dataTransfer.files[0]] } });
-                          }
-                      });
-                  }
-              });
-              window.renderCarImagePreviews();
-          }, 0);
-      }
 
       const cc = $('comment-container');
       if (window.appState.currentMode === 'qc') {
@@ -835,104 +676,6 @@
             window.appState.activeUploads = Math.max(0, window.appState.activeUploads - 1);
             window.updateProgressDisplay();
         }
-    };
-
-    window.handleOfficeImageSelect = async (key, e) => {
-        const file = e.target.files?.[0];
-        if(!file) return;
-
-        try {
-            const compressed = await window.compressImage(file);
-            window.appState.officeImages[key] = compressed;
-            window.renderOfficeImagePreviews();
-            window.updateProgressDisplay();
-            sU(`office-input-${key}`, el => el.value = '');
-            
-            window.showGlobalToast("写真をバックグラウンドで保存中...");
-            window.uploadImageToDriveAsync(compressed, "office", `事業所_${key}`, (url) => {
-                if(window.appState.officeImages[key] === compressed) {
-                    window.appState.officeImages[key] = url;
-                }
-            });
-        } catch (error) {
-            console.warn("Image Process Warn:", error);
-            window.showGlobalToast("画像の処理に失敗しました");
-            sU(`office-input-${key}`, el => el.value = '');
-        }
-    };
-
-    window.removeOfficeImage = (key) => {
-        window.appState.officeImages[key] = null;
-        window.renderOfficeImagePreviews();
-        window.updateProgressDisplay();
-    };
-
-    window.renderOfficeImagePreviews = () => {
-        ['entrance', 'workspace', 'interview', 'office'].forEach(key => {
-            const preview = $(`office-preview-${key}`);
-            const container = $(`office-preview-container-${key}`);
-            const dropzone = $(`office-dropzone-${key}`);
-            if (preview && container && dropzone) {
-                if (window.appState.officeImages[key]) {
-                    preview.src = window.appState.officeImages[key];
-                    container.classList.remove('hidden');
-                    dropzone.classList.add('hidden');
-                } else {
-                    preview.src = '';
-                    container.classList.add('hidden');
-                    dropzone.classList.remove('hidden');
-                }
-            }
-        });
-    };
-
-    window.handleCarImageSelect = async (key, e) => {
-        const file = e.target.files?.[0];
-        if(!file) return;
-
-        try {
-            const compressed = await window.compressImage(file);
-            window.appState.carImages[key] = compressed;
-            window.renderCarImagePreviews();
-            window.updateProgressDisplay();
-            sU(`car-input-${key}`, el => el.value = '');
-            
-            window.showGlobalToast("写真をバックグラウンドで保存中...");
-            window.uploadImageToDriveAsync(compressed, "car", `社用車_${key}`, (url) => {
-                if(window.appState.carImages[key] === compressed) {
-                    window.appState.carImages[key] = url;
-                }
-            });
-        } catch (error) {
-            console.warn("Image Process Warn:", error);
-            window.showGlobalToast("画像の処理に失敗しました");
-            sU(`car-input-${key}`, el => el.value = '');
-        }
-    };
-
-    window.removeCarImage = (key) => {
-        window.appState.carImages[key] = null;
-        window.renderCarImagePreviews();
-        window.updateProgressDisplay();
-    };
-
-    window.renderCarImagePreviews = () => {
-        ['front', 'back', 'inside1', 'inside2'].forEach(key => {
-            const preview = $(`car-preview-${key}`);
-            const container = $(`car-preview-container-${key}`);
-            const dropzone = $(`car-dropzone-${key}`);
-            if (preview && container && dropzone) {
-                if (window.appState.carImages[key]) {
-                    preview.src = window.appState.carImages[key];
-                    container.classList.remove('hidden');
-                    dropzone.classList.add('hidden');
-                } else {
-                    preview.src = '';
-                    container.classList.add('hidden');
-                    dropzone.classList.remove('hidden');
-                }
-            }
-        });
     };
 
     window.handleIssueImageSelect = async (e) => {
@@ -1107,20 +850,6 @@
           if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(key)) return;
           count++;
       });
-
-      if (!isM && isLW) {
-          total += 4; 
-          ['entrance', 'workspace', 'interview', 'office'].forEach(k => {
-              if (window.appState.officeImages && window.appState.officeImages[k]) count++;
-          });
-      }
-
-      if (!isM && isLW && window.appState.settings?.requireCarImages !== false) {
-          total += 4; 
-          ['front', 'back', 'inside1', 'inside2'].forEach(k => {
-              if (window.appState.carImages && window.appState.carImages[k]) count++;
-          });
-      }
 
       let hqExcludedItems = new Set();
       if (window.appState.currentMode === 'qc' && window.appState.issues) {
@@ -1408,7 +1137,7 @@
                     ms.innerHTML += `<option value="half_${y}_2">査定期間: ${y}年 下期 (9月〜2月)</option>`;
                 });
 
-                ms.innerHTML += '<option value="custom">手持で期間を設定...</option>';
+                ms.innerHTML += '<option value="custom">手動で期間を設定...</option>';
                 window.appState.monthsData.slice().reverse().forEach(m => { 
                     ms.innerHTML += `<option value="${m}">${m}</option>`;
                 });
@@ -2320,14 +2049,6 @@
             toggleBonusText.className = `ml-3 text-sm font-black ${toggleBonus.checked ? 'text-blue-600' : 'text-gray-500'}`;
         }
 
-        const toggleCar = document.getElementById('toggle-car-check');
-        const toggleCarText = document.getElementById('toggle-car-check-text');
-        if (toggleCar && toggleCarText) {
-            toggleCar.checked = window.appState.settings?.requireCarImages !== false; 
-            toggleCarText.innerText = toggleCar.checked ? 'ON' : 'OFF';
-            toggleCarText.className = `ml-3 text-sm font-black ${toggleCar.checked ? 'text-blue-600' : 'text-gray-500'}`;
-        }
-
         const toggleCompliance = document.getElementById('toggle-compliance-items');
         const toggleComplianceText = document.getElementById('toggle-compliance-items-text');
         if (toggleCompliance && toggleComplianceText) {
@@ -2357,20 +2078,6 @@
             await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
                 ...window.appState.settings,
                 showBonusScore: checked
-            });
-            window.showGlobalToast("設定を保存しました");
-        } catch(e) {
-            console.error("Settings Error:", e);
-            window.showGlobalToast("保存に失敗しました。Firebaseの設定/権限を確認してください。");
-        }
-    };
-
-    window.toggleCarCheckSetting = async (checked) => {
-        if (!window.appState.user) return;
-        try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
-                ...window.appState.settings,
-                requireCarImages: checked
             });
             window.showGlobalToast("設定を保存しました");
         } catch(e) {
@@ -2445,12 +2152,6 @@
         if (mode === 'staff') {
             colName = "qc_history";
             data.week = period;
-            if (window.appState.isLastWeekOfMonth) {
-                data.officeImages = window.appState.officeImages;
-                if (window.appState.settings?.requireCarImages !== false) {
-                    data.carImages = window.appState.carImages;
-                }
-            }
         } else if (mode === 'am') {
             colName = "am_qc_history";
             data.month = period;
@@ -2593,9 +2294,40 @@
               <div class="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-book-open"></i></div>
               <div><h3 class="font-black text-sm sm:text-base text-gray-800">運用ルール</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Rules</p></div>
           </div>
+          <div onclick="window.switchTab('photos')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-rose-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all cursor-pointer">
+              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-rose-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-camera"></i></div>
+              <div><h3 class="font-black text-sm sm:text-base text-gray-800">写真提出ポータル</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Photo Upload</p></div>
+          </div>
       </div>
     </div>
     
+    <div id="view-photos" class="hidden space-y-6 view-content">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-camera text-rose-500 mr-2"></i>写真提出ポータル</h2>
+        </div>
+        <div class="bg-white p-6 sm:p-8 rounded-2xl border shadow-sm text-center">
+            <p class="text-sm sm:text-base font-bold text-gray-700 mb-4 leading-relaxed">
+                事業所内および社用車のチェック写真は、<br>以下の専用フォームから提出してください。
+            </p>
+
+            <div class="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl mb-6 max-w-sm mx-auto shadow-sm">
+                <p class="text-xs font-black mb-1 flex items-center justify-center"><i class="fa-solid fa-clock mr-1.5 text-orange-600"></i>提出期限</p>
+                <p class="text-base sm:text-lg font-black text-orange-600">毎月20日 ～ 月末 18:00</p>
+            </div>
+            
+            <div class="flex flex-col gap-4 max-w-sm mx-auto">
+                <a href="https://forms.gle/vS2xJRQEjrec2Doi7" target="_blank" class="flex items-center justify-center bg-pink-500 hover:bg-pink-600 text-white font-black px-6 py-4 rounded-xl shadow-md transition active:scale-95">
+                    <i class="fa-solid fa-building mr-2 text-xl"></i>
+                    <span>事業所 写真提出フォーム</span>
+                </a>
+                <a href="https://forms.gle/veA616WHjc8AsMvo6" target="_blank" class="flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-black px-6 py-4 rounded-xl shadow-md transition active:scale-95">
+                    <i class="fa-solid fa-car mr-2 text-xl"></i>
+                    <span>社用車 写真提出フォーム</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <div id="view-kaizen" class="hidden space-y-6 view-content">
         <div class="flex justify-between items-center mb-2">
             <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-lightbulb text-purple-500 mr-2"></i>改善提案</h2>
@@ -2605,7 +2337,7 @@
                 品質向上に向けた現場の「困りごと」や「提案」は、<br>以下のGoogleフォームから送信してください。
             </p>
             
-            <a href="https://forms.gle/7HC5MpVuLN25Cesb6" target="_blank" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-black px-8 py-4 rounded-xl shadow-md transition active:scale-95">
+            <a href="https://forms.gle/7HC5MpVuLN25Cesb6" target="_blank" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-black px-8 py-4 rounded-xl shadow-md transition active:scale-95 mb-8">
                 <i class="fa-solid fa-external-link-alt mr-2"></i>Googleフォームを開く
             </a>
         </div>
@@ -2650,22 +2382,6 @@
                       <input type="checkbox" id="toggle-bonus-score" class="sr-only peer" onchange="window.toggleBonusScoreSetting(this.checked)">
                       <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                       <span class="ml-3 text-sm font-black text-gray-500" id="toggle-bonus-score-text">OFF</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
-                <div>
-                    <h3 class="text-sm font-black text-blue-800 mb-1">社用車チェックの表示（月末週）</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
-                        ONにすると、事業所入力の「月末週」に社用車の写真提出フォームが表示されます。
-                    </p>
-                </div>
-                <div class="flex-shrink-0">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" id="toggle-car-check" class="sr-only peer" onchange="window.toggleCarCheckSetting(this.checked)">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-car-check-text">OFF</span>
                     </label>
                 </div>
             </div>
@@ -2857,7 +2573,6 @@
     window.getDocs = getDocs;
 
     async function connectCloud() {
-      // 外部環境などでFirebase接続が遅延・失敗しても画面が作れるように初回描画しておく
       if (window.renderMasterList) window.renderMasterList(); 
       if (window.renderSelectors) window.renderSelectors(); 
 
@@ -2902,7 +2617,7 @@
         if (window.renderSelectors) window.renderSelectors(); 
         window.hideMainLoader();
       }, e => {
-          console.warn("Offices Sync Warn (外部公開環境のためスキップ):", e);
+          console.warn("Offices Sync Warn:", e);
           window.appState.offices = [...window.initialOffices];
           if (window.renderMasterList) window.renderMasterList(); 
           if (window.renderSelectors) window.renderSelectors(); 
