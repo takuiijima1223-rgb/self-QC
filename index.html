@@ -5,41 +5,96 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>self-A QC管理アプリ</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
-    body { font-family: 'Noto Sans JP', sans-serif; background-color: #f9fafb; color: #374151; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
-    .brand-pink { color: #f06292; } 
-    .brand-bg-pink { background-color: #f06292; }
-    .tab-active { border-bottom: 3px solid #f06292 !important; color: #f06292 !important; font-weight: 800 !important; }
-    .check-btn { transition: all 0.2s ease; border: 2px solid #e5e7eb; border-radius: 12px; height: 48px; font-weight: 900; background-color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-    .check-btn:active { transform: scale(0.95); }
-    .selected-good { background-color: #10b981 !important; color: white !important; border-color: #10b981 !important; }
-    .selected-warn { background-color: #f59e0b !important; color: white !important; border-color: #f59e0b !important; }
-    .selected-error { background-color: #ef4444 !important; color: white !important; border-color: #ef4444 !important; }
-    .selected-na { background-color: #9ca3af !important; color: white !important; border-color: #9ca3af !important; }
-    .view-content { animation: fadeIn 0.2s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-    .portal-card { cursor: pointer; transition: all 0.2s; border: 1px solid #f3f4f6; background-color: white; }
-    .portal-card:active { transform: scale(0.96); background-color: #f9fafb; }
-    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23D1D5DB'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2em; }
+    
+    :root {
+        --primary-pink: #ec4899; /* Tailwind pink-500 */
+        --primary-pink-dark: #be185d; /* Tailwind pink-700 */
+        --bg-color: #f8fafc; /* Tailwind slate-50 */
+        --text-main: #334155; /* Tailwind slate-700 */
+    }
+
+    body { 
+        font-family: 'Noto Sans JP', sans-serif; 
+        background-color: var(--bg-color); 
+        color: var(--text-main); 
+        -webkit-tap-highlight-color: transparent; 
+        overflow-x: hidden; 
+    }
+
+    /* 起動アニメーション用スタイル */
+    #splash-screen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 100%);
+        z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+    }
+    .splash-logo-container {
+        animation: bounceIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .splash-title {
+        opacity: 0; transform: translateY(10px);
+        animation: fadeInUp 0.8s ease-out 0.4s forwards;
+        color: var(--primary-pink-dark);
+    }
+    .loading-dots div { animation: dotBounce 1.4s infinite ease-in-out both; }
+    .loading-dots div:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dots div:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.05); opacity: 1; }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes fadeInUp {
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes dotBounce { 
+        0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 
+        40% { transform: scale(1); opacity: 1; } 
+    }
+
+    /* アプリ共通スタイル */
+    .brand-pink { color: var(--primary-pink); } 
+    .brand-bg-pink { background: linear-gradient(135deg, #f472b6, #db2777); }
+    .tab-active { border-bottom: 3px solid var(--primary-pink) !important; color: var(--primary-pink) !important; font-weight: 800 !important; }
+    
+    .check-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid #e2e8f0; border-radius: 16px; height: 52px; font-weight: 900; background-color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #64748b; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .check-btn:active { transform: scale(0.92); }
+    .selected-good { background: linear-gradient(135deg, #34d399, #10b981) !important; color: white !important; border-color: transparent !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important; }
+    .selected-warn { background: linear-gradient(135deg, #fbbf24, #f59e0b) !important; color: white !important; border-color: transparent !important; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important; }
+    .selected-error { background: linear-gradient(135deg, #f87171, #ef4444) !important; color: white !important; border-color: transparent !important; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important; }
+    .selected-na { background: linear-gradient(135deg, #94a3b8, #64748b) !important; color: white !important; border-color: transparent !important; box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3) !important; }
+    
+    .view-content { animation: contentFadeIn 0.3s ease-out; }
+    @keyframes contentFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* カードデザインの洗練 */
+    .portal-card { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
+    .portal-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1), 0 4px 8px -4px rgba(0, 0, 0, 0.05); border-color: #ffffff; background-color: #ffffff; }
+    .portal-card:active { transform: translateY(0) scale(0.98); }
+
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2em; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f9fafb; border-radius: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
   
   <script>
     const $ = id => document.getElementById(id);
     const sU = (id, cb) => { const el = $(id); if(el) cb(el); };
     window.hideMainLoader = () => { 
-        sU('loading-overlay', e => { 
+        sU('splash-screen', e => { 
             e.style.opacity = '0'; 
-            setTimeout(() => e.style.display = 'none', 500); 
+            e.style.visibility = 'hidden';
+            setTimeout(() => e.style.display = 'none', 600); 
         }); 
     };
 
@@ -135,7 +190,7 @@
     };
     
     const getCircledNumber = (index) => {
-        if (index < 20) return String.fromCharCode(0x2460 + index); // ①〜⑳
+        if (index < 20) return String.fromCharCode(0x2460 + index);
         return `(${index + 1})`;
     };
 
@@ -233,13 +288,9 @@
         window.actuallySwitchTab(id);
     };
 
-    window.renderHomeKnowledgeSpace = () => {
-        // ナレッジ共有機能は削除しました
-    };
-
     window.actuallySwitchTab = (id) => {
       window.appState.activeTab = id;
-      ['home', 'input', 'master', 'feedback', 'knowledge', 'ranking', 'rules', 'kaizen', 'photos'].forEach(v => { 
+      ['home', 'input', 'master', 'feedback', 'ranking', 'rules', 'kaizen', 'photos'].forEach(v => { 
           sU('view-'+v, el => el.classList.add('hidden')); 
           sU('tab-'+v, el => { if(el) el.classList.remove('tab-active', 'text-pink-500'); }); 
       });
@@ -250,7 +301,6 @@
       if (id === 'home') {
         ['nav-tabs', 'office-selector', 'role-badge'].forEach(x => sU(x, e => e.classList.add('hidden')));
         sU('current-office-display', e => e.innerText = "HOME");
-        window.renderHomeKnowledgeSpace();
       } else {
         sU('nav-tabs', e => e.classList.remove('hidden')); 
         sU('role-badge', e => { 
@@ -285,7 +335,6 @@
         const pwd = $('master-password-input').value;
         const target = window.appState.pendingAuthTarget;
         
-        // ▼ 各モードの暗証番号設定
         const passwords = { 'master': '1223', 'am': '1010', 'qc': '2020' };
 
         if (pwd === passwords[target]) {
@@ -460,7 +509,6 @@
     };
 
     window.restoreUI = (pastData) => {
-        // ボタンの色を復元
         Object.keys(window.appState.answers).forEach(id => {
             const val = window.appState.answers[id];
             const b = $(`btn-${id}-${val}`); 
@@ -472,7 +520,6 @@
             }
         });
 
-        // QCチームの総評コメントを復元
         if (window.appState.currentMode === 'qc' && pastData) {
             const commentInput = $('qc-comment-input');
             if (commentInput && pastData.comment) {
@@ -510,7 +557,6 @@
           window.appState.isLastWeekOfMonth = wi ? wi.isLastWeekOfMonth : false; 
       }
 
-      // 入力データをリセットしてから、過去データがあれば復元する
       window.appState.answers = {};
       window.appState.issues = [];
       window.appState.good_practices = [];
@@ -529,7 +575,6 @@
       
       isAlreadyCompleted = !!pastData;
 
-      // 過去データのメモリへの復元
       if (pastData) {
           if (pastData.answers) window.appState.answers = JSON.parse(JSON.stringify(pastData.answers));
           if (mode === 'qc') {
@@ -541,7 +586,7 @@
       const alertContainer = $('already-completed-alert');
       if (alertContainer) {
           if (isAlreadyCompleted) {
-              alertContainer.innerHTML = `<div class="bg-yellow-50 border border-yellow-200 p-4 rounded-xl mb-4 flex items-start gap-3 shadow-sm"><i class="fa-solid fa-clock-rotate-left text-yellow-500 mt-0.5"></i><div><p class="text-xs font-black text-yellow-800 mb-1">過去の入力データを復元しました</p><p class="text-[10px] font-bold text-yellow-700 leading-relaxed">この期間はすでに入力済みです。再度送信するとデータが上書きされます。修正が必要な場合のみ編集して送信してください。</p></div></div>`;
+              alertContainer.innerHTML = `<div class="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-4 flex items-start gap-3 shadow-sm"><i class="fa-solid fa-clock-rotate-left text-amber-500 mt-0.5"></i><div><p class="text-xs font-black text-amber-800 mb-1">過去の入力データを復元しました</p><p class="text-[10px] font-bold text-amber-700 leading-relaxed">この期間はすでに入力済みです。再度送信するとデータが上書きされます。修正が必要な場合のみ編集して送信してください。</p></div></div>`;
               alertContainer.classList.remove('hidden');
           } else {
               alertContainer.innerHTML = '';
@@ -585,39 +630,39 @@
         if (g.items.length === 0) return; 
         
         const div = document.createElement('div'); 
-        div.className = "bg-white rounded-2xl shadow-sm border mb-4 overflow-hidden";
+        div.className = "bg-white rounded-[1.5rem] shadow-sm border border-slate-100 mb-5 overflow-hidden transition-shadow hover:shadow-md";
         
-        let hc = 'bg-gray-800'; 
+        let hc = 'bg-slate-700'; 
         if (isM) {
-          hc = window.appState.currentMode === 'qc' ? 'bg-emerald-600' : 'bg-indigo-600'; 
+          hc = window.appState.currentMode === 'qc' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-blue-500'; 
         } else if (g.cat === '書類・法令チェック（監査・コンプライアンス）' || g.cat === '印象評価（組織風土・接遇）') {
-          hc = 'bg-indigo-600';
+          hc = 'bg-gradient-to-r from-indigo-500 to-blue-500';
         }
         
         let catNote = '';
         if (g.cat === '書類・法令チェック（監査・コンプライアンス）') {
-            catNote = `<div class="bg-red-50 text-red-600 text-[10px] px-4 py-1.5 font-bold flex items-center border-b border-red-100"><i class="fa-solid fa-triangle-exclamation mr-1"></i>ここが崩れると事業存続に関わります</div>`;
+            catNote = `<div class="bg-rose-50 text-rose-600 text-[10px] px-4 py-2 font-bold flex items-center border-b border-rose-100"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i>ここが崩れると事業存続に関わります</div>`;
         }
-        let html = `<div class="${hc} px-4 py-2 text-[10px] text-white font-black uppercase">${g.cat}</div>${catNote}`;
+        let html = `<div class="${hc} px-5 py-3 text-[11px] text-white font-black uppercase tracking-wider">${g.cat}</div>${catNote}`;
         const quarterTargetIds = ['am_1', 'am_2', 'am_3', 'am_6'];
         g.items.forEach(i => {
           let isDisabled = false;
           let disableMessage = '';
           if (quarterTargetIds.includes(i.id) && !window.isTargetQuarterMonth()) {
               isDisabled = true;
-              disableMessage = '<p class="text-[10px] text-red-500 font-bold mb-2">※この項目は四半期末（5月, 8月, 11月, 2月）のみ評価対象です</p>';
+              disableMessage = '<p class="text-[10px] text-rose-500 font-bold mb-2">※この項目は四半期末（5月, 8月, 11月, 2月）のみ評価対象です</p>';
           }
 
           html += `
-            <div class="p-5 border-b last:border-0 ${isDisabled ? 'opacity-50 bg-gray-50' : ''}">
-                <h4 class="font-black text-gray-800 mb-2">${i.t}</h4>
+            <div class="p-5 sm:p-6 border-b border-slate-100 last:border-0 ${isDisabled ? 'opacity-50 bg-slate-50' : ''}">
+                <h4 class="font-black text-slate-800 mb-2 text-sm">${i.t}</h4>
                 ${disableMessage}
-                <p class="text-xs text-gray-500 mb-4 leading-relaxed">${i.d}</p>
-                <div class="grid grid-cols-4 gap-2">
-                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 2)" id="btn-${i.id}-2" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''}">○</button>
-                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 1)" id="btn-${i.id}-1" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''}">△</button>
-                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 0)" id="btn-${i.id}-0" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''}">×</button>
-                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', -1)" id="btn-${i.id}--1" class="check-btn text-xs ${isDisabled ? 'cursor-not-allowed' : ''}">N/A</button>
+                <p class="text-xs text-slate-500 mb-5 leading-relaxed">${i.d}</p>
+                <div class="grid grid-cols-4 gap-2 sm:gap-3">
+                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 2)" id="btn-${i.id}-2" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-emerald-200 hover:text-emerald-500 hover:bg-emerald-50">○</button>
+                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 1)" id="btn-${i.id}-1" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-amber-200 hover:text-amber-500 hover:bg-amber-50">△</button>
+                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 0)" id="btn-${i.id}-0" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-rose-200 hover:text-rose-500 hover:bg-rose-50">×</button>
+                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', -1)" id="btn-${i.id}--1" class="check-btn text-xs ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-slate-300 hover:text-slate-600 hover:bg-slate-100">N/A</button>
                 </div>
             </div>`;
         }); 
@@ -628,20 +673,23 @@
       const cc = $('comment-container');
       if (window.appState.currentMode === 'qc') {
           cc.innerHTML = `
-            <div class="bg-white rounded-2xl shadow-sm border mb-4 p-5 border-l-4 border-l-emerald-500">
-                <h4 class="font-black text-gray-800 mb-3 flex items-center"><i class="fa-solid fa-comment-dots text-emerald-500 mr-2"></i>QCフィードバック（事業所共有用）</h4>
-                <textarea id="qc-comment-input" class="w-full border-2 rounded-xl p-3 text-sm font-bold bg-gray-50 focus:bg-white focus:border-emerald-500 transition-all outline-none mb-4" rows="3" placeholder="全体的な総評を入力 (任意)"></textarea>
+            <div class="bg-white rounded-[1.5rem] shadow-sm border border-emerald-100 mb-4 p-5 sm:p-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+                <h4 class="font-black text-slate-800 mb-4 flex items-center text-sm"><i class="fa-solid fa-comment-dots text-emerald-500 mr-2 text-lg"></i>QCフィードバック（事業所共有用）</h4>
+                <textarea id="qc-comment-input" class="w-full border-2 border-slate-200 rounded-xl p-4 text-sm font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 transition-all outline-none mb-5 shadow-inner" rows="3" placeholder="全体的な総評を入力 (任意)"></textarea>
                 
-                <div class="border-t pt-4">
-                    <label class="text-[10px] font-black text-red-500 flex justify-between items-end mb-3">
-                        <span><i class="fa-solid fa-camera mr-1"></i>指摘事項 (写真と改善要求)</span>
-                        <span id="issue-count" class="text-gray-400 font-bold">0 / 5件</span>
+                <div class="border-t border-slate-100 pt-5">
+                    <label class="text-[11px] font-black text-rose-500 flex justify-between items-end mb-4">
+                        <span class="flex items-center"><i class="fa-solid fa-camera mr-1.5 text-lg"></i>指摘事項 (写真と改善要求)</span>
+                        <span id="issue-count" class="text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded-lg">0 / 5件</span>
                     </label>
-                    <div id="issues-container" class="space-y-3 mb-4"></div>
-                    <div id="issue-dropzone" class="border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-100 transition" onclick="document.getElementById('issue-image-input').click()">
+                    <div id="issues-container" class="space-y-4 mb-5"></div>
+                    <div id="issue-dropzone" class="border-2 border-dashed border-slate-300 bg-slate-50 rounded-2xl p-8 text-center cursor-pointer hover:bg-slate-100 hover:border-emerald-300 transition-all group" onclick="document.getElementById('issue-image-input').click()">
                         <input type="file" id="issue-image-input" accept="image/*" multiple class="hidden" onchange="window.handleIssueImageSelect(event)">
-                        <i class="fa-solid fa-images text-3xl text-gray-300 mb-2"></i>
-                        <p class="text-[11px] text-gray-500 font-bold">タップまたは写真をドロップして指摘を追加<br>(最大5件)</p>
+                        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-emerald-400"></i>
+                        </div>
+                        <p class="text-xs text-slate-500 font-bold leading-relaxed">タップまたは写真をドロップして<br>指摘を追加 (最大5件)</p>
                     </div>
                 </div>
             </div>
@@ -653,11 +701,11 @@
           
           const dropzone = $('issue-dropzone');
           if (dropzone) {
-              dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('bg-gray-200'); dropzone.classList.remove('bg-gray-50'); });
-              dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('bg-gray-200'); dropzone.classList.add('bg-gray-50'); });
+              dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('bg-slate-200', 'border-emerald-400'); dropzone.classList.remove('bg-slate-50', 'border-slate-300'); });
+              dropzone.addEventListener('dragleave', (e) => { e.preventDefault(); dropzone.classList.remove('bg-slate-200', 'border-emerald-400'); dropzone.classList.add('bg-slate-50', 'border-slate-300'); });
               dropzone.addEventListener('drop', (e) => {
                   e.preventDefault();
-                  dropzone.classList.remove('bg-gray-200'); dropzone.classList.add('bg-gray-50');
+                  dropzone.classList.remove('bg-slate-200', 'border-emerald-400'); dropzone.classList.add('bg-slate-50', 'border-slate-300');
                   if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                       window.handleIssueImageSelect({ target: { files: e.dataTransfer.files } });
                   }
@@ -703,13 +751,6 @@
                 callback(result.url);
             } else {
                 console.warn("GAS Upload Error:", result);
-                if (result.message && result.message.includes('権限')) {
-                    window.showGlobalToast("GAS側のDrive権限エラーです");
-                } else if (result.message && (result.message.includes('アクセスが拒否されました') || result.message.includes('Access denied'))) {
-                    window.showGlobalToast("GASの実行権限エラー: 「自分」として実行するようにデプロイ設定を変更してください");
-                } else {
-                    console.warn("保存エラー: " + (result.message || "不明なエラー"));
-                }
                 callback(base64); 
             }
         } catch (e) {
@@ -775,33 +816,33 @@
                 const itemOptions = window.getAllCheckItemsOptions(issue.relatedItemId);
                 
                 html += `
-                <div class="flex gap-3 bg-gray-50 p-3 rounded-xl border mb-3">
-                    <div class="relative w-24 h-24 flex-shrink-0">
-                        <img src="${issue.beforeImage}" class="rounded-lg w-full h-full object-cover shadow-sm border cursor-pointer hover:opacity-80 transition" onclick="window.openImageModal('${issue.beforeImage}')">
-                        <button class="absolute -top-2 -right-2 bg-gray-900 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-500 transition text-xs shadow z-10" onclick="window.removeIssue(${idx})">
+                <div class="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-[1rem] border border-slate-200 mb-4 shadow-sm relative group hover:border-emerald-200 transition-colors">
+                    <div class="relative w-full sm:w-28 h-32 sm:h-28 flex-shrink-0">
+                        <img src="${issue.beforeImage}" class="rounded-xl w-full h-full object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-90 transition" onclick="window.openImageModal('${issue.beforeImage}')">
+                        <button class="absolute -top-2 -right-2 bg-slate-800 text-white w-7 h-7 rounded-full flex items-center justify-center hover:bg-rose-500 transition-colors text-xs shadow-md z-10" onclick="window.removeIssue(${idx})">
                             <i class="fa-solid fa-times"></i>
                         </button>
-                        <span class="absolute top-1 left-1 bg-red-500 text-white text-[10px] px-1.5 rounded font-black shadow z-10">指摘 ${numStr}</span>
+                        <span class="absolute top-2 left-2 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-md font-black shadow-sm z-10">指摘 ${numStr}</span>
                     </div>
-                    <div class="flex-1 flex flex-col gap-2 min-w-0">
-                        <textarea class="w-full p-2 border rounded-lg text-xs font-bold outline-none focus:border-emerald-400 bg-white" rows="2" placeholder="指摘内容や改善案を入力" onchange="window.updateIssueComment(${idx}, this.value)">${issue.comment || ''}</textarea>
+                    <div class="flex-1 min-w-0 flex flex-col gap-3">
+                        <textarea class="w-full p-3 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 bg-slate-50 focus:bg-white transition-all resize-none" rows="2" placeholder="指摘内容や改善案を入力" onchange="window.updateIssueComment(${idx}, this.value)">${issue.comment || ''}</textarea>
                         
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div class="flex flex-col gap-1">
-                                <label class="text-[9px] font-black text-gray-500">対応区分</label>
-                                <select onchange="window.updateIssueResponsibility(${idx}, this.value)" class="p-1.5 border rounded-lg text-[10px] font-bold outline-none bg-white focus:border-emerald-400">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[10px] font-black text-slate-500 ml-1">対応区分</label>
+                                <select onchange="window.updateIssueResponsibility(${idx}, this.value)" class="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none bg-slate-50 focus:bg-white focus:border-emerald-400">
                                     <option value="office" ${issue.responsibility === 'office' ? 'selected' : ''}>事業所対応</option>
                                     <option value="hq" ${issue.responsibility === 'hq' ? 'selected' : ''}>本社対応</option>
                                 </select>
                             </div>
-                            <div class="flex flex-col gap-1">
-                                <label class="text-[9px] font-black text-gray-500">改善期限</label>
-                                <input type="date" value="${issue.deadline_date || ''}" onchange="window.updateIssueDeadline(${idx}, this.value)" class="p-1.5 border rounded-lg text-[10px] font-bold outline-none bg-white focus:border-emerald-400">
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[10px] font-black text-slate-500 ml-1">改善期限</label>
+                                <input type="date" value="${issue.deadline_date || ''}" onchange="window.updateIssueDeadline(${idx}, this.value)" class="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none bg-slate-50 focus:bg-white focus:border-emerald-400">
                             </div>
                         </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="text-[9px] font-black text-gray-500">関連する評価項目 (任意)</label>
-                            <select onchange="window.updateIssueRelatedItem(${idx}, this.value)" class="p-1.5 border rounded-lg text-[10px] font-bold outline-none bg-white focus:border-emerald-400 max-w-full">
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[10px] font-black text-slate-500 ml-1">関連する評価項目 (任意)</label>
+                            <select onchange="window.updateIssueRelatedItem(${idx}, this.value)" class="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none bg-slate-50 focus:bg-white focus:border-emerald-400 max-w-full truncate">
                                 <option value="">- 関連項目なし -</option>
                                 ${itemOptions}
                             </select>
@@ -934,18 +975,18 @@
       if (b) {
         if (window.appState.activeUploads > 0) {
           b.disabled = true; 
-          b.className = "w-full py-4 bg-gray-400 text-white rounded-xl font-black shadow-xl"; 
+          b.className = "w-full py-4 sm:py-5 bg-slate-300 text-white rounded-2xl font-black shadow-sm transition-all"; 
           b.innerText = `写真をアップロード中... (${window.appState.activeUploads}件)`; 
         } else if (pct >= 100) { 
           b.disabled = false; 
           let bc = 'brand-bg-pink'; 
-          if (window.appState.currentMode === 'am') bc = 'bg-indigo-600'; 
-          if (window.appState.currentMode === 'qc') bc = 'bg-emerald-500';
-          b.className = `w-full py-4 ${bc} text-white rounded-xl font-black shadow-xl active:scale-95 transition-transform`; 
-          b.innerText = "クラウドへ送信する"; 
+          if (window.appState.currentMode === 'am') bc = 'bg-gradient-to-r from-indigo-500 to-blue-600'; 
+          if (window.appState.currentMode === 'qc') bc = 'bg-gradient-to-r from-emerald-500 to-teal-500';
+          b.className = `w-full py-4 sm:py-5 ${bc} text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl active:scale-[0.98] transition-all tracking-widest`; 
+          b.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i>クラウドへ送信する`; 
         } else { 
           b.disabled = true; 
-          b.className = "w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black"; 
+          b.className = "w-full py-4 sm:py-5 bg-slate-200 text-slate-400 rounded-2xl font-black transition-all"; 
           b.innerText = "すべて入力してください"; 
         }
       }
@@ -1026,38 +1067,38 @@
 
         if (window.appState.isRulesEditMode) {
             btn.innerHTML = '<i class="fa-solid fa-times mr-1"></i>キャンセル';
-            btn.className = "bg-gray-100 text-gray-600 px-4 py-2 rounded-xl font-bold text-xs hover:bg-gray-200 transition";
+            btn.className = "bg-slate-100 text-slate-600 px-4 py-2 rounded-xl font-bold text-xs hover:bg-slate-200 transition";
             c.innerHTML = `
                 <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm">
                     <div class="space-y-4">
                         <div>
                             <label class="text-xs font-black text-blue-800 mb-1 block">運用目的（トレンド）</label>
-                            <textarea id="rule-edit-purpose" class="w-full border rounded-xl p-3 text-xs font-bold bg-gray-50 focus:bg-white focus:border-blue-400 outline-none" rows="4">${window.appState.rules.purpose}</textarea>
+                            <textarea id="rule-edit-purpose" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-blue-400 outline-none" rows="4">${window.appState.rules.purpose}</textarea>
                         </div>
                         <div>
                             <label class="text-xs font-black text-pink-600 mb-1 block">事業所 ルール</label>
-                            <textarea id="rule-edit-office" class="w-full border rounded-xl p-3 text-xs font-bold bg-gray-50 focus:bg-white focus:border-pink-400 outline-none" rows="4">${window.appState.rules.officeRules}</textarea>
+                            <textarea id="rule-edit-office" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none" rows="4">${window.appState.rules.officeRules}</textarea>
                         </div>
                         <div>
                             <label class="text-xs font-black text-indigo-600 mb-1 block">AM ルール</label>
-                            <textarea id="rule-edit-am" class="w-full border rounded-xl p-3 text-xs font-bold bg-gray-50 focus:bg-white focus:border-indigo-400 outline-none" rows="5">${window.appState.rules.amRules}</textarea>
+                            <textarea id="rule-edit-am" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-indigo-400 outline-none" rows="5">${window.appState.rules.amRules}</textarea>
                         </div>
                         <div>
                             <label class="text-xs font-black text-emerald-600 mb-1 block">QCチーム ルール</label>
-                            <textarea id="rule-edit-qc" class="w-full border rounded-xl p-3 text-xs font-bold bg-gray-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.qcRules}</textarea>
+                            <textarea id="rule-edit-qc" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.qcRules}</textarea>
                         </div>
                         <hr class="my-4 border-emerald-100">
                         <div>
                             <label class="text-xs font-black text-emerald-800 mb-1 block">QC運用ガイド1（評価点の設計）</label>
-                            <textarea id="rule-edit-g1" class="w-full border rounded-xl p-3 text-xs font-bold bg-gray-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide1}</textarea>
+                            <textarea id="rule-edit-g1" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide1}</textarea>
                         </div>
                         <div>
                             <label class="text-xs font-black text-emerald-800 mb-1 block">QC運用ガイド2（基準の標準化）</label>
-                            <textarea id="rule-edit-g2" class="w-full border rounded-xl p-3 text-xs font-bold bg-gray-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide2}</textarea>
+                            <textarea id="rule-edit-g2" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide2}</textarea>
                         </div>
                         <div>
                             <label class="text-xs font-black text-emerald-800 mb-1 block">QC運用ガイド3（本社対応の可視化）</label>
-                            <textarea id="rule-edit-g3" class="w-full border rounded-xl p-3 text-xs font-bold bg-gray-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide3}</textarea>
+                            <textarea id="rule-edit-g3" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide3}</textarea>
                         </div>
                         <div class="text-right pt-4">
                             <button onclick="window.saveRules()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
@@ -1079,20 +1120,20 @@
                     <div class="space-y-6 pt-2">
                         <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
                             <h3 class="text-sm font-black text-blue-800 mb-3">【運用目的（トレンド）】</h3>
-                            <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                            <ul class="list-disc pl-5 text-xs text-slate-700 font-bold space-y-1.5 leading-relaxed">
                                 ${toList(window.appState.rules.purpose)}
                             </ul>
                         </div>
                         
                         <div>
-                            <h3 class="text-sm font-black text-gray-800 mb-3">【運用ルール】</h3>
+                            <h3 class="text-sm font-black text-slate-800 mb-3">【運用ルール】</h3>
                             <div class="space-y-4">
                                 <div class="border rounded-xl overflow-hidden shadow-sm">
                                     <div class="bg-pink-50 px-4 py-2 border-b border-pink-100">
                                         <h4 class="text-xs font-black text-pink-600"><i class="fa-solid fa-building mr-1.5"></i>事業所</h4>
                                     </div>
                                     <div class="p-4 bg-white">
-                                        <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                        <ul class="list-disc pl-5 text-xs text-slate-700 font-bold space-y-1.5 leading-relaxed">
                                             ${toList(window.appState.rules.officeRules)}
                                         </ul>
                                     </div>
@@ -1103,7 +1144,7 @@
                                         <h4 class="text-xs font-black text-indigo-600"><i class="fa-solid fa-user-tie mr-1.5"></i>AM</h4>
                                     </div>
                                     <div class="p-4 bg-white">
-                                        <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                        <ul class="list-disc pl-5 text-xs text-slate-700 font-bold space-y-1.5 leading-relaxed">
                                             ${toList(window.appState.rules.amRules)}
                                         </ul>
                                     </div>
@@ -1114,7 +1155,7 @@
                                         <h4 class="text-xs font-black text-emerald-600"><i class="fa-solid fa-clipboard-check mr-1.5"></i>QCチーム</h4>
                                     </div>
                                     <div class="p-4 bg-white">
-                                        <ul class="list-disc pl-5 text-xs text-gray-700 font-bold space-y-1.5 leading-relaxed">
+                                        <ul class="list-disc pl-5 text-xs text-slate-700 font-bold space-y-1.5 leading-relaxed">
                                             ${toList(window.appState.rules.qcRules)}
                                         </ul>
                                     </div>
@@ -1127,19 +1168,19 @@
                             <div class="space-y-4">
                                 <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
                                     <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">評価点（スコアリング）の設計</h4>
-                                    <p class="text-[10px] text-gray-700 leading-relaxed font-bold">
+                                    <p class="text-[10px] text-slate-700 leading-relaxed font-bold">
                                         ${toHtml(window.appState.rules.guide1)}
                                     </p>
                                 </div>
                                 <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
                                     <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">進捗管理シートと「感じた事実」の標準化</h4>
-                                    <p class="text-[10px] text-gray-700 leading-relaxed font-bold">
+                                    <p class="text-[10px] text-slate-700 leading-relaxed font-bold">
                                         ${toHtml(window.appState.rules.guide2)}
                                     </p>
                                 </div>
                                 <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
                                     <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">改善プロセスにおける「本社対応」の可視化</h4>
-                                    <p class="text-[10px] text-gray-700 leading-relaxed font-bold">
+                                    <p class="text-[10px] text-slate-700 leading-relaxed font-bold">
                                         ${toHtml(window.appState.rules.guide3)}
                                     </p>
                                 </div>
@@ -1379,7 +1420,7 @@
         });
 
         if (scores.length === 0) {
-            c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-chart-simple text-3xl mb-3 block opacity-50"></i>この期間のランキングデータはありません</p></div>';
+            c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-slate-400 font-bold text-sm"><i class="fa-solid fa-chart-simple text-3xl mb-3 block opacity-50"></i>この期間のランキングデータはありません</p></div>';
             return;
         }
 
@@ -1424,29 +1465,29 @@
                 currentScore = tgtScore;
             }
             
-            let rankDisplay = `<div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-black text-gray-500 shadow-inner">${currentRank}</div>`;
-            let rowClass = "hover:bg-gray-50 transition border-gray-200";
+            let rankDisplay = `<div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-500 shadow-inner">${currentRank}</div>`;
+            let rowClass = "hover:bg-slate-50 transition border-slate-200";
             
             if (s.qualityScore === '--' || (sortTarget === 'gap_am_qc' && tgtScore === -1)) {
-                rankDisplay = `<div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center font-black text-gray-300">-</div>`;
-                rowClass = "bg-gray-50 opacity-70";
+                rankDisplay = `<div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center font-black text-slate-300">-</div>`;
+                rowClass = "bg-slate-50 opacity-70";
             } else if (currentRank === 1) {
                 rankDisplay = '<div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center font-black text-yellow-600 shadow-md border border-yellow-200"><i class="fa-solid fa-crown"></i></div>';
                 rowClass = "bg-yellow-50/20 hover:bg-yellow-50 border-yellow-200 shadow-md transform hover:-translate-y-0.5";
             } else if (currentRank === 2) {
-                rankDisplay = '<div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center font-black text-gray-600 shadow-md border border-gray-200"><i class="fa-solid fa-medal"></i></div>';
-                rowClass = "bg-gray-50/40 hover:bg-gray-50 border-gray-300 shadow-sm";
+                rankDisplay = '<div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-600 shadow-md border border-slate-200"><i class="fa-solid fa-medal"></i></div>';
+                rowClass = "bg-slate-50/40 hover:bg-slate-50 border-slate-300 shadow-sm";
             } else if (currentRank === 3) {
                 rankDisplay = '<div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center font-black text-orange-600 shadow-md border border-orange-200"><i class="fa-solid fa-award"></i></div>';
                 rowClass = "bg-orange-50/20 hover:bg-orange-50 border-orange-200 shadow-sm";
             }
 
-            const getQColor = (sc) => sc === '--' ? 'text-gray-400' : (sc >= 80 ? 'text-emerald-600' : (sc >= 50 ? 'text-yellow-600' : 'text-red-600'));
-            const rateColor = s.inputRate >= 90 ? 'text-emerald-600' : (s.inputRate >= 50 ? 'text-yellow-600' : 'text-red-600');
-            const rateBg = s.inputRate >= 90 ? 'bg-emerald-50' : (s.inputRate >= 50 ? 'bg-yellow-50' : 'bg-red-50');
+            const getQColor = (sc) => sc === '--' ? 'text-slate-400' : (sc >= 80 ? 'text-emerald-600' : (sc >= 50 ? 'text-yellow-600' : 'text-rose-600'));
+            const rateColor = s.inputRate >= 90 ? 'text-emerald-600' : (s.inputRate >= 50 ? 'text-yellow-600' : 'text-rose-600');
+            const rateBg = s.inputRate >= 90 ? 'bg-emerald-50' : (s.inputRate >= 50 ? 'bg-yellow-50' : 'bg-rose-50');
 
-            const amRateColor = s.amInputRate >= 90 ? 'text-emerald-600' : (s.amInputRate >= 50 ? 'text-yellow-600' : 'text-red-600');
-            const amRateBg = s.amInputRate >= 90 ? 'bg-emerald-50' : (s.amInputRate >= 50 ? 'bg-yellow-50' : 'bg-red-50');
+            const amRateColor = s.amInputRate >= 90 ? 'text-emerald-600' : (s.amInputRate >= 50 ? 'text-yellow-600' : 'text-rose-600');
+            const amRateBg = s.amInputRate >= 90 ? 'bg-emerald-50' : (s.amInputRate >= 50 ? 'bg-yellow-50' : 'bg-rose-50');
 
             let gapBadgeHtml = '';
             if (sortTarget === 'gap_am_qc' && tgtScore !== -1) {
@@ -1522,12 +1563,12 @@
 
                 if (showBonus) {
                     bonusScoreHtml = `
-                    <div class="col-span-2 sm:col-span-1 bg-gray-50 rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm relative">
-                        <p class="text-[9px] text-gray-500 font-bold mb-1">賞与用スコア</p>
+                    <div class="col-span-2 sm:col-span-1 bg-slate-50 rounded-xl p-2 border border-slate-200 flex flex-col justify-center shadow-sm relative">
+                        <p class="text-[9px] text-slate-500 font-bold mb-1">賞与用スコア</p>
                         <div class="flex items-baseline justify-center">
                             <span class="text-sm font-black text-pink-600">${s.finalScore}</span><span class="text-[10px] font-bold text-pink-400 ml-0.5">pt</span>
                         </div>
-                        <p class="text-[8px] font-bold text-gray-400 mt-0.5">QC × 事業所率 × AM率</p>
+                        <p class="text-[8px] font-bold text-slate-400 mt-0.5">QC × 事業所率 × AM率</p>
                     </div>`;
                 }
             }
@@ -1540,8 +1581,8 @@
                 <div class="flex items-center gap-4 w-full md:w-1/3">
                     <div class="flex-shrink-0">${rankDisplay}</div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm sm:text-base font-black text-gray-800 truncate" title="${s.name}">${s.name}</p>
-                        <p class="text-[10px] font-bold text-gray-500 mt-0.5"><span class="mr-2">${s.corp}</span><span class="bg-gray-100 px-1.5 py-0.5 rounded">${s.area}</span></p>
+                        <p class="text-sm sm:text-base font-black text-slate-800 truncate" title="${s.name}">${s.name}</p>
+                        <p class="text-[10px] font-bold text-slate-500 mt-0.5"><span class="mr-2">${s.corp}</span><span class="bg-slate-100 px-1.5 py-0.5 rounded">${s.area}</span></p>
                         ${gapBadgeHtml}
                     </div>
                 </div>
@@ -1554,15 +1595,15 @@
                         </div>
                         ${mainBarHtml}
                     </div>
-                    <div class="${rateBg} rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm col-span-1">
-                        <p class="text-[9px] text-gray-500 font-bold mb-1">事業所 自己入力率</p>
+                    <div class="${rateBg} rounded-xl p-2 border border-slate-200 flex flex-col justify-center shadow-sm col-span-1">
+                        <p class="text-[9px] text-slate-500 font-bold mb-1">事業所 自己入力率</p>
                         <p class="text-sm font-black ${rateColor}">${s.inputRate}<span class="text-[10px] font-normal ml-0.5">%</span></p>
-                        <p class="text-[9px] font-bold text-gray-400 mt-0.5">(${s.actualStaffCount}/${s.expectedStaffCount}回)</p>
+                        <p class="text-[9px] font-bold text-slate-400 mt-0.5">(${s.actualStaffCount}/${s.expectedStaffCount}回)</p>
                     </div>
-                    <div class="${amRateBg} rounded-xl p-2 border border-gray-200 flex flex-col justify-center shadow-sm col-span-1">
-                        <p class="text-[9px] text-gray-500 font-bold mb-1">AM 入力率</p>
+                    <div class="${amRateBg} rounded-xl p-2 border border-slate-200 flex flex-col justify-center shadow-sm col-span-1">
+                        <p class="text-[9px] text-slate-500 font-bold mb-1">AM 入力率</p>
                         <p class="text-sm font-black ${amRateColor}">${s.amInputRate}<span class="text-[10px] font-normal ml-0.5">%</span></p>
-                        <p class="text-[9px] font-bold text-gray-400 mt-0.5">(${s.actualAmCount}/${s.expectedMonthCount}回)</p>
+                        <p class="text-[9px] font-bold text-slate-400 mt-0.5">(${s.actualAmCount}/${s.expectedMonthCount}回)</p>
                     </div>
                     ${bonusScoreHtml}
                 </div>
@@ -1689,31 +1730,31 @@
                 
                 recentEntries.forEach(entry => {
                     const date = new Date(entry.timestamp).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    const badge = `<span class="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm ml-2 animate-pulse">新着</span>`;
+                    const badge = `<span class="bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black shadow-sm ml-2 animate-pulse">新着</span>`;
                     let issueCount = entry.issues ? entry.issues.length : 0;
-                    let issueBadge = issueCount > 0 ? `<span class="text-[9px] text-red-600 bg-red-100 px-1.5 rounded border border-red-200 ml-1">指摘 ${issueCount}件</span>` : '';
+                    let issueBadge = issueCount > 0 ? `<span class="text-[9px] text-rose-600 bg-rose-100 px-1.5 rounded border border-rose-200 ml-1">指摘 ${issueCount}件</span>` : '';
 
                     recentHtml += `
                     <div class="bg-white p-3 rounded-lg border shadow-sm cursor-pointer hover:bg-pink-50 transition flex items-center justify-between" 
                          onclick="window.selectFeedbackOffice('${entry.office}', '${entry.month}')">
                         <div>
-                            <p class="text-xs font-black text-gray-800">${entry.office} <span class="text-[9px] text-gray-500 font-bold ml-1">${entry.month}</span></p>
+                            <p class="text-xs font-black text-slate-800">${entry.office} <span class="text-[9px] text-slate-500 font-bold ml-1">${entry.month}</span></p>
                             <div class="flex items-center mt-1">
-                                <span class="text-[9px] text-gray-400 font-bold">${date} 更新</span>
+                                <span class="text-[9px] text-slate-400 font-bold">${date} 更新</span>
                                 ${issueBadge}
                             </div>
                         </div>
                         <div>
                             ${badge}
-                            <i class="fa-solid fa-chevron-right text-gray-300 ml-2"></i>
+                            <i class="fa-solid fa-chevron-right text-slate-300 ml-2"></i>
                         </div>
                     </div>`;
                 });
                 recentHtml += `</div></div>`;
                 
-                if(c) c.innerHTML = recentHtml + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>上から選択するか、プルダウンで事業所を指定してください</p></div>';
+                if(c) c.innerHTML = recentHtml + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-slate-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>上から選択するか、プルダウンで事業所を指定してください</p></div>';
             } else {
-                if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>過去24時間以内の新着フィードバックはありません<br><span class="text-xs font-normal mt-2 block">過去の履歴は、上部プルダウンから事業所を選択して確認できます。</span></p></div>';
+                if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-slate-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>過去24時間以内の新着フィードバックはありません<br><span class="text-xs font-normal mt-2 block">過去の履歴は、上部プルダウンから事業所を選択して確認できます。</span></p></div>';
             }
             return;
         }
@@ -1729,18 +1770,18 @@
 
         let html = `
         <div class="mb-4">
-            <button onclick="window.clearFeedbackSelection()" class="text-xs font-bold text-gray-500 hover:text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg transition shadow-sm"><i class="fa-solid fa-arrow-left mr-1"></i>新着一覧に戻る</button>
+            <button onclick="window.clearFeedbackSelection()" class="text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg transition shadow-sm"><i class="fa-solid fa-arrow-left mr-1"></i>新着一覧に戻る</button>
         </div>
         `;
 
         if (entries.length === 0) {
-            c.innerHTML = html + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-gray-400 font-bold text-sm"><i class="fa-solid fa-inbox text-3xl mb-3 block opacity-50"></i>該当するフィードバックはありません</p></div>';
+            c.innerHTML = html + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-slate-400 font-bold text-sm"><i class="fa-solid fa-inbox text-3xl mb-3 block opacity-50"></i>該当するフィードバックはありません</p></div>';
             return;
         }
 
         entries.forEach(e => {
             const date = new Date(e.timestamp).toLocaleDateString('ja-JP');
-            const scoreColor = e.score >= 80 ? 'text-emerald-500' : (e.score >= 50 ? 'text-yellow-500' : 'text-red-500');
+            const scoreColor = e.score >= 80 ? 'text-emerald-500' : (e.score >= 50 ? 'text-yellow-500' : 'text-rose-500');
             const generalComment = e.comment ? e.comment.replace(/\n/g, '<br>') : '';
 
             let gpBonusBadge = '';
@@ -1761,18 +1802,18 @@
             let issuesSection = '';
 
             if (issuesList.length > 0) {
-                issuesSection = `<div class="mt-4 border-t border-gray-100 pt-4 space-y-4">`;
+                issuesSection = `<div class="mt-4 border-t border-slate-100 pt-4 space-y-4">`;
                 
                 issuesList.forEach((issue, idx) => {
                     const numStr = String.fromCharCode(0x2460 + idx) || `(${idx+1})`; 
-                    const issueComment = issue.comment ? issue.comment.replace(/\n/g, '<br>') : '<span class="text-gray-300 italic text-xs">コメントなし</span>';
+                    const issueComment = issue.comment ? issue.comment.replace(/\n/g, '<br>') : '<span class="text-slate-300 italic text-xs">コメントなし</span>';
                     
                     const respBadge = issue.responsibility === 'hq' 
                         ? `<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black border border-indigo-200 ml-1">本社対応</span>`
                         : `<span class="text-[9px] bg-pink-100 text-pink-700 px-1.5 py-0.5 rounded font-black border border-pink-200 ml-1">事業所対応</span>`;
 
                     const relatedItemText = issue.relatedItemId 
-                        ? `<span class="text-[9px] text-gray-500 ml-1"><i class="fa-solid fa-link mr-0.5"></i>関連: ${window.getCheckItemName(issue.relatedItemId)}</span>`
+                        ? `<span class="text-[9px] text-slate-500 ml-1"><i class="fa-solid fa-link mr-0.5"></i>関連: ${window.getCheckItemName(issue.relatedItemId)}</span>`
                         : '';
                     
                     const isResolved = issue.resolved || false;
@@ -1786,7 +1827,7 @@
                             const now = new Date();
                             if (now > dDate) {
                                 const diffDays = Math.ceil((now - dDate) / (1000 * 60 * 60 * 24));
-                                overBadge = `<span class="ml-2 text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse">${diffDays}日 超過中</span>`;
+                                overBadge = `<span class="ml-2 text-[9px] font-black bg-rose-500 text-white px-1.5 py-0.5 rounded shadow-sm animate-pulse">${diffDays}日 超過中</span>`;
                             } else if (dDate.toLocaleDateString() === now.toLocaleDateString()) {
                                 overBadge = `<span class="ml-2 text-[9px] font-black bg-yellow-500 text-white px-1.5 py-0.5 rounded shadow-sm">本日期限</span>`;
                             }
@@ -1813,7 +1854,7 @@
                             } else if (diffDays < 0) {
                                 speedBadge = `<span class="ml-2 text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 font-bold">期限内 (${Math.abs(diffDays)}日前倒し)</span>`;
                             } else {
-                                speedBadge = `<span class="ml-2 text-[9px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded border border-red-200 font-bold">期限超過 (${diffDays}日遅れ)</span>`;
+                                speedBadge = `<span class="ml-2 text-[9px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded border border-rose-200 font-bold">期限超過 (${diffDays}日遅れ)</span>`;
                             }
                         }
 
@@ -1843,12 +1884,12 @@
                         </div>
                         <div class="flex-1 min-w-0 flex flex-col">
                             <div class="flex items-center flex-wrap gap-1 mb-1.5">
-                                <span class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded font-black shadow">指摘 ${numStr}</span>
+                                <span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded font-black shadow">指摘 ${numStr}</span>
                                 ${respBadge}
                             </div>
                             ${relatedItemText ? `<div class="mb-1.5 truncate w-full">${relatedItemText}</div>` : ''}
                             ${deadlineStr}
-                            <div class="text-xs text-gray-700 font-bold leading-relaxed whitespace-pre-wrap mt-1">${issueComment}</div>
+                            <div class="text-xs text-slate-700 font-bold leading-relaxed whitespace-pre-wrap mt-1">${issueComment}</div>
                             <div class="mt-auto">${resolutionSection}</div>
                         </div>
                     </div>`;
@@ -1864,11 +1905,11 @@
                 qcApprovalSection = `
                     <div class="mt-4 pt-3 border-t">
                         <h4 class="text-[10px] font-black text-emerald-600 mb-2 uppercase"><i class="fa-solid fa-stamp mr-1"></i>QC全体最終判定</h4>
-                        <div class="bg-gray-50 p-3 rounded-xl border">
+                        <div class="bg-slate-50 p-3 rounded-xl border">
                             <p class="text-xs font-bold bg-white p-2 rounded border mb-2">${e.qc_judge_comment || 'コメントなし'}</p>
                             <div class="flex items-center gap-2">
-                                <span class="text-[10px] text-gray-500 font-bold">判定日時: ${e.qc_judged_date || '-'}</span>
-                                <span class="px-2 py-1 rounded-lg text-xs font-black border ${qcStatus === 'failed' ? 'bg-red-100 text-red-600 border-red-200' : 'bg-emerald-100 text-emerald-600 border-emerald-200'}">
+                                <span class="text-[10px] text-slate-500 font-bold">判定日時: ${e.qc_judged_date || '-'}</span>
+                                <span class="px-2 py-1 rounded-lg text-xs font-black border ${qcStatus === 'failed' ? 'bg-rose-100 text-rose-600 border-rose-200' : 'bg-emerald-100 text-emerald-600 border-emerald-200'}">
                                     ${qcStatus === 'failed' ? '<i class="fa-solid fa-times mr-1"></i>不合格' : '<i class="fa-solid fa-check mr-1"></i>合格'}
                                 </span>
                             </div>
@@ -1880,8 +1921,8 @@
             html += `
             <div class="bg-white p-5 shadow-sm">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="font-black text-gray-800 text-sm"><i class="fa-solid fa-map-marker-alt text-yellow-500 mr-1"></i>${e.office}</h3>
-                    <span class="text-[10px] font-bold text-gray-400">${date} 実施</span>
+                    <h3 class="font-black text-slate-800 text-sm"><i class="fa-solid fa-map-marker-alt text-yellow-500 mr-1"></i>${e.office}</h3>
+                    <span class="text-[10px] font-bold text-slate-400">${date} 実施</span>
                 </div>
                 <div class="flex items-center gap-3 mb-4">
                     <span class="font-black text-xs ${scoreColor}">品質スコア: <span class="text-base">${e.score}</span>pt</span>
@@ -1929,7 +1970,7 @@
       sU('month-pulldown-section', e => e.style.display = isM ? 'block' : 'none');
       
       sU('selector-title', e => e.innerText = window.appState.currentMode === 'am' ? "AM品質確認" : (window.appState.currentMode === 'qc' ? "QCチーム品質確認" : "事業所品質確認"));
-      sU('start-btn-main', e => e.className = `w-full py-5 ${window.appState.currentMode === 'qc' ? 'bg-emerald-500' : (window.appState.currentMode === 'am' ? 'bg-indigo-600' : 'brand-bg-pink')} text-white rounded-2xl font-black text-lg shadow-xl uppercase active:scale-95 transition-transform`);
+      sU('start-btn-main', e => e.className = `w-full py-4 sm:py-5 ${window.appState.currentMode === 'qc' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : (window.appState.currentMode === 'am' ? 'bg-gradient-to-r from-indigo-500 to-blue-600' : 'brand-bg-pink')} text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl uppercase active:scale-[0.98] transition-all tracking-widest`);
       
       window.handleAreaFilterChange();
     };
@@ -1943,10 +1984,10 @@
             if(a.area === b.area) return a.name.localeCompare(b.name);
             return a.area.localeCompare(b.area);
         }).forEach(o => { 
-            const isFixed = o.isFixed ? '<span class="bg-gray-100 text-gray-400 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold border">初期データ</span>' : '';
+            const isFixed = o.isFixed ? '<span class="bg-slate-100 text-slate-400 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold border">初期データ</span>' : '';
             const delBtn = o.isFixed 
-                ? `<button disabled class="text-gray-300 cursor-not-allowed opacity-50"><i class="fa-solid fa-trash"></i></button>`
-                : `<button onclick="window.deleteMasterOffice('${o.name}')" class="text-red-400 hover:text-red-600 transition p-2 bg-red-50 hover:bg-red-100 rounded-lg"><i class="fa-solid fa-trash"></i></button>`;
+                ? `<button disabled class="text-slate-300 cursor-not-allowed opacity-50"><i class="fa-solid fa-trash"></i></button>`
+                : `<button onclick="window.deleteMasterOffice('${o.name}')" class="text-rose-400 hover:text-rose-600 transition p-2 bg-rose-50 hover:bg-rose-100 rounded-lg"><i class="fa-solid fa-trash"></i></button>`;
             
             let areaOptions = '';
             amList.forEach(a => {
@@ -1955,11 +1996,11 @@
             areaOptions += `<option value="その他" ${o.area === 'その他' ? 'selected' : ''}>その他</option>`;
 
             l.innerHTML += `
-            <tr class="border-b hover:bg-gray-50 transition">
-                <td class="p-3 font-bold text-gray-800">${o.corp}</td>
+            <tr class="border-b hover:bg-slate-50 transition">
+                <td class="p-3 font-bold text-slate-800">${o.corp}</td>
                 <td class="p-3">
-                    <div class="font-black text-gray-900">${o.name}${isFixed}</div>
-                    <div class="text-[9px] text-gray-400 mt-0.5">${o.type || '就労A型'}</div>
+                    <div class="font-black text-slate-900">${o.name}${isFixed}</div>
+                    <div class="text-[9px] text-slate-400 mt-0.5">${o.type || '就労A型'}</div>
                 </td>
                 <td class="p-3">
                     <select onchange="window.updateOfficeArea('${o.name}', this.value)" class="p-1.5 border rounded-lg text-[10px] font-bold bg-white focus:border-orange-400 outline-none w-full max-w-[120px]">
@@ -2039,15 +2080,15 @@
         const modal = document.createElement('div');
         modal.className = "fixed inset-0 z-[20000] bg-black bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm";
         modal.innerHTML = `
-        <div class="bg-white p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl border-t-4 border-red-500">
-            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+        <div class="bg-white p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl border-t-4 border-rose-500">
+            <div class="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <h3 class="text-lg font-black text-gray-800 mb-2">すべての入力データをリセットします</h3>
-            <p class="text-xs font-bold text-gray-600 mb-6 leading-relaxed">事業所・AM・QCチームのすべての過去データ（写真やフィードバック含む）を削除します。<br>この操作は取り消せません。</p>
+            <h3 class="text-lg font-black text-slate-800 mb-2">すべての入力データをリセットします</h3>
+            <p class="text-xs font-bold text-slate-600 mb-6 leading-relaxed">事業所・AM・QCチームのすべての過去データ（写真やフィードバック含む）を削除します。<br>この操作は取り消せません。</p>
             <div class="flex gap-3 justify-center">
-                <button id="cancel-reset-btn" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-black text-sm transition">キャンセル</button>
-                <button id="confirm-reset-btn" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black text-sm transition shadow-md">削除する</button>
+                <button id="cancel-reset-btn" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-black text-sm transition">キャンセル</button>
+                <button id="confirm-reset-btn" class="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-sm transition shadow-md">削除する</button>
             </div>
         </div>
         `;
@@ -2081,7 +2122,7 @@
         if (toggleInput && toggleInputText) {
             toggleInput.checked = window.appState.settings?.allowInputOutsidePeriod || false;
             toggleInputText.innerText = toggleInput.checked ? 'ON' : 'OFF';
-            toggleInputText.className = `ml-3 text-sm font-black ${toggleInput.checked ? 'text-blue-600' : 'text-gray-500'}`;
+            toggleInputText.className = `ml-3 text-sm font-black ${toggleInput.checked ? 'text-blue-600' : 'text-slate-500'}`;
         }
 
         const toggleBonus = document.getElementById('toggle-bonus-score');
@@ -2089,7 +2130,7 @@
         if (toggleBonus && toggleBonusText) {
             toggleBonus.checked = window.appState.settings?.showBonusScore || false;
             toggleBonusText.innerText = toggleBonus.checked ? 'ON' : 'OFF';
-            toggleBonusText.className = `ml-3 text-sm font-black ${toggleBonus.checked ? 'text-blue-600' : 'text-gray-500'}`;
+            toggleBonusText.className = `ml-3 text-sm font-black ${toggleBonus.checked ? 'text-blue-600' : 'text-slate-500'}`;
         }
 
         const toggleCompliance = document.getElementById('toggle-compliance-items');
@@ -2097,7 +2138,7 @@
         if (toggleCompliance && toggleComplianceText) {
             toggleCompliance.checked = window.appState.settings?.showComplianceItems === true; 
             toggleComplianceText.innerText = toggleCompliance.checked ? 'ON' : 'OFF';
-            toggleComplianceText.className = `ml-3 text-sm font-black ${toggleCompliance.checked ? 'text-blue-600' : 'text-gray-500'}`;
+            toggleComplianceText.className = `ml-3 text-sm font-black ${toggleCompliance.checked ? 'text-blue-600' : 'text-slate-500'}`;
         }
     };
 
@@ -2171,7 +2212,7 @@
 
         for (let key in answers) {
             if (hqExcludedItems.has(key) || quarterExcludedItems.has(key)) continue; 
-            if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(key)) continue; // 非表示項目はスコア計算から除外
+            if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(key)) continue; 
             if (answers[key] === -1) continue; 
             
             totalPoints += answers[key];
@@ -2214,7 +2255,6 @@
         try {
             window.showGlobalToast("データを送信中...");
             
-            // 外部環境からの保存でもエラーを握りつぶさずにスローする
             try {
                 await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', colName, docId), data);
             } catch (dbErr) {
@@ -2222,9 +2262,6 @@
                 throw dbErr;
             }
             
-            // ==========================================
-            // GASへデータ送信 (スプレッドシート連携)
-            // ==========================================
             const shouldSendToGAS = GAS_WEBHOOK_URL && (mode !== 'staff' || window.appState.isLastWeekOfMonth);
             
             if (shouldSendToGAS) {
@@ -2274,96 +2311,152 @@
   </script>
 </head>
 <body>
-  <div id="loading-overlay">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mb-4"></div>
-      <p class="text-xs font-bold text-gray-400">CONNECTING...</p>
+  
+  <!-- 洗練された起動アニメーション（スプラッシュスクリーン） -->
+  <div id="splash-screen">
+      <div class="splash-logo-container relative">
+          <svg width="80" height="80" viewBox="0 0 100 100" fill="none" class="drop-shadow-xl">
+              <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="url(#pink-grad)"/>
+              <circle cx="53" cy="38" r="14" fill="white"/>
+              <path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/>
+              <defs>
+                  <linearGradient id="pink-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#f472b6" />
+                      <stop offset="1" stop-color="#be185d" />
+                  </linearGradient>
+              </defs>
+          </svg>
+          <div class="absolute inset-0 bg-pink-400 blur-2xl opacity-30 rounded-full z-[-1] animate-pulse"></div>
+      </div>
+      <h1 class="splash-title text-2xl font-black mt-6 tracking-wider">self-A QC System</h1>
+      <div class="mt-8 flex gap-2 loading-dots">
+          <div class="w-2 h-2 bg-pink-400 rounded-full"></div>
+          <div class="w-2 h-2 bg-pink-500 rounded-full"></div>
+          <div class="w-2 h-2 bg-pink-600 rounded-full"></div>
+      </div>
   </div>
   
-  <header class="bg-white sticky top-0 z-50 border-b-2 border-pink-400 shadow-sm">
+  <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 shadow-sm">
       <div class="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
           <div class="flex items-center min-w-0" onclick="window.switchTab('home')" style="cursor:pointer">
-              <svg width="44" height="44" viewBox="0 0 100 100" fill="none" class="mr-3 flex-shrink-0">
-                  <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="#f06292"/>
+              <svg viewBox="0 0 100 100" fill="none" class="w-11 h-11 sm:w-14 sm:h-14 mr-3 sm:mr-4 flex-shrink-0 drop-shadow-md transition-all">
+                  <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="var(--primary-pink)"/>
                   <circle cx="53" cy="38" r="14" fill="white"/>
                   <path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/>
               </svg>
               <div class="min-w-0 pr-2">
-                  <h1 class="text-lg sm:text-xl font-black text-gray-800 truncate">self-A QC管理アプリ</h1>
-                  <p id="current-office-display" class="text-[10px] font-bold text-gray-400 mt-0.5 truncate">HOME</p>
+                  <h1 class="text-[1.3rem] sm:text-2xl font-black text-slate-800 truncate tracking-tight transition-all">self-A QC管理アプリ</h1>
+                  <p id="current-office-display" class="text-[10px] sm:text-xs font-bold text-slate-400 mt-0.5 truncate tracking-wider transition-all">HOME</p>
               </div>
           </div>
-          <span id="role-badge" class="hidden text-[11px] px-3 py-1.5 bg-pink-50 text-pink-500 rounded-full font-black flex-shrink-0 whitespace-nowrap"></span>
+          <span id="role-badge" class="hidden text-[10px] px-3 py-1 bg-pink-50 text-pink-600 border border-pink-100 rounded-full font-black flex-shrink-0 whitespace-nowrap shadow-sm"></span>
       </div>
-      <nav class="hidden flex border-t bg-white overflow-x-auto scrollbar-hide" id="nav-tabs">
-          <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase">入力</button>
-          <button onclick="window.switchTab('ranking')" id="tab-ranking" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">ランキング</button>
-          <button onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">FB共有</button>
-          <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase border-l">マスタ</button>
+      <nav class="hidden flex border-t border-slate-100 bg-white/50 overflow-x-auto scrollbar-hide" id="nav-tabs">
+          <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors">入力</button>
+          <button onclick="window.switchTab('ranking')" id="tab-ranking" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">ランキング</button>
+          <button onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">FB共有</button>
+          <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">マスタ</button>
       </nav>
   </header>
   
-  <main class="max-w-4xl mx-auto p-4">
-    <div id="view-home" class="view-content pt-2 pb-6">
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
-          <div onclick="window.startInputMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-pink-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 brand-bg-pink rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-pen-to-square"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">事業所入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Weekly Check</p></div>
+  <main class="max-w-4xl mx-auto p-4 sm:p-6">
+    <div id="view-home" class="view-content pt-2 pb-8">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+          <div onclick="window.startInputMode()" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-pink-50 rounded-full blur-3xl opacity-50 group-hover:bg-pink-100 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-pink-200 relative z-10"><i class="fa-solid fa-pen-to-square"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">事業所入力</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Weekly Check</p>
+              </div>
           </div>
-          <div onclick="window.startAMCheckMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-indigo-600 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-indigo-600 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-user-check"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">AM入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">AM Validation</p></div>
+          <div onclick="window.startAMCheckMode()" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-50 group-hover:bg-indigo-100 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-indigo-200 relative z-10"><i class="fa-solid fa-user-check"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">AM入力</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">AM Validation</p>
+              </div>
           </div>
-          <div onclick="window.startQCCheckMode()" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-emerald-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-clipboard-check"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">QCチーム入力</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">QC Team</p></div>
+          <div onclick="window.startQCCheckMode()" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-3xl opacity-50 group-hover:bg-emerald-100 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-emerald-200 relative z-10"><i class="fa-solid fa-clipboard-check"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">QCチーム入力</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">QC Team</p>
+              </div>
           </div>
-          <div onclick="window.switchTab('feedback')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-yellow-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-yellow-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-comments"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">QCフィードバック</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Feedback</p></div>
+          <div onclick="window.switchTab('feedback')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-50 rounded-full blur-3xl opacity-50 group-hover:bg-amber-100 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-3xl shadow-lg shadow-amber-200 relative z-10"><i class="fa-solid fa-comments"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">QCフィードバック</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Feedback</p>
+              </div>
           </div>
-          <div onclick="window.switchTab('ranking')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-cyan-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-ranking-star"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">点数ランキング</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Ranking</p></div>
+          <div onclick="window.switchTab('ranking')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-cyan-50 rounded-full blur-3xl opacity-50 group-hover:bg-cyan-100 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-cyan-200 relative z-10"><i class="fa-solid fa-ranking-star"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">点数ランキング</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Ranking</p>
+              </div>
           </div>
-          <div onclick="window.switchTab('master')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-orange-400 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-400 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-database"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">マスタ設定</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Settings</p></div>
+          <div onclick="window.switchTab('master')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-slate-100 rounded-full blur-3xl opacity-50 group-hover:bg-slate-200 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white text-3xl shadow-lg shadow-slate-200 relative z-10"><i class="fa-solid fa-database"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">マスタ設定</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Settings</p>
+              </div>
           </div>
-          <div onclick="window.switchTab('kaizen')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-purple-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all cursor-pointer">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-lightbulb"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">改善提案</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Kaizen</p></div>
+          <div onclick="window.switchTab('kaizen')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-purple-50 rounded-full blur-3xl opacity-50 group-hover:bg-purple-100 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-purple-200 relative z-10"><i class="fa-solid fa-lightbulb"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">改善提案</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Kaizen</p>
+              </div>
           </div>
-          <div onclick="window.switchTab('rules')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-blue-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-book-open"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">運用ルール</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Rules</p></div>
+          <div onclick="window.switchTab('rules')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-50 group-hover:bg-blue-100 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-blue-200 relative z-10"><i class="fa-solid fa-book-open"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">運用ルール</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Rules</p>
+              </div>
           </div>
-          <div onclick="window.switchTab('photos')" class="portal-card p-5 sm:p-6 rounded-2xl border-t-4 border-t-rose-500 flex flex-col items-center text-center space-y-3 shadow-sm hover:shadow-md transition-all cursor-pointer">
-              <div class="w-14 h-14 sm:w-16 sm:h-16 bg-rose-500 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl"><i class="fa-solid fa-camera"></i></div>
-              <div><h3 class="font-black text-sm sm:text-base text-gray-800">写真提出ポータル</h3><p class="text-[10px] sm:text-xs text-gray-400 mt-1">Photo Upload</p></div>
+          <div onclick="window.switchTab('photos')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+              <div class="absolute -top-10 -right-10 w-32 h-32 bg-rose-50 rounded-full blur-3xl opacity-50 group-hover:bg-rose-100 transition-colors"></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-rose-200 relative z-10"><i class="fa-solid fa-camera"></i></div>
+              <div class="relative z-10">
+                  <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">写真提出ポータル</h3>
+                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Photo Upload</p>
+              </div>
           </div>
       </div>
     </div>
     
     <div id="view-photos" class="hidden space-y-6 view-content">
         <div class="flex justify-between items-center mb-2">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-camera text-rose-500 mr-2"></i>写真提出ポータル</h2>
+            <h2 class="text-base sm:text-lg font-black text-slate-800 flex items-center"><i class="fa-solid fa-camera text-rose-500 mr-2"></i>写真提出ポータル</h2>
         </div>
-        <div class="bg-white p-6 sm:p-8 rounded-2xl border shadow-sm text-center">
-            <p class="text-sm sm:text-base font-bold text-gray-700 mb-4 leading-relaxed">
+        <div class="bg-white p-6 sm:p-8 rounded-[1.5rem] border border-slate-100 shadow-sm text-center">
+            <p class="text-sm sm:text-base font-bold text-slate-700 mb-6 leading-relaxed">
                 事業所内および社用車のチェック写真は、<br>以下の専用フォームから提出してください。
             </p>
 
-            <div class="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl mb-6 max-w-sm mx-auto shadow-sm">
-                <p class="text-xs font-black mb-1 flex items-center justify-center"><i class="fa-solid fa-clock mr-1.5 text-orange-600"></i>提出期限</p>
+            <div class="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 text-orange-800 p-5 rounded-2xl mb-8 max-w-sm mx-auto shadow-sm">
+                <p class="text-[11px] font-black mb-1.5 flex items-center justify-center tracking-wider"><i class="fa-solid fa-clock mr-1.5 text-orange-500"></i>提出期限</p>
                 <p class="text-base sm:text-lg font-black text-orange-600">当月分 毎月15日～月末（23:59）まで</p>
             </div>
             
             <div class="flex flex-col gap-4 max-w-sm mx-auto">
-                <a href="https://forms.gle/vS2xJRQEjrec2Doi7" target="_blank" class="flex items-center justify-center bg-pink-500 hover:bg-pink-600 text-white font-black px-6 py-4 rounded-xl shadow-md transition active:scale-95">
+                <a href="https://forms.gle/vS2xJRQEjrec2Doi7" target="_blank" class="flex items-center justify-center bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-black px-6 py-4 rounded-xl shadow-md transition-all active:scale-[0.98]">
                     <i class="fa-solid fa-building mr-2 text-xl"></i>
                     <span>事業所 写真提出フォーム</span>
                 </a>
-                <a href="https://forms.gle/veA616WHjc8AsMvo6" target="_blank" class="flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-black px-6 py-4 rounded-xl shadow-md transition active:scale-95">
+                <a href="https://forms.gle/veA616WHjc8AsMvo6" target="_blank" class="flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-black px-6 py-4 rounded-xl shadow-md transition-all active:scale-[0.98]">
                     <i class="fa-solid fa-car mr-2 text-xl"></i>
                     <span>社用車 写真提出フォーム</span>
                 </a>
@@ -2373,14 +2466,15 @@
 
     <div id="view-kaizen" class="hidden space-y-6 view-content">
         <div class="flex justify-between items-center mb-2">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-lightbulb text-purple-500 mr-2"></i>改善提案</h2>
+            <h2 class="text-base sm:text-lg font-black text-slate-800 flex items-center"><i class="fa-solid fa-lightbulb text-purple-500 mr-2"></i>改善提案</h2>
         </div>
-        <div class="bg-white p-6 sm:p-8 rounded-2xl border shadow-sm text-center">
-            <p class="text-sm sm:text-base font-bold text-gray-700 mb-6 leading-relaxed">
+        <div class="bg-white p-6 sm:p-8 rounded-[1.5rem] border border-slate-100 shadow-sm text-center">
+            <div class="w-16 h-16 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4"><i class="fa-solid fa-paper-plane"></i></div>
+            <p class="text-sm sm:text-base font-bold text-slate-700 mb-6 leading-relaxed">
                 品質向上に向けた現場の「困りごと」や「提案」は、<br>以下のGoogleフォームから送信してください。
             </p>
             
-            <a href="https://forms.gle/7HC5MpVuLN25Cesb6" target="_blank" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-black px-8 py-4 rounded-xl shadow-md transition active:scale-95 mb-8">
+            <a href="https://forms.gle/7HC5MpVuLN25Cesb6" target="_blank" class="inline-flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-black px-8 py-4 rounded-xl shadow-md transition-all active:scale-[0.98]">
                 <i class="fa-solid fa-external-link-alt mr-2"></i>Googleフォームを開く
             </a>
         </div>
@@ -2388,74 +2482,77 @@
 
     <div id="view-rules" class="hidden space-y-6 view-content">
         <div class="flex justify-between items-center mb-2">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center"><i class="fa-solid fa-book-open text-blue-500 mr-2"></i>運用ルール / 目的</h2>
+            <h2 class="text-base sm:text-lg font-black text-slate-800 flex items-center"><i class="fa-solid fa-book-open text-blue-500 mr-2"></i>運用ルール / 目的</h2>
             <button id="btn-edit-rules" onclick="window.toggleRulesEdit()" class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-100 transition shadow-sm"><i class="fa-solid fa-pen mr-1"></i>編集する</button>
         </div>
         <div id="rules-content-container"></div>
     </div>
 
     <div id="view-master" class="hidden space-y-6 view-content">
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm mt-6">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-gear text-blue-500 mr-2"></i>システム共通設定</h2>
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="bg-white p-5 sm:p-6 rounded-[1.5rem] border border-slate-100 shadow-sm mt-6 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+            <h2 class="text-base sm:text-lg font-black text-slate-800 flex items-center mb-5"><i class="fa-solid fa-gear text-blue-500 mr-2"></i>システム共通設定</h2>
+            
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-blue-200 transition-colors">
                 <div>
-                    <h3 class="text-sm font-black text-blue-800 mb-1">入力期間の制限解除</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
+                    <h3 class="text-sm font-black text-slate-800 mb-1">入力期間の制限解除</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold leading-relaxed">
                         ONにすると、期日超過や未来の週・月でも入力が可能になります。<br>テスト入力や例外的な過去分の修正時のみONにしてください。
                     </p>
                 </div>
                 <div class="flex-shrink-0">
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" id="toggle-input-period" class="sr-only peer" onchange="window.toggleInputPeriodSetting(this.checked)">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-input-period-text">OFF</span>
+                      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      <span class="ml-3 text-sm font-black text-slate-500" id="toggle-input-period-text">OFF</span>
                     </label>
                 </div>
             </div>
             
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 hover:border-blue-200 transition-colors">
                 <div>
-                    <h3 class="text-sm font-black text-blue-800 mb-1">賞与用スコアの表示（管理者用）</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
+                    <h3 class="text-sm font-black text-slate-800 mb-1">賞与用スコアの表示（管理者用）</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold leading-relaxed">
                         ONにすると、ランキング画面に「QC評価スコア × 事業所入力率 × AM入力率」で計算された賞与用スコアが表示されます。
                     </p>
                 </div>
                 <div class="flex-shrink-0">
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" id="toggle-bonus-score" class="sr-only peer" onchange="window.toggleBonusScoreSetting(this.checked)">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-bonus-score-text">OFF</span>
+                      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      <span class="ml-3 text-sm font-black text-slate-500" id="toggle-bonus-score-text">OFF</span>
                     </label>
                 </div>
             </div>
 
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 hover:border-blue-200 transition-colors">
                 <div>
-                    <h3 class="text-sm font-black text-blue-800 mb-1">法令チェック項目の表示（帳票管理以外）</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-700 font-bold leading-relaxed">
+                    <h3 class="text-sm font-black text-slate-800 mb-1">法令チェック項目の表示（帳票管理以外）</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold leading-relaxed">
                         ONにすると、AM/QC入力時の「書類・法令チェック」に、個別支援計画やモニタリング等の項目が表示されます。<br>OFFの場合は「帳票管理」のみ表示されます。
                     </p>
                 </div>
                 <div class="flex-shrink-0">
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" id="toggle-compliance-items" class="sr-only peer" onchange="window.toggleComplianceItemsSetting(this.checked)">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                      <span class="ml-3 text-sm font-black text-gray-500" id="toggle-compliance-items-text">OFF</span>
+                      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      <span class="ml-3 text-sm font-black text-slate-500" id="toggle-compliance-items-text">OFF</span>
                     </label>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-orange-400 shadow-sm mt-6">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-database text-orange-500 mr-2"></i>事業所マスタ管理</h2>
+        <div class="bg-white p-5 sm:p-6 rounded-[1.5rem] border border-slate-100 shadow-sm mt-6 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-orange-400"></div>
+            <h2 class="text-base sm:text-lg font-black text-slate-800 flex items-center mb-5"><i class="fa-solid fa-database text-orange-500 mr-2"></i>事業所マスタ管理</h2>
             
-            <div class="bg-gray-50 p-4 rounded-xl border mb-6">
-                <h3 class="text-xs font-black text-gray-700 mb-3"><i class="fa-solid fa-plus-circle mr-1"></i>新規事業所の追加</h3>
+            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-6">
+                <h3 class="text-xs font-black text-slate-700 mb-3 flex items-center"><i class="fa-solid fa-plus-circle mr-1.5 text-orange-500"></i>新規事業所の追加</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <input type="text" id="new-corp" placeholder="法人名 (例: ハニービー)" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
-                    <input type="text" id="new-name" placeholder="事業所名 (一意な名前)" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
-                    <select id="new-area" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition"></select>
-                    <select id="new-type" class="p-2 border rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
+                    <input type="text" id="new-corp" placeholder="法人名 (例: ハニービー)" class="p-2.5 border border-slate-200 rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
+                    <input type="text" id="new-name" placeholder="事業所名 (一意な名前)" class="p-2.5 border border-slate-200 rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
+                    <select id="new-area" class="p-2.5 border border-slate-200 rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition"></select>
+                    <select id="new-type" class="p-2.5 border border-slate-200 rounded-xl text-xs font-bold w-full bg-white focus:border-orange-400 outline-none transition">
                         <option value="就労A型">就労A型</option>
                         <option value="就労B型">就労B型</option>
                         <option value="就労移行">就労移行</option>
@@ -2463,141 +2560,161 @@
                     </select>
                 </div>
                 <div class="mt-4 text-right">
-                    <button onclick="window.addMasterOffice()" class="bg-orange-500 hover:bg-orange-600 text-white font-black text-xs py-2.5 px-6 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
-                        <i class="fa-solid fa-plus mr-1"></i>事業所を追加する
+                    <button onclick="window.addMasterOffice()" class="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-black text-xs py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 w-full sm:w-auto">
+                        <i class="fa-solid fa-plus mr-1.5"></i>事業所を追加する
                     </button>
                 </div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-xs font-black text-gray-700"><i class="fa-solid fa-list mr-1"></i>登録済み事業所一覧</h3>
-                    <span class="text-[10px] font-bold text-gray-500">計 <span id="office-count" class="text-orange-500 font-black">0</span> 件</span>
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <h3 class="text-xs font-black text-slate-700"><i class="fa-solid fa-list mr-1.5"></i>登録済み事業所一覧</h3>
+                    <span class="text-[10px] font-bold text-slate-500">計 <span id="office-count" class="text-orange-500 font-black text-sm mx-0.5">0</span> 件</span>
                 </div>
-                <div class="overflow-x-auto rounded-xl border border-gray-200">
+                <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
                     <table class="w-full text-left border-collapse whitespace-nowrap">
                         <thead>
-                            <tr class="bg-gray-100 text-[10px] text-gray-500 border-b">
-                                <th class="p-3 font-bold w-1/4">法人名</th>
-                                <th class="p-3 font-bold w-1/3">事業所名・種類</th>
-                                <th class="p-3 font-bold w-1/4">エリア (AM)</th>
-                                <th class="p-3 font-bold w-1/6 text-center">操作</th>
+                            <tr class="bg-slate-50 text-[10px] text-slate-500 border-b border-slate-200 uppercase tracking-wider">
+                                <th class="p-4 font-black w-1/4">法人名</th>
+                                <th class="p-4 font-black w-1/3">事業所名・種類</th>
+                                <th class="p-4 font-black w-1/4">エリア (AM)</th>
+                                <th class="p-4 font-black w-1/6 text-center">操作</th>
                             </tr>
                         </thead>
-                        <tbody id="master-office-list" class="text-xs font-bold text-gray-700 bg-white">
+                        <tbody id="master-office-list" class="text-xs font-bold text-slate-700 bg-white">
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-red-500 shadow-sm mt-6">
-            <h2 class="text-base sm:text-lg font-black text-gray-800 flex items-center mb-4"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>危険な操作 (システム管理)</h2>
-            <div class="bg-red-50 p-4 rounded-xl border border-red-200">
-                <h3 class="text-sm font-black text-red-700 mb-2">テスト入力データの一括リセット</h3>
-                <p class="text-[10px] sm:text-xs text-gray-700 mb-4 font-bold leading-relaxed">
-                    事業所・AM・QCチームの<span class="text-red-600">すべての入力履歴（写真やコメント含む）を完全に消去</span>します。<br>
-                    ※事業所マスタ（一覧）は削除されません。本番運用への切り替え時や、テストを最初からやり直したい時に使用してください。
-                </p>
-                <button onclick="window.resetAllTestData()" class="bg-red-600 hover:bg-red-700 text-white font-black text-xs py-2.5 px-6 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
-                    <i class="fa-solid fa-trash-can mr-1"></i>すべての入力データをリセットする
+        <div class="bg-white p-5 sm:p-6 rounded-[1.5rem] border border-slate-100 shadow-sm mt-6 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-rose-500"></div>
+            <h2 class="text-base sm:text-lg font-black text-slate-800 flex items-center mb-5"><i class="fa-solid fa-triangle-exclamation text-rose-500 mr-2"></i>危険な操作 (システム管理)</h2>
+            <div class="bg-rose-50 p-5 rounded-xl border border-rose-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-sm font-black text-rose-700 mb-1.5">テスト入力データの一括リセット</h3>
+                    <p class="text-[10px] sm:text-xs text-rose-600/80 font-bold leading-relaxed">
+                        すべての入力履歴（写真やコメント含む）を完全に消去します。<br>
+                        ※事業所マスタは削除されません。本番への切り替え時のみ使用してください。
+                    </p>
+                </div>
+                <button onclick="window.resetAllTestData()" class="bg-rose-500 hover:bg-rose-600 text-white font-black text-xs py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 whitespace-nowrap flex-shrink-0 w-full sm:w-auto">
+                    <i class="fa-solid fa-trash-can mr-1.5"></i>リセット実行
                 </button>
             </div>
         </div>
     </div>
 
     <div id="view-ranking" class="hidden space-y-6 view-content">
-        <div class="bg-white p-6 rounded-2xl border shadow-sm">
-            <h2 class="text-lg font-black text-gray-800 mb-3 flex items-center"><i class="fa-solid fa-ranking-star text-cyan-500 mr-2"></i>点数ランキング（評価スコア）</h2>
-            <div class="bg-cyan-50 border border-cyan-100 p-3 rounded-xl mb-4">
+        <div class="bg-white p-6 sm:p-8 rounded-[1.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-cyan-500"></div>
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-12 h-12 bg-cyan-50 text-cyan-500 rounded-full flex items-center justify-center text-xl shadow-inner border border-cyan-100 flex-shrink-0">
+                    <i class="fa-solid fa-ranking-star"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg sm:text-xl font-black text-slate-800 tracking-tight">点数ランキング</h2>
+                    <p class="text-[10px] sm:text-xs font-bold text-slate-500 mt-0.5">各事業所の評価スコア比較</p>
+                </div>
+            </div>
+            <div class="bg-cyan-50 border border-cyan-100 p-4 rounded-xl mb-6">
                 <p class="text-[11px] text-cyan-800 font-bold leading-relaxed">
-                    <i class="fa-solid fa-circle-info mr-1"></i>基本ランキングは<span class="text-pink-600 font-black">「品質スコア（平均点）」</span>で順位付けされます（同点時は自己入力率が高い事業所が上位）。<br>
-                    <span id="ranking-bonus-desc" class="hidden mt-1 block">
-                        賞与評価用として、未入力による減点を加味した <span class="bg-white px-1 rounded text-red-500">賞与用スコア (QC評価 × 自己入力率 × AM入力率)</span> も算出しています。<br>
-                        <span class="text-[10px] text-gray-500 font-normal mt-1 block">※プルダウンから「査定期間」を選択すると、進行中の期間でも現在までの経過分で自動按分され、現時点での評価が確認できます。</span>
+                    <i class="fa-solid fa-circle-info mr-1.5"></i>基本ランキングは<span class="text-pink-600 font-black">「品質スコア（平均点）」</span>で順位付けされます（同点時は自己入力率が高い事業所が上位）。<br>
+                    <span id="ranking-bonus-desc" class="hidden mt-1.5 block">
+                        賞与評価用として、未入力による減点を加味した <span class="bg-white px-1.5 py-0.5 rounded text-rose-500 shadow-sm">賞与用スコア (QC評価 × 自己入力率 × AM入力率)</span> も算出しています。<br>
+                        <span class="text-[10px] text-cyan-700/70 font-normal mt-1 block">※プルダウンから「査定期間」を選択すると、進行中の期間でも現在までの経過分で自動按分され、現時点での評価が確認できます。</span>
                     </span>
                 </p>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-                <div class="flex flex-col gap-2">
-                    <select id="ranking-month-pulldown" onchange="window.handleRankingMonthChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm outline-none focus:border-cyan-400 transition-all"></select>
-                    <div id="ranking-custom-period-container" class="hidden flex items-center gap-2 bg-gray-50 p-2 rounded-xl border-2">
-                        <input type="date" id="ranking-custom-start" onchange="window.renderRankingList()" class="w-full p-1.5 border rounded-lg font-bold bg-white text-[10px] sm:text-xs outline-none focus:border-cyan-400 text-gray-700">
-                        <span class="text-gray-400 font-bold text-[10px]">～</span>
-                        <input type="date" id="ranking-custom-end" onchange="window.renderRankingList()" class="w-full p-1.5 border rounded-lg font-bold bg-white text-[10px] sm:text-xs outline-none focus:border-cyan-400 text-gray-700">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                <div class="flex flex-col gap-3">
+                    <select id="ranking-month-pulldown" onchange="window.handleRankingMonthChange()" class="w-full p-3.5 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-xs sm:text-sm outline-none focus:bg-white focus:border-cyan-400 transition-colors"></select>
+                    <div id="ranking-custom-period-container" class="hidden flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border-2 border-slate-200">
+                        <input type="date" id="ranking-custom-start" onchange="window.renderRankingList()" class="w-full p-2 border border-slate-200 rounded-lg font-bold bg-white text-[10px] sm:text-xs outline-none focus:border-cyan-400 text-slate-700">
+                        <span class="text-slate-400 font-black text-[10px]">～</span>
+                        <input type="date" id="ranking-custom-end" onchange="window.renderRankingList()" class="w-full p-2 border border-slate-200 rounded-lg font-bold bg-white text-[10px] sm:text-xs outline-none focus:border-cyan-400 text-slate-700">
                     </div>
                 </div>
-                <select id="ranking-sort-pulldown" onchange="window.renderRankingList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm outline-none focus:border-cyan-400 transition-all h-fit">
+                <select id="ranking-sort-pulldown" onchange="window.renderRankingList()" class="w-full p-3.5 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-xs sm:text-sm outline-none focus:bg-white focus:border-cyan-400 transition-colors h-fit">
                 </select>
             </div>
         </div>
-        <div id="ranking-list-container" class="space-y-3"></div>
+        <div id="ranking-list-container" class="space-y-4"></div>
     </div>
 
     <div id="view-feedback" class="hidden space-y-6 view-content">
-        <div class="bg-white p-6 rounded-2xl border shadow-sm">
-            <h2 class="text-lg font-black text-gray-800 mb-4 flex items-center"><i class="fa-solid fa-comments text-yellow-500 mr-2"></i>QCフィードバック確認</h2>
-            <p class="text-xs text-gray-500 mb-4">QCチームによる抜き打ちチェックの結果とコメントを確認できます。</p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <select id="feedback-area-pulldown" onchange="window.handleFeedbackAreaChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
-                <select id="feedback-office-pulldown" onchange="window.handleFeedbackOfficeChange()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
-                <select id="feedback-month-pulldown" onchange="window.renderFeedbackList()" class="w-full p-3 border-2 rounded-xl font-bold bg-gray-50 text-xs sm:text-sm"></select>
+        <div class="bg-white p-6 sm:p-8 rounded-[1.5rem] border border-slate-100 shadow-sm">
+            <h2 class="text-lg font-black text-slate-800 mb-4 flex items-center"><i class="fa-solid fa-comments text-amber-500 mr-2"></i>QCフィードバック確認</h2>
+            <p class="text-xs text-slate-500 mb-6 font-bold leading-relaxed">QCチームによる抜き打ちチェックの結果とコメントを確認できます。</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <select id="feedback-area-pulldown" onchange="window.handleFeedbackAreaChange()" class="w-full p-3.5 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-xs sm:text-sm focus:bg-white focus:border-amber-400 transition-colors outline-none"></select>
+                <select id="feedback-office-pulldown" onchange="window.handleFeedbackOfficeChange()" class="w-full p-3.5 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-xs sm:text-sm focus:bg-white focus:border-amber-400 transition-colors outline-none"></select>
+                <select id="feedback-month-pulldown" onchange="window.renderFeedbackList()" class="w-full p-3.5 border-2 border-slate-200 rounded-xl font-bold bg-slate-50 text-xs sm:text-sm focus:bg-white focus:border-amber-400 transition-colors outline-none"></select>
             </div>
         </div>
         <div id="feedback-list-container" class="space-y-4"></div>
     </div>
     
-    <div id="office-selector" class="hidden view-content bg-white p-8 rounded-3xl shadow-xl border">
-      <h2 class="text-xl font-black text-center mb-8" id="selector-title">対象を選択</h2>
+    <div id="office-selector" class="hidden view-content bg-white p-8 sm:p-10 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100">
+      <h2 class="text-xl sm:text-2xl font-black text-center mb-8 text-slate-800 tracking-tight" id="selector-title">対象を選択</h2>
       <div class="space-y-5">
-        <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 border-2 rounded-2xl font-bold bg-white">
+        <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm">
             <option value="" selected disabled>エリア選択...</option>
             <option value="石川AM">石川AM</option><option value="寺口AM">寺口AM</option><option value="甲部AM">甲部AM</option>
             <option value="若林AM">若林AM</option><option value="辰橋AM">辰橋AM</option><option value="中村AM">中村AM</option>
             <option value="小野統括">小野統括</option>
         </select>
-        <select id="office-pulldown" onchange="window.updatePeriodOptions()" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select>
-        <div id="week-pulldown-section"><select id="week-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select></div>
-        <div id="month-pulldown-section" class="hidden"><select id="month-pulldown" class="w-full p-4 border-2 rounded-2xl font-bold bg-white"></select></div>
-        <button onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-xl uppercase">START</button>
+        <select id="office-pulldown" onchange="window.updatePeriodOptions()" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm"></select>
+        <div id="week-pulldown-section"><select id="week-pulldown" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm"></select></div>
+        <div id="month-pulldown-section" class="hidden"><select id="month-pulldown" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm"></select></div>
+        <div class="pt-2">
+            <button onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl uppercase tracking-widest active:scale-[0.98] transition-all">START</button>
+        </div>
       </div>
     </div>
     
     <div id="view-input" class="hidden space-y-6 view-content">
-        <div class="bg-pink-50 p-5 rounded-2xl border">
-            <div class="flex justify-between items-start mb-2">
-                <p class="text-[10px] text-pink-500 font-black uppercase">QC Sheet</p>
-                <p id="progress-text" class="text-2xl font-black text-pink-600">0%</p>
+        <div class="bg-pink-50 p-6 rounded-[1.5rem] border border-pink-100 flex justify-between items-center shadow-sm">
+            <div>
+                <p class="text-[10px] text-pink-500 font-black uppercase tracking-widest mb-1">QC Sheet</p>
+                <h2 class="font-black text-slate-800 text-lg" id="input-view-header-title">チェックシート</h2>
             </div>
-            <h2 class="font-black text-gray-800" id="input-view-header-title">チェックシート</h2>
+            <div class="text-right">
+                <p class="text-[10px] text-pink-400 font-bold uppercase mb-0.5">Progress</p>
+                <p id="progress-text" class="text-3xl font-black text-pink-600 leading-none">0%</p>
+            </div>
         </div>
         <div id="already-completed-alert" class="hidden"></div>
-        <div id="categories-container"></div>
+        <div id="categories-container" class="space-y-5"></div>
         <div id="comment-container" class="hidden"></div>
-        <button id="submit-btn" disabled onclick="window.submitData()" class="w-full py-4 bg-gray-200 text-gray-400 rounded-xl font-black text-lg shadow-xl transition-all">すべて入力してください</button>
+        <div class="pt-4 pb-8">
+            <button id="submit-btn" disabled onclick="window.submitData()" class="w-full py-5 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg transition-all">すべて入力してください</button>
+        </div>
     </div>
   </main>
   
-  <div id="success-toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border-l-4 border-pink-500">
-      <i class="fa-solid fa-check-circle text-pink-400 mr-3"></i><span id="toast-message" class="font-black text-sm uppercase">COMPLETE</span>
+  <div id="success-toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border border-slate-700 transition-all duration-300 transform translate-y-0 opacity-100">
+      <i class="fa-solid fa-check-circle text-emerald-400 mr-3 text-lg"></i><span id="toast-message" class="font-black text-sm tracking-wide">COMPLETE</span>
   </div>
 
-  <div id="image-modal" class="fixed inset-0 z-[10000] bg-black bg-opacity-90 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm" onclick="this.classList.add('hidden')">
-      <button class="absolute top-6 right-6 text-white text-4xl hover:text-red-500 transition cursor-pointer z-50"><i class="fa-solid fa-times"></i></button>
-      <img id="image-modal-content" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()">
+  <div id="image-modal" class="fixed inset-0 z-[10000] bg-slate-900/95 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" onclick="this.classList.add('hidden')">
+      <button class="absolute top-6 right-6 text-slate-300 hover:text-white text-4xl transition-colors cursor-pointer z-50 drop-shadow-md"><i class="fa-solid fa-times"></i></button>
+      <img id="image-modal-content" class="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl border border-slate-700/50" onclick="event.stopPropagation()">
   </div>
 
-  <div id="password-modal" class="fixed inset-0 z-[20000] bg-black bg-opacity-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
-      <div class="bg-white p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl border-t-4 border-orange-500">
-          <div class="w-16 h-16 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+  <div id="password-modal" class="fixed inset-0 z-[20000] bg-slate-900/60 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+      <div class="bg-white p-8 rounded-[2rem] max-w-sm w-full text-center shadow-2xl border border-slate-100 relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-orange-400 to-amber-400"></div>
+          <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-2xl mx-auto mb-5 shadow-inner border border-orange-100">
               <i class="fa-solid fa-lock"></i>
           </div>
-          <h3 class="text-lg font-black text-gray-800 mb-2" id="password-modal-title">暗証番号の入力</h3>
-          <p class="text-xs font-bold text-gray-500 mb-6 leading-relaxed">アクセスするには<br>4桁の暗証番号が必要です。</p>
-          <input type="password" id="master-password-input" class="w-full p-4 border-2 rounded-xl text-center font-black text-2xl tracking-widest outline-none focus:border-orange-500 mb-6" placeholder="****" maxlength="4" onkeyup="if(event.key==='Enter') window.verifyPassword()">
+          <h3 class="text-lg font-black text-slate-800 mb-2 tracking-tight" id="password-modal-title">暗証番号の入力</h3>
+          <p class="text-xs font-bold text-slate-500 mb-6 leading-relaxed">アクセスするには<br>4桁の暗証番号が必要です。</p>
+          <input type="password" id="master-password-input" class="w-full p-4 border-2 border-slate-200 rounded-xl text-center font-black text-2xl tracking-[0.5em] outline-none focus:border-orange-400 focus:bg-orange-50/30 transition-colors mb-6 bg-slate-50" placeholder="****" maxlength="4" onkeyup="if(event.key==='Enter') window.verifyPassword()">
           <div class="flex gap-3 justify-center">
-              <button onclick="window.closePasswordModal()" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-600 font-black text-sm transition">キャンセル</button>
-              <button onclick="window.verifyPassword()" class="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm transition shadow-md">解除する</button>
+              <button onclick="window.closePasswordModal()" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-black text-sm transition-colors">キャンセル</button>
+              <button onclick="window.verifyPassword()" class="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm transition-colors shadow-md active:scale-95">解除する</button>
           </div>
       </div>
   </div>
@@ -2616,7 +2733,6 @@
     window.getDocs = getDocs;
 
     async function connectCloud() {
-      // 外部環境などでFirebase接続が遅延・失敗しても画面が作れるように初回描画しておく
       if (window.renderMasterList) window.renderMasterList(); 
       if (window.renderSelectors) window.renderSelectors(); 
 
@@ -2659,13 +2775,13 @@
         window.appState.offices = Array.from(m.values()); 
         if (window.renderMasterList) window.renderMasterList(); 
         if (window.renderSelectors) window.renderSelectors(); 
-        window.hideMainLoader();
+        
       }, e => {
-          console.warn("Offices Sync Warn (外部公開環境のためスキップ):", e);
+          console.warn("Offices Sync Warn:", e);
           window.appState.offices = [...window.initialOffices];
           if (window.renderMasterList) window.renderMasterList(); 
           if (window.renderSelectors) window.renderSelectors(); 
-          window.hideMainLoader();
+          
       });
 
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), d => {
@@ -2722,7 +2838,8 @@
 
     connectCloud();
     window.addEventListener('DOMContentLoaded', () => { 
-        setTimeout(window.hideMainLoader, 2000); 
+        // 起動アニメーションをしっかり見せるために2.5秒表示してからフェードアウト
+        setTimeout(window.hideMainLoader, 2500); 
         window.switchTab('home'); 
     });
   </script>
