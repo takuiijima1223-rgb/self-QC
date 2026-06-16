@@ -11,10 +11,10 @@
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
     
     :root {
-        --primary-pink: #ec4899; /* Tailwind pink-500 */
-        --primary-pink-dark: #be185d; /* Tailwind pink-700 */
-        --bg-color: #f8fafc; /* Tailwind slate-50 */
-        --text-main: #334155; /* Tailwind slate-700 */
+        --primary-pink: #ec4899;
+        --primary-pink-dark: #be185d;
+        --bg-color: #f8fafc;
+        --text-main: #334155;
     }
 
     body { 
@@ -32,31 +32,15 @@
         z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
         transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
     }
-    .splash-logo-container {
-        animation: bounceIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
-    .splash-title {
-        opacity: 0; transform: translateY(10px);
-        animation: fadeInUp 0.8s ease-out 0.4s forwards;
-        color: var(--primary-pink-dark);
-    }
+    .splash-logo-container { animation: bounceIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    .splash-title { opacity: 0; transform: translateY(10px); animation: fadeInUp 0.8s ease-out 0.4s forwards; color: var(--primary-pink-dark); }
     .loading-dots div { animation: dotBounce 1.4s infinite ease-in-out both; }
     .loading-dots div:nth-child(1) { animation-delay: -0.32s; }
     .loading-dots div:nth-child(2) { animation-delay: -0.16s; }
 
-    @keyframes bounceIn {
-        0% { transform: scale(0.3); opacity: 0; }
-        50% { transform: scale(1.05); opacity: 1; }
-        70% { transform: scale(0.9); }
-        100% { transform: scale(1); opacity: 1; }
-    }
-    @keyframes fadeInUp {
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes dotBounce { 
-        0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 
-        40% { transform: scale(1); opacity: 1; } 
-    }
+    @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); opacity: 1; } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
 
     /* アプリ共通スタイル */
     .brand-pink { color: var(--primary-pink); } 
@@ -73,7 +57,6 @@
     .view-content { animation: contentFadeIn 0.3s ease-out; }
     @keyframes contentFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* カードデザインの洗練 */
     .portal-card { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
     .portal-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1), 0 4px 8px -4px rgba(0, 0, 0, 0.05); border-color: #ffffff; background-color: #ffffff; }
     .portal-card:active { transform: translateY(0) scale(0.98); }
@@ -101,7 +84,7 @@
     // ==========================================
     // ▼ GAS(Google Apps Script)のWebアプリURL ▼
     // ==========================================
-    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxoLVrI3mhvh9pnBxXs6xLYk-JaXN5_4z56u66VKroqACUTZN2N0ejwe5ZWVyAENJoW/exec"; 
+    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxRWTFSrVtByG6M0l7RvAObZCvC--ylSVEcMIeb0eCBiJ7rOQ51W4TBuKFhMu_F9d1V/exec"; 
 
     window.getNowLocalStr = () => {
         const d = new Date();
@@ -525,6 +508,10 @@
             if (commentInput && pastData.comment) {
                 commentInput.value = pastData.comment;
             }
+            const gpInput = $('gp-bonus-input');
+            if (gpInput && pastData.gp_bonus) {
+                gpInput.value = pastData.gp_bonus;
+            }
         }
     };
 
@@ -676,6 +663,18 @@
             <div class="bg-white rounded-[1.5rem] shadow-sm border border-emerald-100 mb-4 p-5 sm:p-6 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
                 <h4 class="font-black text-slate-800 mb-4 flex items-center text-sm"><i class="fa-solid fa-comment-dots text-emerald-500 mr-2 text-lg"></i>QCフィードバック（事業所共有用）</h4>
+                
+                <div class="mb-5 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-black text-emerald-800 mb-1"><i class="fa-solid fa-arrow-up text-emerald-500 mr-1.5"></i>GP加点 (Good Practice)</p>
+                        <p class="text-[10px] text-emerald-600 font-bold">素晴らしい取り組みに対する特別加点（任意）</p>
+                    </div>
+                    <div class="flex items-center bg-white p-1 rounded-lg border border-emerald-200 shadow-sm">
+                        <input type="number" id="gp-bonus-input" min="0" max="100" class="w-16 p-2 text-base font-black text-center text-emerald-600 outline-none rounded-md" placeholder="0">
+                        <span class="text-xs font-bold text-slate-400 pr-2">pt</span>
+                    </div>
+                </div>
+
                 <textarea id="qc-comment-input" class="w-full border-2 border-slate-200 rounded-xl p-4 text-sm font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 transition-all outline-none mb-5 shadow-inner" rows="3" placeholder="全体的な総評を入力 (任意)"></textarea>
                 
                 <div class="border-t border-slate-100 pt-5">
@@ -717,51 +716,6 @@
       }
     };
 
-    window.uploadImageToDriveAsync = async (base64, folderType, filenamePrefix, callback) => {
-        if (!GAS_WEBHOOK_URL) {
-            callback(base64);
-            return;
-        }
-        
-        window.appState.activeUploads = (window.appState.activeUploads || 0) + 1;
-        window.updateProgressDisplay();
-        
-        try {
-            const timestamp = new Date().getTime();
-            const officeName = window.appState.office || "Unknown";
-            const filename = `${officeName}_${filenamePrefix}_${timestamp}.jpg`;
-            
-            const payload = {
-                action: "upload_image",
-                folderType: folderType,
-                filename: filename,
-                base64: base64
-            };
-            
-            const response = await fetch(GAS_WEBHOOK_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: JSON.stringify(payload)
-            });
-            
-            const result = await response.json();
-            if (result.status === 'success') {
-                callback(result.url);
-            } else {
-                console.warn("GAS Upload Error:", result);
-                callback(base64); 
-            }
-        } catch (e) {
-            console.warn("GAS Fetch Warn:", e);
-            callback(base64); 
-        } finally {
-            window.appState.activeUploads = Math.max(0, window.appState.activeUploads - 1);
-            window.updateProgressDisplay();
-        }
-    };
-
     window.handleIssueImageSelect = async (e) => {
         const files = e.target.files;
         if(!files || files.length === 0) return;
@@ -774,7 +728,7 @@
         }
         if (addCount <= 0) return;
 
-        window.showGlobalToast("写真をバックグラウンドで保存中...");
+        window.showGlobalToast("写真を登録しました");
         for (let i = 0; i < addCount; i++) {
             const compressed = await window.compressImage(files[i]);
             const issueId = Date.now() + i;
@@ -790,13 +744,6 @@
                 resolved_at: null
             });
             window.renderIssues();
-            
-            window.uploadImageToDriveAsync(compressed, "qc_issue", `QC指摘`, (url) => {
-                const targetIssue = window.appState.issues.find(iss => iss.id === issueId);
-                if (targetIssue && targetIssue.beforeImage === compressed) {
-                    targetIssue.beforeImage = url;
-                }
-            });
         }
         sU('issue-image-input', el => el.value = '');
     };
@@ -1312,19 +1259,16 @@
                 if (customStart && new Date(w.end) < customStart) return;
                 if (customEnd && new Date(w.start) > customEnd) return;
                 
-                // 査定期間は、未来のテストデータに影響されず、純粋に「現在の日付」だけで按分する
                 if (now >= w.start) {
                     expectedStaffCount++;
                     validWeeks.push(w.label);
                 }
             } else if (effectiveMonthMode === 'all') {
-                // 全期間は進行中の按分を適用しつつ、未来のテストデータも表示できるようにする
                 if (now >= w.start || hasDataWeeks.has(w.label)) {
                     expectedStaffCount++;
                     validWeeks.push(w.label);
                 }
             } else {
-                // 単月（〇月度）指定の場合は、按分せずにその月の全週を分母とする
                 expectedStaffCount++;
                 validWeeks.push(w.label);
             }
@@ -1345,19 +1289,16 @@
                     if (customStart && endOfMonth < customStart) return;
                     if (customEnd && startOfMonth > customEnd) return;
                     
-                    // 査定期間は、未来のテストデータに影響されず、純粋に「現在の日付」だけで按分する
                     if (now >= startOfMonth) {
                         expectedMonthCount++;
                         validMonths.push(m);
                     }
                 } else if (effectiveMonthMode === 'all') {
-                    // 全期間は進行中の按分を適用しつつ、未来のテストデータも表示できるようにする
                     if (now >= startOfMonth || hasDataMonths.has(m)) {
                         expectedMonthCount++;
                         validMonths.push(m);
                     }
                 } else {
-                    // 単月（〇月度）指定の場合は、按分せずに分母とする
                     expectedMonthCount++;
                     validMonths.push(m);
                 }
@@ -1425,7 +1366,7 @@
         }
 
         const showBonus = window.appState.settings?.showBonusScore || false;
-        sU('ranking-bonus-desc', e => e.className = showBonus ? 'mt-1 block' : 'hidden');
+        sU('ranking-bonus-desc', e => e.className = showBonus ? 'mt-1.5 block' : 'hidden');
 
         scores.sort((a, b) => {
             if (sortTarget === 'final') {
@@ -1693,6 +1634,59 @@
         window.renderFeedbackList();
     };
 
+    window.handleImprovementUpload = async (event, office, month, issueIndex) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        if (!window.appState.user) return window.showGlobalToast("認証待ちです");
+        
+        window.showGlobalToast("改善報告を送信しています...");
+        const compressed = await window.compressImage(file);
+        
+        const docId = `${office}_${month}`;
+        try {
+            const docData = window.appState.teamHistoryFull[office][month];
+            if (!docData || !docData.issues) return;
+            
+            const updatedIssues = [...docData.issues];
+            const nowIso = new Date().toISOString();
+            if (updatedIssues[issueIndex]) {
+                updatedIssues[issueIndex].resolved = true;
+                updatedIssues[issueIndex].resolved_at = nowIso;
+                if (!updatedIssues[issueIndex].afterImages) updatedIssues[issueIndex].afterImages = [];
+                updatedIssues[issueIndex].afterImages.push(compressed);
+            }
+            
+            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                issues: updatedIssues
+            });
+
+            if (GAS_WEBHOOK_URL) {
+                fetch(GAS_WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'update_resolution',
+                        office: office,
+                        period: month,
+                        issueIndex: issueIndex,
+                        isResolved: true,
+                        resolvedAt: nowIso,
+                        afterImageUrl: compressed
+                    })
+                }).catch(e => console.warn("GAS Update Warn:", e));
+            }
+            
+            window.showGlobalToast("改善報告と写真の保存が完了しました！");
+        } catch(e) {
+            console.warn("Update Warn:", e);
+            window.showGlobalToast("エラーが発生しました");
+        }
+        
+        event.target.value = ''; 
+    };
+
     window.renderFeedbackList = () => {
         const c = $('feedback-list-container');
         const os = $('feedback-office-pulldown');
@@ -1704,28 +1698,23 @@
             const as = $('feedback-area-pulldown');
             const selA = (as && as.value) ? as.value : 'all';
 
-            const now = new Date();
-            const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-
             Object.keys(qcData).forEach(officeName => {
                 const officeInfo = window.appState.offices.find(o => o.name === officeName);
                 if (selA !== 'all' && officeInfo && officeInfo.area !== selA) return;
 
                 Object.values(qcData[officeName]).forEach(doc => {
                     if (doc.comment || (doc.issues && doc.issues.length > 0) || (doc.good_practices && doc.good_practices.length > 0)) {
-                        const docDate = new Date(doc.timestamp);
-                        if (docDate >= twentyFourHoursAgo) {
-                            recentEntries.push({ ...doc, office: officeName });
-                        }
+                        recentEntries.push({ ...doc, office: officeName });
                     }
                 });
             });
 
             recentEntries.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            recentEntries = recentEntries.slice(0, 10);
 
             if (recentEntries.length > 0) {
                 let recentHtml = `<div class="bg-pink-50 p-4 rounded-xl border border-pink-100 mb-4">
-                    <h3 class="text-sm font-black text-pink-700 mb-3"><i class="fa-solid fa-bell mr-1"></i>新着のQCフィードバック <span class="text-[10px] text-pink-500 font-normal ml-2">(24時間以内)</span></h3>
+                    <h3 class="text-sm font-black text-pink-700 mb-3"><i class="fa-solid fa-bell mr-1"></i>新着のQCフィードバック <span class="text-[10px] text-pink-500 font-normal ml-2">(最新10件)</span></h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
                 
                 recentEntries.forEach(entry => {
@@ -1754,7 +1743,7 @@
                 
                 if(c) c.innerHTML = recentHtml + '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-slate-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>上から選択するか、プルダウンで事業所を指定してください</p></div>';
             } else {
-                if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-slate-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>過去24時間以内の新着フィードバックはありません<br><span class="text-xs font-normal mt-2 block">過去の履歴は、上部プルダウンから事業所を選択して確認できます。</span></p></div>';
+                if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-slate-400 font-bold text-sm"><i class="fa-solid fa-magnifying-glass text-3xl mb-3 block opacity-50"></i>フィードバック履歴はありません<br><span class="text-xs font-normal mt-2 block">過去の履歴は、上部プルダウンから事業所を選択して確認できます。</span></p></div>';
             }
             return;
         }
@@ -1858,20 +1847,33 @@
                             }
                         }
 
+                        let afterImageHtml = '';
+                        if (issue.afterImages && issue.afterImages.length > 0) {
+                            afterImageHtml = `<img src="${issue.afterImages[issue.afterImages.length - 1]}" class="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover cursor-pointer border border-emerald-200 shadow-sm ml-3 hover:opacity-80 transition" onclick="window.openImageModal('${issue.afterImages[issue.afterImages.length - 1]}')" title="改善後の写真を見る">`;
+                        }
+
                         resolutionSection = `
                             <div class="mt-3 flex items-center justify-between bg-emerald-50 p-2 sm:p-2.5 rounded-lg border border-emerald-200 shadow-sm flex-wrap gap-2">
                                 <div class="flex items-center flex-wrap">
                                     <div class="text-emerald-700 text-[10px] font-black flex items-center mr-2"><i class="fa-solid fa-check-circle mr-1.5 text-emerald-500 text-sm"></i>事業所にて改善完了</div>
-                                    <div class="flex items-center mt-1 sm:mt-0"><span class="text-emerald-600 font-bold text-[10px] bg-white px-1.5 py-0.5 rounded border border-emerald-100 shadow-sm">${resolvedAt}</span>${speedBadge}</div>
+                                    <div class="flex items-center mt-1 sm:mt-0">
+                                        <span class="text-emerald-600 font-bold text-[10px] bg-white px-1.5 py-0.5 rounded border border-emerald-100 shadow-sm">${resolvedAt}</span>
+                                        ${speedBadge}
+                                    </div>
+                                    ${afterImageHtml}
                                 </div>
                                 <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, true); event.stopPropagation();" class="text-[9px] text-emerald-600 hover:text-emerald-800 underline font-bold px-2 whitespace-nowrap">未完了に戻す</button>
                             </div>
                         `;
                     } else {
                         resolutionSection = `
-                            <div class="mt-3 flex justify-end">
-                                <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, false); event.stopPropagation();" class="flex items-center bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-pink-200 hover:border-pink-300 shadow-sm">
-                                    <i class="fa-regular fa-square-check mr-1.5 text-lg"></i>事業所が完了チェックをする
+                            <div class="mt-3 flex justify-end gap-2 flex-wrap sm:flex-nowrap">
+                                <input type="file" id="improve-img-${e.office}-${e.month}-${idx}" accept="image/*" class="hidden" onchange="window.handleImprovementUpload(event, '${e.office}', '${e.month}', ${idx})">
+                                <button onclick="document.getElementById('improve-img-${e.office}-${e.month}-${idx}').click(); event.stopPropagation();" class="flex-1 sm:flex-none flex items-center justify-center bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-emerald-200 hover:border-emerald-300 shadow-sm">
+                                    <i class="fa-solid fa-camera mr-1.5 text-lg"></i>写真を撮って完了報告
+                                </button>
+                                <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, false); event.stopPropagation();" class="flex-1 sm:flex-none flex items-center justify-center bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-pink-200 hover:border-pink-300 shadow-sm">
+                                    <i class="fa-regular fa-square-check mr-1.5 text-lg"></i>写真なしで完了報告
                                 </button>
                             </div>
                         `;
@@ -1949,14 +1951,36 @@
             if (!docData || !docData.issues) return;
             
             const updatedIssues = [...docData.issues];
+            const nowIso = new Date().toISOString();
+            let isNowResolved = !currentStatus;
+            let resolvedAtStr = isNowResolved ? nowIso : null;
+
             if (updatedIssues[issueIndex]) {
-                updatedIssues[issueIndex].resolved = !currentStatus;
-                updatedIssues[issueIndex].resolved_at = !currentStatus ? new Date().toISOString() : null;
+                updatedIssues[issueIndex].resolved = isNowResolved;
+                updatedIssues[issueIndex].resolved_at = resolvedAtStr;
             }
             
             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
                 issues: updatedIssues
             });
+
+            if (GAS_WEBHOOK_URL) {
+                fetch(GAS_WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'update_resolution',
+                        office: office,
+                        period: month,
+                        issueIndex: issueIndex,
+                        isResolved: isNowResolved,
+                        resolvedAt: resolvedAtStr,
+                        afterImageUrl: ""
+                    })
+                }).catch(e => console.warn("GAS Update Warn:", e));
+            }
+
             window.showGlobalToast(currentStatus ? "未完了に戻しました" : "改善完了にしました！");
         } catch(e) {
             console.warn("Update Warn:", e);
@@ -2078,17 +2102,18 @@
 
     window.resetAllTestData = async () => {
         const modal = document.createElement('div');
-        modal.className = "fixed inset-0 z-[20000] bg-black bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm";
+        modal.className = "fixed inset-0 z-[20000] bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300";
         modal.innerHTML = `
-        <div class="bg-white p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl border-t-4 border-rose-500">
-            <div class="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+        <div class="bg-white p-8 rounded-[2rem] max-w-sm w-full text-center shadow-2xl border border-slate-100 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-400 to-rose-600"></div>
+            <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-5 shadow-inner border border-rose-100">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <h3 class="text-lg font-black text-slate-800 mb-2">すべての入力データをリセットします</h3>
-            <p class="text-xs font-bold text-slate-600 mb-6 leading-relaxed">事業所・AM・QCチームのすべての過去データ（写真やフィードバック含む）を削除します。<br>この操作は取り消せません。</p>
+            <h3 class="text-lg font-black text-slate-800 mb-2 tracking-tight">すべての入力データをリセットします</h3>
+            <p class="text-xs font-bold text-slate-500 mb-8 leading-relaxed">事業所・AM・QCチームのすべての過去データ（写真やフィードバック含む）を削除します。<br>この操作は取り消せません。</p>
             <div class="flex gap-3 justify-center">
-                <button id="cancel-reset-btn" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-black text-sm transition">キャンセル</button>
-                <button id="confirm-reset-btn" class="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-sm transition shadow-md">削除する</button>
+                <button id="cancel-reset-btn" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-black text-sm transition-colors">キャンセル</button>
+                <button id="confirm-reset-btn" class="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-sm transition-colors shadow-md active:scale-95">削除する</button>
             </div>
         </div>
         `;
@@ -2262,7 +2287,7 @@
                 throw dbErr;
             }
             
-            const shouldSendToGAS = GAS_WEBHOOK_URL && (mode !== 'staff' || window.appState.isLastWeekOfMonth);
+            const shouldSendToGAS = GAS_WEBHOOK_URL ? true : false;
             
             if (shouldSendToGAS) {
                 let teamName = "事業所";
@@ -2273,6 +2298,12 @@
                 const areaName = officeInfo ? officeInfo.area : "不明";
 
                 const issuesComments = (window.appState.issues || []).map(i => i.comment || "");
+                const issuesUrls = (window.appState.issues || []).map(i => {
+                    return i.beforeImage || "";
+                });
+                const issuesResponsibility = (window.appState.issues || []).map(i => i.responsibility === 'hq' ? '本社対応' : '事業所対応');
+                const issuesDeadlines = (window.appState.issues || []).map(i => i.deadline_date ? i.deadline_date.replace(/-/g, '/') : "");
+                const issuesRelated = (window.appState.issues || []).map(i => i.relatedItemId ? window.getCheckItemName(i.relatedItemId) : "");
 
                 const gasData = {
                     timestamp: new Date().toISOString(),
@@ -2283,17 +2314,23 @@
                     score: score,
                     comment: data.comment || "",
                     issuesComments: issuesComments,
-                    answers: answers
+                    issuesUrls: issuesUrls,
+                    issuesResponsibility: issuesResponsibility,
+                    issuesDeadlines: issuesDeadlines,
+                    issuesRelated: issuesRelated,
+                    answers: answers,
+                    gp_bonus: data.gp_bonus || 0
                 };
                 
                 fetch(GAS_WEBHOOK_URL, {
                     method: 'POST',
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'text/plain'
                     },
                     body: JSON.stringify(gasData)
                 }).then(() => {
-                    console.log("GAS転送完了");
+                    console.log("GAS転送リクエスト送信完了");
                 }).catch(e => {
                     console.warn("GAS転送Warn:", e);
                 });
@@ -2426,7 +2463,7 @@
                   <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Rules</p>
               </div>
           </div>
-          <div onclick="window.switchTab('photos')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
+          <div onclick="window.switchTab('photos')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300 cursor-pointer">
               <div class="absolute -top-10 -right-10 w-32 h-32 bg-rose-50 rounded-full blur-3xl opacity-50 group-hover:bg-rose-100 transition-colors"></div>
               <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-rose-200 relative z-10"><i class="fa-solid fa-camera"></i></div>
               <div class="relative z-10">
@@ -2775,13 +2812,11 @@
         window.appState.offices = Array.from(m.values()); 
         if (window.renderMasterList) window.renderMasterList(); 
         if (window.renderSelectors) window.renderSelectors(); 
-        
       }, e => {
           console.warn("Offices Sync Warn:", e);
           window.appState.offices = [...window.initialOffices];
           if (window.renderMasterList) window.renderMasterList(); 
           if (window.renderSelectors) window.renderSelectors(); 
-          
       });
 
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), d => {
@@ -2838,7 +2873,6 @@
 
     connectCloud();
     window.addEventListener('DOMContentLoaded', () => { 
-        // 起動アニメーションをしっかり見せるために2.5秒表示してからフェードアウト
         setTimeout(window.hideMainLoader, 2500); 
         window.switchTab('home'); 
     });
