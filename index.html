@@ -25,7 +25,6 @@
         overflow-x: hidden; 
     }
 
-    /* 起動アニメーション用スタイル */
     #splash-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 100%);
@@ -42,7 +41,6 @@
     @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
     @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
 
-    /* アプリ共通スタイル */
     .brand-pink { color: var(--primary-pink); } 
     .brand-bg-pink { background: linear-gradient(135deg, #f472b6, #db2777); }
     .tab-active { border-bottom: 3px solid var(--primary-pink) !important; color: var(--primary-pink) !important; font-weight: 800 !important; }
@@ -64,10 +62,6 @@
     select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2em; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
   
   <script>
@@ -1673,7 +1667,7 @@
                         issueIndex: issueIndex,
                         isResolved: true,
                         resolvedAt: nowIso,
-                        afterImageUrl: compressed
+                        base64: compressed // ここで写真データをGASに送る
                     })
                 }).catch(e => console.warn("GAS Update Warn:", e));
             }
@@ -1976,7 +1970,7 @@
                         issueIndex: issueIndex,
                         isResolved: isNowResolved,
                         resolvedAt: resolvedAtStr,
-                        afterImageUrl: ""
+                        base64: "" // 写真なしの場合は空で送る
                     })
                 }).catch(e => console.warn("GAS Update Warn:", e));
             }
@@ -2298,14 +2292,13 @@
                 const areaName = officeInfo ? officeInfo.area : "不明";
 
                 const issuesComments = (window.appState.issues || []).map(i => i.comment || "");
-                const issuesUrls = (window.appState.issues || []).map(i => {
-                    return i.beforeImage || "";
-                });
                 const issuesResponsibility = (window.appState.issues || []).map(i => i.responsibility === 'hq' ? '本社対応' : '事業所対応');
                 const issuesDeadlines = (window.appState.issues || []).map(i => i.deadline_date ? i.deadline_date.replace(/-/g, '/') : "");
                 const issuesRelated = (window.appState.issues || []).map(i => i.relatedItemId ? window.getCheckItemName(i.relatedItemId) : "");
 
+                // テキストデータのみを先に送って行を作成させる
                 const gasData = {
+                    action: 'submit_qc_data',
                     timestamp: new Date().toISOString(),
                     team: teamName,
                     period: period,
@@ -2314,7 +2307,6 @@
                     score: score,
                     comment: data.comment || "",
                     issuesComments: issuesComments,
-                    issuesUrls: issuesUrls,
                     issuesResponsibility: issuesResponsibility,
                     issuesDeadlines: issuesDeadlines,
                     issuesRelated: issuesRelated,
@@ -2325,15 +2317,29 @@
                 fetch(GAS_WEBHOOK_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'text/plain'
-                    },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify(gasData)
-                }).then(() => {
-                    console.log("GAS転送リクエスト送信完了");
-                }).catch(e => {
-                    console.warn("GAS転送Warn:", e);
-                });
+                }).catch(e => console.warn(e));
+
+                // 各指摘事項の画像は、1枚ずつ個別にGASに送ってURLを追記させる
+                if (mode === 'qc' && window.appState.issues) {
+                    window.appState.issues.forEach((issue, idx) => {
+                        if (issue.beforeImage && issue.beforeImage.startsWith('data:image')) {
+                            fetch(GAS_WEBHOOK_URL, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                headers: { 'Content-Type': 'text/plain' },
+                                body: JSON.stringify({
+                                    action: 'upload_issue_image',
+                                    office: office,
+                                    period: period,
+                                    issueIndex: idx,
+                                    base64: issue.beforeImage
+                                })
+                            }).catch(e => console.warn(e));
+                        }
+                    });
+                }
             }
             
             window.showGlobalToast("データの送信が完了しました！");
@@ -2349,7 +2355,6 @@
 </head>
 <body>
   
-  <!-- 洗練された起動アニメーション（スプラッシュスクリーン） -->
   <div id="splash-screen">
       <div class="splash-logo-container relative">
           <svg width="80" height="80" viewBox="0 0 100 100" fill="none" class="drop-shadow-xl">
@@ -2756,6 +2761,7 @@
       </div>
   </div>
 
+  <!-- ここからFirebaseとメインの連携スクリプト -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
