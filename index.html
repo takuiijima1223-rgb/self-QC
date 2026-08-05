@@ -59,6 +59,59 @@
     .portal-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1), 0 4px 8px -4px rgba(0, 0, 0, 0.05); border-color: #ffffff; background-color: #ffffff; }
     .portal-card:active { transform: translateY(0) scale(0.98); }
 
+    /* Toggle Switch Container */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    /* Hide default HTML checkbox */
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* The slider */
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #cbd5e1;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .toggle-slider {
+      background-color: #10b981;
+    }
+
+    input:focus + .toggle-slider {
+      box-shadow: 0 0 1px #10b981;
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+
     select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2em; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -312,9 +365,9 @@
         const pwd = $('master-password-input').value;
         const target = window.appState.pendingAuthTarget;
         
-        const passwords = { 'master': '1223', 'am': '1010', 'qc': '2020' };
+        const passwords = { 'master': '1223', 'am': '1010', 'qc': '2020', 'qc_verify': '2020' };
 
-        if (pwd === passwords[target]) {
+        if (passwords[target] && pwd === passwords[target]) {
             if (target === 'master') {
                 window.appState.masterAuthenticated = true;
                 window.actuallySwitchTab('master');
@@ -324,6 +377,11 @@
             } else if (target === 'qc') {
                 window.appState.qcAuthenticated = true;
                 initMode('qc');
+            } else if (target === 'qc_verify') {
+                window.appState.qcAuthenticated = true;
+                if (window.appState.activeTab === 'feedback') {
+                    window.renderFeedbackList();
+                }
             }
             $('password-modal').classList.add('hidden');
             window.showGlobalToast("ロックを解除しました");
@@ -332,6 +390,10 @@
             $('master-password-input').value = '';
             $('master-password-input').focus();
         }
+    };
+
+    window.requestQcAuth = () => {
+        window.showPasswordModal('qc_verify', 'QCチーム');
     };
 
     const initMode = (mode) => { 
@@ -735,7 +797,8 @@
                 responsibility: "office",
                 relatedItemId: "",
                 resolved: false,
-                resolved_at: null
+                resolved_at: null,
+                qc_verified: false
             });
             window.renderIssues();
         }
@@ -781,6 +844,7 @@
                                 <input type="date" value="${issue.deadline_date || ''}" onchange="window.updateIssueDeadline(${idx}, this.value)" class="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none bg-slate-50 focus:bg-white focus:border-emerald-400">
                             </div>
                         </div>
+                        
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[10px] font-black text-slate-500 ml-1">関連する評価項目 (任意)</label>
                             <select onchange="window.updateIssueRelatedItem(${idx}, this.value)" class="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none bg-slate-50 focus:bg-white focus:border-emerald-400 max-w-full truncate">
@@ -788,6 +852,22 @@
                                 ${itemOptions}
                             </select>
                         </div>
+
+                        ${issue.resolved ? `
+                        <div class="mt-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] font-black text-emerald-700 mb-0.5"><i class="fa-solid fa-clipboard-check mr-1"></i>QC改善確認</p>
+                                <p class="text-[9px] font-bold text-emerald-600">事業所から改善報告がありました</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold ${issue.qc_verified ? 'text-emerald-600' : 'text-slate-400'}">${issue.qc_verified ? '確認済' : '未確認'}</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" ${issue.qc_verified ? 'checked' : ''} onchange="window.updateIssueQcVerification(${idx}, this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
                 `;
@@ -823,6 +903,12 @@
     window.updateIssueRelatedItem = (idx, val) => {
         if (window.appState.issues[idx]) {
             window.appState.issues[idx].relatedItemId = val;
+        }
+    };
+    
+    window.updateIssueQcVerification = (idx, val) => {
+        if (window.appState.issues[idx]) {
+            window.appState.issues[idx].qc_verified = val;
         }
     };
 
@@ -1667,7 +1753,7 @@
                         issueIndex: issueIndex,
                         isResolved: true,
                         resolvedAt: nowIso,
-                        base64: compressed // ここで写真データをGASに送る
+                        base64: compressed
                     })
                 }).catch(e => console.warn("GAS Update Warn:", e));
             }
@@ -1679,6 +1765,79 @@
         }
         
         event.target.value = ''; 
+    };
+
+    window.updateIssueQcVerificationCloud = async (office, month, issueIndex, verified) => {
+        if (!window.appState.user) return window.showGlobalToast("認証待ちです");
+        const docId = `${office}_${month}`;
+        
+        try {
+            const docData = window.appState.teamHistoryFull[office][month];
+            if (!docData || !docData.issues) return;
+            
+            const updatedIssues = [...docData.issues];
+            if (updatedIssues[issueIndex]) {
+                updatedIssues[issueIndex].qc_verified = verified;
+            }
+            
+            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                issues: updatedIssues
+            });
+
+            window.showGlobalToast(verified ? "合格（確認済）にしました" : "未確認に戻しました");
+        } catch(e) {
+            console.warn("Update Warn:", e);
+            window.showGlobalToast("エラーが発生しました");
+        }
+    };
+
+    window.toggleIssueResolution = async (office, month, issueIndex, currentStatus) => {
+        if (!window.appState.user) return window.showGlobalToast("認証待ちです");
+        const docId = `${office}_${month}`;
+        
+        try {
+            const docData = window.appState.teamHistoryFull[office][month];
+            if (!docData || !docData.issues) return;
+            
+            const updatedIssues = [...docData.issues];
+            const nowIso = new Date().toISOString();
+            let isNowResolved = !currentStatus;
+            let resolvedAtStr = isNowResolved ? nowIso : null;
+
+            if (updatedIssues[issueIndex]) {
+                updatedIssues[issueIndex].resolved = isNowResolved;
+                updatedIssues[issueIndex].resolved_at = resolvedAtStr;
+                if (!isNowResolved) {
+                    updatedIssues[issueIndex].qc_verified = false;
+                }
+            }
+            
+            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                issues: updatedIssues
+            });
+
+            if (GAS_WEBHOOK_URL) {
+                fetch(GAS_WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'update_resolution',
+                        office: office,
+                        period: month,
+                        issueIndex: issueIndex,
+                        isResolved: isNowResolved,
+                        resolvedAt: resolvedAtStr,
+                        base64: ""
+                    })
+                }).catch(e => console.warn("GAS Update Warn:", e));
+            }
+
+            window.showGlobalToast(currentStatus ? "未完了に差し戻しました" : "改善完了にしました！");
+        } catch(e) {
+            console.warn("Update Warn:", e);
+            window.showGlobalToast("エラーが発生しました");
+        }
     };
 
     window.renderFeedbackList = () => {
@@ -1778,11 +1937,28 @@
                  const bImgs = e.beforeImages || (e.beforeImage ? [e.beforeImage] : []);
                  const aImgs = e.afterImages || (e.afterImage ? [e.afterImage] : []);
                  bImgs.forEach((img, i) => {
-                     issuesList.push({ beforeImage: img, comment: "", afterImages: aImgs });
+                     issuesList.push({ beforeImage: img, comment: "", afterImages: aImgs, resolved: e.resolved || false, resolved_at: null, qc_verified: false });
                  });
             }
 
             let issuesSection = '';
+            let allIssuesResolvedAndVerified = false;
+
+            if (issuesList.length > 0) {
+                allIssuesResolvedAndVerified = issuesList.every(i => i.resolved && i.qc_verified);
+            }
+
+            let overallResolvedBadge = '';
+            if (issuesList.length > 0) {
+                if (allIssuesResolvedAndVerified) {
+                    overallResolvedBadge = `<div class="bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-lg shadow-sm inline-flex items-center gap-1.5 ml-auto"><i class="fa-solid fa-circle-check"></i>全件改善済</div>`;
+                } else if (issuesList.every(i => i.resolved)) {
+                     overallResolvedBadge = `<div class="bg-gradient-to-r from-blue-400 to-indigo-500 text-white text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-lg shadow-sm inline-flex items-center gap-1.5 ml-auto"><i class="fa-solid fa-spinner fa-spin-pulse"></i>QC確認待ち</div>`;
+                } else {
+                     let resolvedCount = issuesList.filter(i => i.resolved).length;
+                     overallResolvedBadge = `<div class="bg-slate-100 text-slate-500 text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-lg shadow-sm inline-flex items-center gap-1.5 ml-auto border border-slate-200">改善中 ${resolvedCount}/${issuesList.length}</div>`;
+                }
+            }
 
             if (issuesList.length > 0) {
                 issuesSection = `<div class="mt-4 border-t border-slate-100 pt-4 space-y-4">`;
@@ -1846,17 +2022,48 @@
                             afterImageHtml = `<img src="${issue.afterImages[issue.afterImages.length - 1]}" class="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover cursor-pointer border border-emerald-200 shadow-sm ml-3 hover:opacity-80 transition" onclick="window.openImageModal('${issue.afterImages[issue.afterImages.length - 1]}')" title="改善後の写真を見る">`;
                         }
 
+                        let qcVerificationSection = '';
+                        if (window.appState.qcAuthenticated) {
+                            qcVerificationSection = `
+                                <div class="mt-2.5 p-2 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-black ${issue.qc_verified ? 'text-teal-600' : 'text-slate-500'}">QC合否確認:</span>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox" ${issue.qc_verified ? 'checked' : ''} onchange="window.updateIssueQcVerificationCloud('${e.office}', '${e.month}', ${idx}, this.checked)">
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span class="text-[10px] font-bold ${issue.qc_verified ? 'text-teal-600' : 'text-slate-400'}">${issue.qc_verified ? '合格 (確認済)' : '未確認'}</span>
+                                    </div>
+                                    <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, true); event.stopPropagation();" class="text-[9px] text-pink-600 hover:text-pink-800 underline font-bold px-2 whitespace-nowrap">未完了に差し戻す</button>
+                                </div>
+                            `;
+                        } else {
+                            qcVerificationSection = `
+                                <div class="mt-2.5 p-2 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-black text-slate-500">QC合否確認:</span>
+                                        <span class="text-[10px] font-bold ${issue.qc_verified ? 'text-teal-600' : 'text-slate-400'}">
+                                            ${issue.qc_verified ? '<i class="fa-solid fa-check-double mr-1"></i>合格 (確認済)' : '<i class="fa-solid fa-hourglass-half mr-1"></i>未確認'}
+                                        </span>
+                                    </div>
+                                    <button onclick="window.requestQcAuth()" class="text-[9px] text-slate-400 hover:text-slate-600 underline font-bold px-2 whitespace-nowrap"><i class="fa-solid fa-lock mr-1"></i>QC担当者</button>
+                                </div>
+                            `;
+                        }
+
                         resolutionSection = `
-                            <div class="mt-3 flex items-center justify-between bg-emerald-50 p-2 sm:p-2.5 rounded-lg border border-emerald-200 shadow-sm flex-wrap gap-2">
-                                <div class="flex items-center flex-wrap">
-                                    <div class="text-emerald-700 text-[10px] font-black flex items-center mr-2"><i class="fa-solid fa-check-circle mr-1.5 text-emerald-500 text-sm"></i>事業所にて改善完了</div>
-                                    <div class="flex items-center mt-1 sm:mt-0">
-                                        <span class="text-emerald-600 font-bold text-[10px] bg-white px-1.5 py-0.5 rounded border border-emerald-100 shadow-sm">${resolvedAt}</span>
-                                        ${speedBadge}
+                            <div class="mt-3 bg-emerald-50 p-2 sm:p-2.5 rounded-lg border border-emerald-200 shadow-sm flex flex-col gap-2">
+                                <div class="flex items-center justify-between flex-wrap gap-2">
+                                    <div class="flex items-center flex-wrap">
+                                        <div class="text-emerald-700 text-[10px] font-black flex items-center mr-2"><i class="fa-solid fa-check-circle mr-1.5 text-emerald-500 text-sm"></i>事業所にて改善完了</div>
+                                        <div class="flex items-center mt-1 sm:mt-0">
+                                            <span class="text-emerald-600 font-bold text-[10px] bg-white px-1.5 py-0.5 rounded border border-emerald-100 shadow-sm">${resolvedAt}</span>
+                                            ${speedBadge}
+                                        </div>
                                     </div>
                                     ${afterImageHtml}
                                 </div>
-                                <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, true); event.stopPropagation();" class="text-[9px] text-emerald-600 hover:text-emerald-800 underline font-bold px-2 whitespace-nowrap">未完了に戻す</button>
+                                ${qcVerificationSection}
                             </div>
                         `;
                     } else {
@@ -1917,7 +2124,10 @@
             html += `
             <div class="bg-white p-5 shadow-sm">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="font-black text-slate-800 text-sm"><i class="fa-solid fa-map-marker-alt text-yellow-500 mr-1"></i>${e.office}</h3>
+                    <div class="flex items-center gap-2">
+                        <h3 class="font-black text-slate-800 text-sm"><i class="fa-solid fa-map-marker-alt text-yellow-500 mr-1"></i>${e.office}</h3>
+                        ${overallResolvedBadge}
+                    </div>
                     <span class="text-[10px] font-bold text-slate-400">${date} 実施</span>
                 </div>
                 <div class="flex items-center gap-3 mb-4">
@@ -1934,63 +2144,6 @@
         });
 
         c.innerHTML = html;
-    };
-
-    window.toggleIssueResolution = async (office, month, issueIndex, currentStatus) => {
-        if (!window.appState.user) return window.showGlobalToast("認証待ちです");
-        const docId = `${office}_${month}`;
-        
-        try {
-            const docData = window.appState.teamHistoryFull[office][month];
-            if (!docData || !docData.issues) return;
-            
-            const updatedIssues = [...docData.issues];
-            const nowIso = new Date().toISOString();
-            let isNowResolved = !currentStatus;
-            let resolvedAtStr = isNowResolved ? nowIso : null;
-
-            if (updatedIssues[issueIndex]) {
-                updatedIssues[issueIndex].resolved = isNowResolved;
-                updatedIssues[issueIndex].resolved_at = resolvedAtStr;
-            }
-            
-            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                issues: updatedIssues
-            });
-
-            if (GAS_WEBHOOK_URL) {
-                fetch(GAS_WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'update_resolution',
-                        office: office,
-                        period: month,
-                        issueIndex: issueIndex,
-                        isResolved: isNowResolved,
-                        resolvedAt: resolvedAtStr,
-                        base64: "" // 写真なしの場合は空で送る
-                    })
-                }).catch(e => console.warn("GAS Update Warn:", e));
-            }
-
-            window.showGlobalToast(currentStatus ? "未完了に戻しました" : "改善完了にしました！");
-        } catch(e) {
-            console.warn("Update Warn:", e);
-            window.showGlobalToast("エラーが発生しました");
-        }
-    };
-
-    window.renderSelectors = () => {
-      const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
-      sU('week-pulldown-section', e => e.style.display = isM ? 'none' : 'block'); 
-      sU('month-pulldown-section', e => e.style.display = isM ? 'block' : 'none');
-      
-      sU('selector-title', e => e.innerText = window.appState.currentMode === 'am' ? "AM品質確認" : (window.appState.currentMode === 'qc' ? "QCチーム品質確認" : "事業所品質確認"));
-      sU('start-btn-main', e => e.className = `w-full py-4 sm:py-5 ${window.appState.currentMode === 'qc' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : (window.appState.currentMode === 'am' ? 'bg-gradient-to-r from-indigo-500 to-blue-600' : 'brand-bg-pink')} text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl uppercase active:scale-[0.98] transition-all tracking-widest`);
-      
-      window.handleAreaFilterChange();
     };
 
     window.renderMasterList = () => { 
@@ -2203,6 +2356,17 @@
         }
     };
 
+    window.renderSelectors = () => {
+      const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
+      sU('week-pulldown-section', e => e.style.display = isM ? 'none' : 'block'); 
+      sU('month-pulldown-section', e => e.style.display = isM ? 'block' : 'none');
+      
+      sU('selector-title', e => e.innerText = window.appState.currentMode === 'am' ? "AM品質確認" : (window.appState.currentMode === 'qc' ? "QCチーム品質確認" : "事業所品質確認"));
+      sU('start-btn-main', e => e.className = `w-full py-4 sm:py-5 ${window.appState.currentMode === 'qc' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : (window.appState.currentMode === 'am' ? 'bg-gradient-to-r from-indigo-500 to-blue-600' : 'brand-bg-pink')} text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl uppercase active:scale-[0.98] transition-all tracking-widest`);
+      
+      window.handleAreaFilterChange();
+    };
+
     window.submitData = async () => {
         if (!window.appState.user) return window.showGlobalToast("認証待ちです。少し待ってから再度お試しください。");
         
@@ -2296,7 +2460,6 @@
                 const issuesDeadlines = (window.appState.issues || []).map(i => i.deadline_date ? i.deadline_date.replace(/-/g, '/') : "");
                 const issuesRelated = (window.appState.issues || []).map(i => i.relatedItemId ? window.getCheckItemName(i.relatedItemId) : "");
 
-                // テキストデータのみを先に送って行を作成させる
                 const gasData = {
                     action: 'submit_qc_data',
                     timestamp: new Date().toISOString(),
@@ -2321,7 +2484,6 @@
                     body: JSON.stringify(gasData)
                 }).catch(e => console.warn(e));
 
-                // 各指摘事項の画像は、1枚ずつ個別にGASに送ってURLを追記させる
                 if (mode === 'qc' && window.appState.issues) {
                     window.appState.issues.forEach((issue, idx) => {
                         if (issue.beforeImage && issue.beforeImage.startsWith('data:image')) {
@@ -2354,7 +2516,6 @@
   </script>
 </head>
 <body>
-  
   <div id="splash-screen">
       <div class="splash-logo-container relative">
           <svg width="80" height="80" viewBox="0 0 100 100" fill="none" class="drop-shadow-xl">
@@ -2761,7 +2922,6 @@
       </div>
   </div>
 
-  <!-- ここからFirebaseとメインの連携スクリプト -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
