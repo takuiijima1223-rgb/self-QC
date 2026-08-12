@@ -735,7 +735,7 @@
                 
                 <div class="border-t border-slate-100 pt-5">
                     <label class="text-[11px] font-black text-rose-500 flex justify-between items-end mb-4">
-                        <span class="flex items-center"><i class="fa-solid fa-camera mr-1.5 text-lg"></i>指摘事項 (写真と改善要求)</span>
+                        <span class="flex items-center"><i class="fa-solid fa-camera mr-1.5 text-lg"></i>フィードバック事項 (写真と改善要求)</span>
                         <span id="issue-count" class="text-slate-400 font-bold bg-slate-100 px-2 py-1 rounded-lg">0 / 5件</span>
                     </label>
                     <div id="issues-container" class="space-y-4 mb-5"></div>
@@ -744,7 +744,7 @@
                         <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
                             <i class="fa-solid fa-cloud-arrow-up text-2xl text-emerald-400"></i>
                         </div>
-                        <p class="text-xs text-slate-500 font-bold leading-relaxed">タップまたは写真をドロップして<br>指摘を追加 (最大5件)</p>
+                        <p class="text-xs text-slate-500 font-bold leading-relaxed">タップまたは写真をドロップして<br>フィードバックを追加 (最大5件)</p>
                     </div>
                 </div>
             </div>
@@ -779,7 +779,7 @@
         const currentCount = window.appState.issues.length;
         let addCount = files.length;
         if (currentCount + addCount > 5) {
-            window.showGlobalToast("指摘事項は最大5件までです");
+            window.showGlobalToast("フィードバックは最大5件までです");
             addCount = 5 - currentCount;
         }
         if (addCount <= 0) return;
@@ -826,10 +826,10 @@
                         <button class="absolute -top-2 -right-2 bg-slate-800 text-white w-7 h-7 rounded-full flex items-center justify-center hover:bg-rose-500 transition-colors text-xs shadow-md z-10" onclick="window.removeIssue(${idx})">
                             <i class="fa-solid fa-times"></i>
                         </button>
-                        <span class="absolute top-2 left-2 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-md font-black shadow-sm z-10">指摘 ${numStr}</span>
+                        <span class="absolute top-2 left-2 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-md font-black shadow-sm z-10">フィードバック ${numStr}</span>
                     </div>
                     <div class="flex-1 min-w-0 flex flex-col gap-3">
-                        <textarea class="w-full p-3 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 bg-slate-50 focus:bg-white transition-all resize-none" rows="2" placeholder="指摘内容や改善案を入力" onchange="window.updateIssueComment(${idx}, this.value)">${issue.comment || ''}</textarea>
+                        <textarea class="w-full p-3 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 bg-slate-50 focus:bg-white transition-all resize-none" rows="2" placeholder="フィードバック内容や改善案を入力" onchange="window.updateIssueComment(${idx}, this.value)">${issue.comment || ''}</textarea>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="flex flex-col gap-1.5">
@@ -1884,7 +1884,7 @@
                     }
 
                     let issueCount = issuesList.length;
-                    let issueBadge = issueCount > 0 ? `<span class="text-[9px] text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200 ml-1">指摘 ${issueCount}件</span>` : '';
+                    let issueBadge = issueCount > 0 ? `<span class="text-[9px] text-rose-600 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200 ml-1">フィードバック ${issueCount}件</span>` : '';
                     
                     let statusBadge = '';
                     if (issueCount > 0) {
@@ -2111,7 +2111,7 @@
                         </div>
                         <div class="flex-1 min-w-0 flex flex-col">
                             <div class="flex items-center flex-wrap gap-1 mb-1.5">
-                                <span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded font-black shadow">指摘 ${numStr}</span>
+                                <span class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded font-black shadow">フィードバック ${numStr}</span>
                                 ${respBadge}
                             </div>
                             ${relatedItemText ? `<div class="mb-1.5 truncate w-full">${relatedItemText}</div>` : ''}
