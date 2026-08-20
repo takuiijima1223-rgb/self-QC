@@ -59,7 +59,6 @@
     .portal-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1), 0 4px 8px -4px rgba(0, 0, 0, 0.05); border-color: #ffffff; background-color: #ffffff; }
     .portal-card:active { transform: translateY(0) scale(0.98); }
 
-    /* Toggle Switch Container */
     .toggle-switch {
       position: relative;
       display: inline-block;
@@ -67,14 +66,12 @@
       height: 24px;
     }
 
-    /* Hide default HTML checkbox */
     .toggle-switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
 
-    /* The slider */
     .toggle-slider {
       position: absolute;
       cursor: pointer;
@@ -128,9 +125,6 @@
         }); 
     };
 
-    // ==========================================
-    // ▼ GAS(Google Apps Script)のWebアプリURL ▼
-    // ==========================================
     const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxRWTFSrVtByG6M0l7RvAObZCvC--ylSVEcMIeb0eCBiJ7rOQ51W4TBuKFhMu_F9d1V/exec"; 
 
     window.getNowLocalStr = () => {
@@ -198,14 +192,15 @@
 
     const amList = ["石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
 
+    // Updated rules based on the provided slides A~G
     const defaultRules = {
-        purpose: "品質レベルの標準化\n利用者満足度向上 = 事業所の利益向上 = 皆が幸せになる\n品質レベルの標準化をし、上記の「皆が幸せになる」には何点が最低限必要なのかを設計する",
-        officeRules: "事業所は毎週金曜日(祝日の場合は前日23:59)までに事業所入力にチェックをすること\n実施有無チェックに虚偽がないこと。虚偽が事実と認められた場合、個人・事業所の評価に影響する(上長判断による)\n期日内に入力出来ない場合、減点評価となる",
-        amRules: "月1回は事業所へ来所し、品質評価と印象評価をすること\n担当マネージャーは必ず毎月月末の23:59までに、各品質評価と印象評価を入力すること\n指摘事項は、項目に応じて「事業所対応」と「本社対応」に分けて、サポートチームが事業所または本社に対応を依頼する。依頼されたら期日までに対応すること。\nあとでやる、たまたま掃除忘れていた等は一切評価に関係せず、見た事実を評価すること\n月1回品質チェックの評価をもとに必ずフィードバックを実施すること\n期日内に入力出来ない場合、減点評価となる",
-        qcRules: "QCチームは事業所来所時に品質評価と印象評価 ＋ 加点評価(項目外でもOKとする)をすること\n来所後、営業日3日以内に情報をアプリ内に入力をすること\n情報更新後、事業所 ＋ 担当AMに共有し、改善項目に関しては期日を設ける。期日後に写真などでチェックをし改善有無の判断をする\n来所時は見た事実と感じた事実をそのまま評価にすること。\n毎週、毎月、期日時間経過後、各事業所の入力期日をチェックする ※1分でも過ぎたら減点",
-        guide1: "事業所の入力負担を減らしつつ、客観的な評価ができるよう「3段階評価」＋「管轄外（N/A）」を導入します。\n■2点（基準達成）：基準を満たしている（例：清掃が行き届いている）\n■1点（一部不備）：すぐに改善できる軽微な不備がある（例：ゴミ箱がいっぱい）\n■0点（基準未達）：基準を満たしておらず、指導・改善が必要\n■N/A（評価対象外）：本社対応が必要な修繕（壁の破損など）\n\nポイント：\n「品質スコア（満点に対して何％達成したか）」と「運用スコア（期日遵守など）」は分けて可視化。事業所のどこに課題があるか（環境維持の意識か、業務管理能力か）を明確にします。",
-        guide2: "「感じた事実（例：なんとなく暗い、雑然としている）」は属人化しやすいため、基準に引き上げる工夫をします。\n\nBefore/Afterシートの「マニュアル化」転用：\n現在QCチームが使っているBefore/Afterの進捗シートを蓄積し、良い状態（正解）と悪い状態（NG）の「写真付きビジュアルスタンダード（VMD基準）」を作成します。\n言葉によるチェックリストだけでなく、「この写真の状態を維持する」という視覚的な基準がある方が、福祉現場で働く多様なスタッフにとって圧倒的にわかりやすく、負担軽減になります。",
-        guide3: "指摘事項を「事業所対応」と「本社対応」に分ける仕組みです。\n\n事業所が「本社に依頼しているのに直してくれないから、ずっと低評価になっている」とモチベーションを下げないよう、QC管理シート上に「本社対応待ちフラグ」を設け、AMやQCチームが来所した際に、そこは事業所の責任として減点しない（N/A扱いにする）運用を徹底すると、不満が出にくくなります。"
+        purpose: "【なぜ今、「品質管理（QC）」が必要なのか？】\n事業拡大に伴う「属人化」からの脱却と、組織としての強固な基盤づくり。\n\n◆これまでの課題（属人化）\n・事業所ごとにルールや環境の基準にばらつきがある\n・管理者の「個人的なスキル・経験」に依存した運営\n・「誰がやっても同じ」という安全・環境の土台が未整備\n・トラブル対応に追われ、本来の支援に集中できない\n\n◆これから目指す姿（組織化）\n・全社共通の「最低限の安全・環境ルール」の確立\n・「仕組み」によって、誰がやっても一定の質が保たれる\n・管理者が一人で抱え込まず、チームで品質を維持できる\n・安心して【本来の利用者支援】に100%集中できる環境",
+        officeRules: "【手段1：写真格納（事実の共有と定点観測）】\n言葉のチェックリストでは伝わりにくい「視覚的な基準（正解）」を全社で共有します。ごまかしの効かない「事実」を記録し、客観的な環境維持に努めます。\n・毎月15日～月末（23:59）までに、写真提出ポータルから事業所および社用車の写真を提出すること\n\n【手段2：QCアプリ（習慣化と業務効率化）】\n「これさえやっておけば安全」という基準をルーティン化します。\n・毎週金曜日(祝日の場合は前日23:59)までに事業所入力にチェックをすること\n・実施有無チェックに虚偽がないこと。虚偽が事実と認められた場合、個人・事業所の評価に影響する。",
+        amRules: "【AMの役割（内部品質の担保）】\n・月1回は事業所へ来所し、品質評価と印象評価をすること\n・担当マネージャーは必ず毎月月末の23:59までに、各品質評価と印象評価を入力すること\n・指摘事項は、項目に応じて「事業所対応」と「本社対応」に分けて、サポートチーム等が事業所または本社に対応を依頼する。依頼されたら期日までに対応すること\n・「あとでやる」「たまたま掃除忘れていた」等は一切評価に関係せず、見た事実を評価すること\n・月1回の品質チェックの評価をもとに必ずフィードバックを実施すること\n・期日内に入力出来ない場合、減点評価となる",
+        qcRules: "【手段3：QCチーム訪問（第三者の目と客観的評価）】\n・内部では慣れて見えなくなる「空気感・風土」を、見学者やご家族と同じ目線で確認します。\n・「監視・評価」ではなく、「本来の支援に集中できる環境」をつくることが目的です。\n・私たちは「専門的な監査官」ではありません。「明日、大切な家族を預けたいか？」「新しい人がここで働きたいか？」という客観的な視点（第三者の目）で確認します。\n・QCチームは事業所来所時に品質評価と印象評価＋加点評価(Good Practiceなど)をすること\n・来所後、営業日3日以内に情報をアプリ内に入力をすること\n・情報更新後、事業所＋担当AMに共有し、改善項目に関しては期日を設ける。期日後に写真などでチェックをし改善有無の判断をする",
+        guide1: "【self-Aにおける「品質」の定義（4階層モデル）】\n「良い支援」という曖昧な概念を、再現可能で成果に繋がる「組織の指標」へ。\n\n■ Tier 3 (価値品質 / 攻め)：利用者の自己実現、地域移行、定着率など（アウトカム・結果）\n■ Tier 2 (プロセス品質 / 攻め)：スタッフの支援技術、OJT、アセスメント能力など（属人的スキルの向上）\n■ Tier 1 (当たり前品質 / 守り)：清掃状況、備品の整理整頓、車両管理など（ルール・環境の維持）※アプリの入力対象\n■ Tier 0 (コンプライアンス / 守り)：虐待防止、人員基準の遵守など（事業継続の絶対条件）\n\n※1階（Tier 1）がゴミだらけで雨漏りしている状態では、2階（Tier 2/3）で質の高い良い支援は送れません。下層の品質を仕組み（ルーティン）で強固にするための取り組みです。",
+        guide2: "【現場から寄せられた「リアルな声」への回答】\n\nQ:「QCチームは専門知識がないのに、何のために事業所を見に来るのか？」\nA: 私たちは「専門的な監査官」ではありません。内部では慣れて見えなくなる環境を、「明日、大切な家族を預けたいか？」という客観的な視点（第三者の目）で確認するためです。\n\nQ:「うちはすでに出来ているのに、毎週提出を求められるのは苦痛だ」\nA:「レベルアップ（免除）制度」を導入します。「標準品質（Tier 1）」が定着した優良事業所は、基礎チェックを減免（免除）し、次のステップ（プロセス品質の向上）へ進んでいただく仕組みに移行します。",
+        guide3: "【今後のロードマップ（私たちが目指す3つのステップ）】\n現在のチェックはゴールではありません。本当の支援に集中するための準備期間です。\n\n■ ステップ1：土台の構築と習慣化\n全事業所で「基礎チェック（環境・安全）」を習慣化し、ルール違反や異常を早期発見する防衛線を構築します。\n\n■ ステップ2：プロセスの質の向上・共有\n基準を継続クリアした優秀事業所は、基礎チェックの頻度を大幅に減免（免除）。評価軸を「環境」から「人（OJTや支援）」へシフトし、Good Practiceを収集・加点します。\n\n■ ステップ3：アウトカム（結果）の創出と還元\n事業所の品質スコアと、実際の「利用者の定着率・工賃向上」が連動する状態へ。蓄積されたノウハウを全社に還元します。"
     };
 
     window.initialOffices = initialOfficesData.map(x => ({ corp: x[0], name: x[1], area: x[2], type: x[3] || "就労A型", isFixed: true }));
@@ -214,7 +209,7 @@
         history: {}, historyFull: {}, amHistory: {}, amHistoryFull: {}, teamHistory: {}, teamHistoryFull: {}, 
         currentMode: 'staff', selectedAM: "", analysisTarget: "all", weeksData: [], monthsData: [], 
         isLastWeekOfMonth: false, dataSource: 'staff', gapCompareMode: 'all', issues: [], good_practices: [],
-        settings: {}, rules: defaultRules, isRulesEditMode: false,
+        settings: { hideDocumentManagement: false }, rules: defaultRules, isRulesEditMode: false,
         masterAuthenticated: false, amAuthenticated: false, qcAuthenticated: false, pendingAuthTarget: null,
         activeUploads: 0
     };
@@ -263,12 +258,18 @@
     window.getAllCheckItemsOptions = (selectedId) => {
         let html = '';
         const showCompliance = window.appState.settings?.showComplianceItems === true;
+        const hideDocumentManagement = window.appState.settings?.hideDocumentManagement === true;
         let itemsToIterate = JSON.parse(JSON.stringify([...staffCheckItems, ...amCheckItems]));
         
-        if (!showCompliance) {
+        if (!showCompliance || hideDocumentManagement) {
             itemsToIterate.forEach(cat => {
                 if (cat.cat === '書類・法令チェック（監査・コンプライアンス）') {
-                    cat.items = cat.items.filter(i => !['am_1', 'am_2', 'am_3'].includes(i.id));
+                    if (!showCompliance) {
+                        cat.items = cat.items.filter(i => !['am_1', 'am_2', 'am_3'].includes(i.id));
+                    }
+                    if (hideDocumentManagement) {
+                        cat.items = cat.items.filter(i => i.id !== 'am_6');
+                    }
                 }
             });
         }
@@ -657,12 +658,18 @@
       let baseItems = (isM || isLW) ? [...staffCheckItems, ...amCheckItems] : staffCheckItems;
       
       const showCompliance = window.appState.settings?.showComplianceItems === true;
+      const hideDocumentManagement = window.appState.settings?.hideDocumentManagement === true;
       let itemsToRender = JSON.parse(JSON.stringify(baseItems));
       
-      if (!showCompliance) {
+      if (!showCompliance || hideDocumentManagement) {
           itemsToRender.forEach(cat => {
               if (cat.cat === '書類・法令チェック（監査・コンプライアンス）') {
-                  cat.items = cat.items.filter(i => !['am_1', 'am_2', 'am_3'].includes(i.id));
+                  if (!showCompliance) {
+                      cat.items = cat.items.filter(i => !['am_1', 'am_2', 'am_3'].includes(i.id));
+                  }
+                  if (hideDocumentManagement) {
+                      cat.items = cat.items.filter(i => i.id !== 'am_6');
+                  }
               }
           });
       }
@@ -947,11 +954,13 @@
       const isLW = !isM && window.appState.isLastWeekOfMonth;
       const items = (isM || isLW) ? [...staffCheckItems, ...amCheckItems] : staffCheckItems;
       const showCompliance = window.appState.settings?.showComplianceItems === true;
+      const hideDocumentManagement = window.appState.settings?.hideDocumentManagement === true;
 
       let total = 0;
       items.forEach(cat => {
           cat.items.forEach(item => {
               if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(item.id)) return;
+              if (hideDocumentManagement && item.id === 'am_6') return;
               total++;
           });
       });
@@ -959,6 +968,7 @@
       let count = 0;
       Object.keys(window.appState.answers).forEach(key => {
           if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(key)) return;
+          if (hideDocumentManagement && key === 'am_6') return;
           count++;
       });
 
@@ -978,6 +988,7 @@
 
       hqExcludedItems.forEach(id => {
           if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(id)) return;
+          if (hideDocumentManagement && id === 'am_6') return;
           total -= 1;
           if (window.appState.answers[id] !== undefined) {
               count -= 1; 
@@ -986,6 +997,7 @@
       
       quarterExcludedItems.forEach(id => {
           if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(id)) return;
+          if (hideDocumentManagement && id === 'am_6') return;
           const isItemIncluded = items.some(cat => cat.items.some(i => i.id === id));
           if (isItemIncluded) {
               total -= 1;
@@ -1099,33 +1111,33 @@
                 <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm">
                     <div class="space-y-4">
                         <div>
-                            <label class="text-xs font-black text-blue-800 mb-1 block">運用目的（トレンド）</label>
-                            <textarea id="rule-edit-purpose" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-blue-400 outline-none" rows="4">${window.appState.rules.purpose}</textarea>
+                            <label class="text-xs font-black text-blue-800 mb-1 block">なぜ今、「品質管理（QC）」が必要なのか？</label>
+                            <textarea id="rule-edit-purpose" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-blue-400 outline-none" rows="6">${window.appState.rules.purpose}</textarea>
                         </div>
                         <div>
-                            <label class="text-xs font-black text-pink-600 mb-1 block">事業所 ルール</label>
-                            <textarea id="rule-edit-office" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none" rows="4">${window.appState.rules.officeRules}</textarea>
+                            <label class="text-xs font-black text-pink-600 mb-1 block">事業所の役割 (写真・アプリ)</label>
+                            <textarea id="rule-edit-office" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none" rows="5">${window.appState.rules.officeRules}</textarea>
                         </div>
                         <div>
-                            <label class="text-xs font-black text-indigo-600 mb-1 block">AM ルール</label>
-                            <textarea id="rule-edit-am" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-indigo-400 outline-none" rows="5">${window.appState.rules.amRules}</textarea>
+                            <label class="text-xs font-black text-indigo-600 mb-1 block">AMの役割 (内部評価)</label>
+                            <textarea id="rule-edit-am" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-indigo-400 outline-none" rows="6">${window.appState.rules.amRules}</textarea>
                         </div>
                         <div>
-                            <label class="text-xs font-black text-emerald-600 mb-1 block">QCチーム ルール</label>
-                            <textarea id="rule-edit-qc" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.qcRules}</textarea>
+                            <label class="text-xs font-black text-emerald-600 mb-1 block">QCチームの役割 (第三者評価)</label>
+                            <textarea id="rule-edit-qc" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="6">${window.appState.rules.qcRules}</textarea>
                         </div>
                         <hr class="my-4 border-emerald-100">
                         <div>
-                            <label class="text-xs font-black text-emerald-800 mb-1 block">QC運用ガイド1（評価点の設計）</label>
-                            <textarea id="rule-edit-g1" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide1}</textarea>
+                            <label class="text-xs font-black text-emerald-800 mb-1 block">品質の再定義（4階層モデル）</label>
+                            <textarea id="rule-edit-g1" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="7">${window.appState.rules.guide1}</textarea>
                         </div>
                         <div>
-                            <label class="text-xs font-black text-emerald-800 mb-1 block">QC運用ガイド2（基準の標準化）</label>
-                            <textarea id="rule-edit-g2" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide2}</textarea>
+                            <label class="text-xs font-black text-emerald-800 mb-1 block">リアルな声への回答</label>
+                            <textarea id="rule-edit-g2" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="6">${window.appState.rules.guide2}</textarea>
                         </div>
                         <div>
-                            <label class="text-xs font-black text-emerald-800 mb-1 block">QC運用ガイド3（本社対応の可視化）</label>
-                            <textarea id="rule-edit-g3" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="5">${window.appState.rules.guide3}</textarea>
+                            <label class="text-xs font-black text-emerald-800 mb-1 block">今後のロードマップ</label>
+                            <textarea id="rule-edit-g3" class="w-full border rounded-xl p-3 text-xs font-bold bg-slate-50 focus:bg-white focus:border-emerald-400 outline-none" rows="6">${window.appState.rules.guide3}</textarea>
                         </div>
                         <div class="text-right pt-4">
                             <button onclick="window.saveRules()" class="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 py-3 rounded-xl shadow-sm transition active:scale-95 w-full sm:w-auto">
@@ -1146,44 +1158,44 @@
                 <div class="bg-white p-5 sm:p-6 rounded-2xl border-t-4 border-blue-500 shadow-sm">
                     <div class="space-y-6 pt-2">
                         <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                            <h3 class="text-sm font-black text-blue-800 mb-3">【運用目的（トレンド）】</h3>
+                            <h3 class="text-sm font-black text-blue-800 mb-3">【運用目的・背景】</h3>
                             <ul class="list-disc pl-5 text-xs text-slate-700 font-bold space-y-1.5 leading-relaxed">
                                 ${toList(window.appState.rules.purpose)}
                             </ul>
                         </div>
                         
                         <div>
-                            <h3 class="text-sm font-black text-slate-800 mb-3">【運用ルール】</h3>
+                            <h3 class="text-sm font-black text-slate-800 mb-3">【3つのアプローチと役割】</h3>
                             <div class="space-y-4">
                                 <div class="border rounded-xl overflow-hidden shadow-sm">
                                     <div class="bg-pink-50 px-4 py-2 border-b border-pink-100">
-                                        <h4 class="text-xs font-black text-pink-600"><i class="fa-solid fa-building mr-1.5"></i>事業所</h4>
+                                        <h4 class="text-xs font-black text-pink-600"><i class="fa-solid fa-building mr-1.5"></i>事業所の役割</h4>
                                     </div>
                                     <div class="p-4 bg-white">
-                                        <ul class="list-disc pl-5 text-xs text-slate-700 font-bold space-y-1.5 leading-relaxed">
-                                            ${toList(window.appState.rules.officeRules)}
+                                        <ul class="list-none text-xs text-slate-700 font-bold space-y-2 leading-relaxed">
+                                            ${toHtml(window.appState.rules.officeRules)}
                                         </ul>
                                     </div>
                                 </div>
                                 
                                 <div class="border rounded-xl overflow-hidden shadow-sm">
                                     <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100">
-                                        <h4 class="text-xs font-black text-indigo-600"><i class="fa-solid fa-user-tie mr-1.5"></i>AM</h4>
+                                        <h4 class="text-xs font-black text-indigo-600"><i class="fa-solid fa-user-tie mr-1.5"></i>AMの役割</h4>
                                     </div>
                                     <div class="p-4 bg-white">
-                                        <ul class="list-disc pl-5 text-xs text-slate-700 font-bold space-y-1.5 leading-relaxed">
-                                            ${toList(window.appState.rules.amRules)}
+                                        <ul class="list-none text-xs text-slate-700 font-bold space-y-2 leading-relaxed">
+                                            ${toHtml(window.appState.rules.amRules)}
                                         </ul>
                                     </div>
                                 </div>
 
                                 <div class="border rounded-xl overflow-hidden shadow-sm">
                                     <div class="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-                                        <h4 class="text-xs font-black text-emerald-600"><i class="fa-solid fa-clipboard-check mr-1.5"></i>QCチーム</h4>
+                                        <h4 class="text-xs font-black text-emerald-600"><i class="fa-solid fa-clipboard-check mr-1.5"></i>QCチームの役割</h4>
                                     </div>
                                     <div class="p-4 bg-white">
-                                        <ul class="list-disc pl-5 text-xs text-slate-700 font-bold space-y-1.5 leading-relaxed">
-                                            ${toList(window.appState.rules.qcRules)}
+                                        <ul class="list-none text-xs text-slate-700 font-bold space-y-2 leading-relaxed">
+                                            ${toHtml(window.appState.rules.qcRules)}
                                         </ul>
                                     </div>
                                 </div>
@@ -1191,23 +1203,23 @@
                         </div>
 
                         <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                            <h3 class="text-sm font-black text-emerald-800 mb-3">【QCチーム運用ガイド（評価と改善の仕組み）】</h3>
+                            <h3 class="text-sm font-black text-emerald-800 mb-3">【品質の定義とロードマップ】</h3>
                             <div class="space-y-4">
-                                <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                                    <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">評価点（スコアリング）の設計</h4>
-                                    <p class="text-[10px] text-slate-700 leading-relaxed font-bold">
+                                <div class="bg-white p-4 rounded-lg shadow-sm border border-emerald-200">
+                                    <h4 class="text-xs font-black text-emerald-600 mb-3 border-b border-emerald-100 pb-2">障害福祉における品質の再定義（4階層モデル）</h4>
+                                    <p class="text-xs text-slate-700 leading-relaxed font-bold">
                                         ${toHtml(window.appState.rules.guide1)}
                                     </p>
                                 </div>
-                                <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                                    <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">進捗管理シートと「感じた事実」の標準化</h4>
-                                    <p class="text-[10px] text-slate-700 leading-relaxed font-bold">
+                                <div class="bg-white p-4 rounded-lg shadow-sm border border-emerald-200">
+                                    <h4 class="text-xs font-black text-emerald-600 mb-3 border-b border-emerald-100 pb-2">現場から寄せられた「リアルな声」への回答</h4>
+                                    <p class="text-xs text-slate-700 leading-relaxed font-bold">
                                         ${toHtml(window.appState.rules.guide2)}
                                     </p>
                                 </div>
-                                <div class="bg-white p-3 rounded-lg shadow-sm border border-emerald-200">
-                                    <h4 class="text-xs font-black text-emerald-600 mb-2 border-b border-emerald-100 pb-1">改善プロセスにおける「本社対応」の可視化</h4>
-                                    <p class="text-[10px] text-slate-700 leading-relaxed font-bold">
+                                <div class="bg-white p-4 rounded-lg shadow-sm border border-emerald-200">
+                                    <h4 class="text-xs font-black text-emerald-600 mb-3 border-b border-emerald-100 pb-2">今後のロードマップ</h4>
+                                    <p class="text-xs text-slate-700 leading-relaxed font-bold">
                                         ${toHtml(window.appState.rules.guide3)}
                                     </p>
                                 </div>
@@ -1258,19 +1270,21 @@
         const ss = $('ranking-sort-pulldown');
         if (ss) {
             const showBonus = window.appState.settings?.showBonusScore || false;
+            const hideQc = window.appState.settings?.hideQcInRanking === true;
             const currentSort = ss.value;
+            
             ss.innerHTML = `
-                ${showBonus ? '<option value="final">賞与用スコア優先 (QC評価 × 各入力率)</option>' : ''}
+                ${showBonus && !hideQc ? '<option value="final">賞与用スコア優先 (QC評価 × 各入力率)</option>' : ''}
                 <option value="input_rate">事業所 自己入力率</option>
                 <option value="am_input_rate">AM 入力率</option>
                 <option value="am">AM 評価スコア</option>
-                <option value="qc">QC 評価スコア</option>
-                <option value="gap_am_qc">AM・QC評価ギャップ (差が大きい順)</option>
+                ${!hideQc ? '<option value="qc">QC 評価スコア</option>' : ''}
+                ${!hideQc ? '<option value="gap_am_qc">AM・QC評価ギャップ (差が大きい順)</option>' : ''}
             `;
             if ([...ss.options].some(o => o.value === currentSort)) {
                 ss.value = currentSort;
             } else {
-                ss.value = showBonus ? 'final' : 'input_rate';
+                ss.value = showBonus && !hideQc ? 'final' : 'input_rate';
             }
         }
     };
@@ -1310,11 +1324,11 @@
             const isFirstHalf = parts[2] === '1';
             
             if (isFirstHalf) {
-                customStart = new Date(year, 2, 1); // 3月1日
-                customEnd = new Date(year, 8, 0, 23, 59, 59); // 8月末日
+                customStart = new Date(year, 2, 1);
+                customEnd = new Date(year, 8, 0, 23, 59, 59);
             } else {
-                customStart = new Date(year, 8, 1); // 9月1日
-                customEnd = new Date(year + 1, 2, 0, 23, 59, 59); // 翌年2月末日
+                customStart = new Date(year, 8, 1);
+                customEnd = new Date(year + 1, 2, 0, 23, 59, 59);
             }
             hasCustomDate = true;
             effectiveMonthMode = 'custom';
@@ -1406,7 +1420,11 @@
                 }
             });
             
-            const qcHistory = window.appState.teamHistoryFull[o.name] || {};
+            let qcHistory = {};
+            if (window.appState.settings?.hideQcInRanking !== true) {
+                qcHistory = window.appState.teamHistoryFull[o.name] || {};
+            }
+
             validMonths.forEach(mLabel => {
                 if (qcHistory[mLabel] && qcHistory[mLabel].score !== undefined) {
                     qcSum += qcHistory[mLabel].score;
@@ -1579,10 +1597,10 @@
                     <div class="flex flex-col gap-1 w-full px-2 mt-1.5 relative z-10">
                         <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-pink-500 text-left">事業所</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-pink-400 h-1.5 rounded-full" style="width:${s.staffScore === '--' ? 0 : s.staffScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.staffScore}</span></div>
                         <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-indigo-500 text-left">AM</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-indigo-400 h-1.5 rounded-full" style="width:${s.amScore === '--' ? 0 : s.amScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.amScore}</span></div>
-                        <div class="flex items-center text-[8px] font-bold"><span class="w-8 text-teal-600 text-left">QC</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-teal-500 h-1.5 rounded-full" style="width:${s.qcScore === '--' ? 0 : s.qcScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.qcScore}</span></div>
+                        ${window.appState.settings?.hideQcInRanking !== true ? `<div class="flex items-center text-[8px] font-bold"><span class="w-8 text-teal-600 text-left">QC</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-teal-500 h-1.5 rounded-full" style="width:${s.qcScore === '--' ? 0 : s.qcScore}%"></div></div><span class="w-6 text-right ${titleColorClass}">${s.qcScore}</span></div>` : `<div class="flex items-center text-[8px] font-bold opacity-50"><span class="w-8 text-teal-600 text-left">QC</span><div class="flex-1 bg-white/60 rounded-full h-1.5 overflow-hidden"><div class="bg-slate-300 h-1.5 rounded-full" style="width:0%"></div></div><span class="w-6 text-right ${titleColorClass}">非公開</span></div>`}
                     </div>`;
 
-                if (showBonus) {
+                if (showBonus && window.appState.settings?.hideQcInRanking !== true) {
                     bonusScoreHtml = `
                     <div class="col-span-2 sm:col-span-1 bg-slate-50 rounded-xl p-2 border border-slate-200 flex flex-col justify-center shadow-sm relative">
                         <p class="text-[9px] text-slate-500 font-bold mb-1">賞与用スコア</p>
@@ -1740,50 +1758,28 @@
             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
                 issues: updatedIssues
             });
-
-            if (GAS_WEBHOOK_URL) {
-                fetch(GAS_WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'update_resolution',
-                        office: office,
-                        period: month,
-                        issueIndex: issueIndex,
-                        isResolved: true,
-                        resolvedAt: nowIso,
-                        base64: compressed
-                    })
-                }).catch(e => console.warn("GAS Update Warn:", e));
-            }
             
             window.showGlobalToast("改善報告と写真の保存が完了しました！");
         } catch(e) {
             console.warn("Update Warn:", e);
             window.showGlobalToast("エラーが発生しました");
         }
-        
         event.target.value = ''; 
     };
 
     window.updateIssueQcVerificationCloud = async (office, month, issueIndex, verified) => {
         if (!window.appState.user) return window.showGlobalToast("認証待ちです");
         const docId = `${office}_${month}`;
-        
         try {
             const docData = window.appState.teamHistoryFull[office][month];
             if (!docData || !docData.issues) return;
-            
             const updatedIssues = [...docData.issues];
             if (updatedIssues[issueIndex]) {
                 updatedIssues[issueIndex].qc_verified = verified;
             }
-            
             await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
                 issues: updatedIssues
             });
-
             window.showGlobalToast(verified ? "合格（確認済）にしました" : "未確認に戻しました");
         } catch(e) {
             console.warn("Update Warn:", e);
@@ -1816,23 +1812,6 @@
                 issues: updatedIssues
             });
 
-            if (GAS_WEBHOOK_URL) {
-                fetch(GAS_WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        action: 'update_resolution',
-                        office: office,
-                        period: month,
-                        issueIndex: issueIndex,
-                        isResolved: isNowResolved,
-                        resolvedAt: resolvedAtStr,
-                        base64: ""
-                    })
-                }).catch(e => console.warn("GAS Update Warn:", e));
-            }
-
             window.showGlobalToast(currentStatus ? "未完了に差し戻しました" : "改善完了にしました！");
         } catch(e) {
             console.warn("Update Warn:", e);
@@ -1842,6 +1821,12 @@
 
     window.renderFeedbackList = () => {
         const c = $('feedback-list-container');
+        
+        if (window.appState.settings?.hideQcInFeedback === true) {
+            if(c) c.innerHTML = '<div class="bg-white p-8 rounded-2xl border text-center shadow-sm"><p class="text-slate-400 font-bold text-sm"><i class="fa-solid fa-eye-slash text-3xl mb-3 block opacity-50"></i>現在QCフィードバックは非公開に設定されています</p></div>';
+            return;
+        }
+
         const os = $('feedback-office-pulldown');
         const ms = $('feedback-month-pulldown');
         
@@ -2336,6 +2321,31 @@
             toggleComplianceText.innerText = toggleCompliance.checked ? 'ON' : 'OFF';
             toggleComplianceText.className = `ml-3 text-sm font-black ${toggleCompliance.checked ? 'text-blue-600' : 'text-slate-500'}`;
         }
+
+        // NEW: Document Management Toggle Setting rendering
+        const toggleDocMgmt = document.getElementById('toggle-document-management');
+        const toggleDocMgmtText = document.getElementById('toggle-document-management-text');
+        if (toggleDocMgmt && toggleDocMgmtText) {
+            toggleDocMgmt.checked = window.appState.settings?.hideDocumentManagement === true;
+            toggleDocMgmtText.innerText = toggleDocMgmt.checked ? 'ON (非表示)' : 'OFF (表示)';
+            toggleDocMgmtText.className = `ml-3 text-sm font-black ${toggleDocMgmt.checked ? 'text-rose-600' : 'text-slate-500'}`;
+        }
+
+        const toggleQcRanking = document.getElementById('toggle-qc-ranking');
+        const toggleQcRankingText = document.getElementById('toggle-qc-ranking-text');
+        if (toggleQcRanking && toggleQcRankingText) {
+            toggleQcRanking.checked = window.appState.settings?.hideQcInRanking === true;
+            toggleQcRankingText.innerText = toggleQcRanking.checked ? 'ON (非表示)' : 'OFF (表示)';
+            toggleQcRankingText.className = `ml-3 text-sm font-black ${toggleQcRanking.checked ? 'text-rose-600' : 'text-slate-500'}`;
+        }
+
+        const toggleQcFeedback = document.getElementById('toggle-qc-feedback');
+        const toggleQcFeedbackText = document.getElementById('toggle-qc-feedback-text');
+        if (toggleQcFeedback && toggleQcFeedbackText) {
+            toggleQcFeedback.checked = window.appState.settings?.hideQcInFeedback === true;
+            toggleQcFeedbackText.innerText = toggleQcFeedback.checked ? 'ON (非表示)' : 'OFF (表示)';
+            toggleQcFeedbackText.className = `ml-3 text-sm font-black ${toggleQcFeedback.checked ? 'text-rose-600' : 'text-slate-500'}`;
+        }
     };
 
     window.toggleInputPeriodSetting = async (checked) => {
@@ -2380,6 +2390,49 @@
         }
     };
 
+    // NEW: Document Management Toggle handling
+    window.toggleDocumentManagementSetting = async (checked) => {
+        if (!window.appState.user) return;
+        try {
+            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
+                ...window.appState.settings,
+                hideDocumentManagement: checked
+            });
+            window.showGlobalToast(`帳票管理の項目を${checked ? '非表示' : '表示'}にしました`);
+        } catch(e) {
+            console.error("Settings Error:", e);
+            window.showGlobalToast("保存に失敗しました。");
+        }
+    };
+
+    window.toggleQcRankingSetting = async (checked) => {
+        if (!window.appState.user) return;
+        try {
+            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
+                ...window.appState.settings,
+                hideQcInRanking: checked
+            });
+            window.showGlobalToast(`QC評価のランキング反映を${checked ? '無効' : '有効'}にしました`);
+        } catch(e) {
+            console.error("Settings Error:", e);
+            window.showGlobalToast("保存に失敗しました。");
+        }
+    };
+
+    window.toggleQcFeedbackSetting = async (checked) => {
+        if (!window.appState.user) return;
+        try {
+            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
+                ...window.appState.settings,
+                hideQcInFeedback: checked
+            });
+            window.showGlobalToast(`QCフィードバックの反映を${checked ? '無効' : '有効'}にしました`);
+        } catch(e) {
+            console.error("Settings Error:", e);
+            window.showGlobalToast("保存に失敗しました。");
+        }
+    };
+
     window.renderSelectors = () => {
       const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
       sU('week-pulldown-section', e => e.style.display = isM ? 'none' : 'block'); 
@@ -2399,6 +2452,7 @@
         const period = mode === 'staff' ? window.appState.inputWeek : window.appState.inputMonth;
         const answers = window.appState.answers;
         const showCompliance = window.appState.settings?.showComplianceItems === true;
+        const hideDocumentManagement = window.appState.settings?.hideDocumentManagement === true;
 
         let totalPoints = 0;
         let maxPoints = 0;
@@ -2420,6 +2474,7 @@
         for (let key in answers) {
             if (hqExcludedItems.has(key) || quarterExcludedItems.has(key)) continue; 
             if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(key)) continue; 
+            if (hideDocumentManagement && key === 'am_6') continue;
             if (answers[key] === -1) continue; 
             
             totalPoints += answers[key];
@@ -2539,6 +2594,7 @@
     };
   </script>
 </head>
+
 <body>
   <div id="splash-screen">
       <div class="splash-logo-container relative">
@@ -2764,6 +2820,54 @@
                       <input type="checkbox" id="toggle-compliance-items" class="sr-only peer" onchange="window.toggleComplianceItemsSetting(this.checked)">
                       <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                       <span class="ml-3 text-sm font-black text-slate-500" id="toggle-compliance-items-text">OFF</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 hover:border-rose-200 transition-colors">
+                <div>
+                    <h3 class="text-sm font-black text-slate-800 mb-1">四半期ごとの「帳票管理」項目の非表示</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold leading-relaxed">
+                        ONにすると、事業所やAM/QC入力時の四半期末チェック項目から「帳票管理」が完全に隠れます。
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="toggle-document-management" class="sr-only peer" onchange="window.toggleDocumentManagementSetting(this.checked)">
+                      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                      <span class="ml-3 text-sm font-black text-slate-500" id="toggle-document-management-text">OFF (表示)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 hover:border-rose-200 transition-colors">
+                <div>
+                    <h3 class="text-sm font-black text-slate-800 mb-1">QC評価を「点数ランキング」に反映しない</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold leading-relaxed">
+                        ONにすると、QCチームが入力した評価スコアがランキングに表示・合算されなくなります。（※スプレッドシートへのデータ送信は継続されます）
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="toggle-qc-ranking" class="sr-only peer" onchange="window.toggleQcRankingSetting(this.checked)">
+                      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                      <span class="ml-3 text-sm font-black text-slate-500" id="toggle-qc-ranking-text">OFF (表示)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4 hover:border-rose-200 transition-colors">
+                <div>
+                    <h3 class="text-sm font-black text-slate-800 mb-1">QC評価を「QCフィードバック」に反映しない</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-500 font-bold leading-relaxed">
+                        ONにすると、QCチームが入力したフィードバック情報がフィードバック画面に表示されなくなります。（※スプレッドシートへのデータ送信は継続されます）
+                    </p>
+                </div>
+                <div class="flex-shrink-0">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="toggle-qc-feedback" class="sr-only peer" onchange="window.toggleQcFeedbackSetting(this.checked)">
+                      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                      <span class="ml-3 text-sm font-black text-slate-500" id="toggle-qc-feedback-text">OFF (表示)</span>
                     </label>
                 </div>
             </div>
@@ -3013,7 +3117,7 @@
           if (d.exists()) {
               window.appState.settings = d.data();
           } else {
-              window.appState.settings = { allowInputOutsidePeriod: false, showBonusScore: false, requireCarImages: true, showComplianceItems: false };
+              window.appState.settings = { allowInputOutsidePeriod: false, showBonusScore: false, requireCarImages: true, showComplianceItems: false, hideDocumentManagement: false };
           }
           if (window.appState.activeTab === 'input' && !window.appState.office) {
               if (window.renderSelectors) window.renderSelectors();
