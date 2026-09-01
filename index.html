@@ -89,7 +89,7 @@
         }); 
     };
 
-    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw4J-Rwuym8drDL7UNvHGLWyIbKFmvS38AjBruWMH14ZQsynFYHYf0R2ry3Szo8R6Ru/exec"; 
+    const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwLZ8BLcDRbccYGzwmRwv726FQBGAqkEw7_aDanTZZtygGtarKrveqytqt-Wf8wBYWo/exec"; 
 
     window.getNowLocalStr = () => {
         const d = new Date();
@@ -2360,9 +2360,11 @@
                 const issuesDeadlines = (window.appState.issues || []).map(i => i.deadline_date ? i.deadline_date.replace(/-/g, '/') : "");
                 const issuesRelated = (window.appState.issues || []).map(i => i.relatedItemId ? window.getCheckItemName(i.relatedItemId) : "");
 
+                const jstTimestamp = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+
                 const gasData = {
                     action: 'submit_qc_data',
-                    timestamp: new Date().toISOString(),
+                    timestamp: jstTimestamp,
                     team: teamName,
                     period: period,
                     area: areaName,
