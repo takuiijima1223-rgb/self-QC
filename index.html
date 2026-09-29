@@ -154,7 +154,7 @@
       ["HELLOS","北仙台（A型）","中村AM"],["グランメル","アイステージ中浦和","中村AM"],["グランメル","アイステージ川口","中村AM"]
     ];
 
-    const amList = ["石黒AM", "石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
+    const amList = ["石黒AM", "石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括", "福島部長"];
 
     window.initialOffices = initialOfficesData.map(x => ({ corp: x[0], name: x[1], area: x[2], type: x[3] || "就労A型", isFixed: true }));
     window.appState = { 
@@ -1446,7 +1446,7 @@
         
         if (as.options.length === 0) {
             as.innerHTML = '<option value="" disabled selected>エリア選択...</option><option value="all">全エリア</option>';
-            const amList = ["石黒AM", "石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括"];
+            const amList = ["石黒AM", "石川AM", "寺口AM", "甲部AM", "若林AM", "辰橋AM", "中村AM", "小野統括", "福島部長"];
             amList.forEach(a => {
                 as.innerHTML += `<option value="${a}">${a}</option>`;
             });
@@ -2423,8 +2423,8 @@
       <div class="splash-logo-container relative">
           <svg width="80" height="80" viewBox="0 0 100 100" fill="none" class="drop-shadow-xl">
               <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="url(#pink-grad)"/>
-              <circle cx="53" cy="38" r="14" fill="white"/>
-              <path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/>
+              <circle cx="50" cy="38" r="14" fill="white"/>
+              <path d="M30 68C30 55 70 55 70 68C70 78 30 78 30 68Z" fill="white"/>
               <defs>
                   <linearGradient id="pink-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
                       <stop stop-color="#f472b6" />
@@ -2454,8 +2454,8 @@
           <div class="flex items-center min-w-0" onclick="window.switchTab('home')" style="cursor:pointer">
               <svg viewBox="0 0 100 100" fill="none" class="w-11 h-11 sm:w-14 sm:h-14 mr-3 sm:mr-4 flex-shrink-0 drop-shadow-md transition-all">
                   <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="var(--primary-pink)"/>
-                  <circle cx="53" cy="38" r="14" fill="white"/>
-                  <path d="M35 68C35 55 75 55 75 68C75 78 35 78 35 68Z" fill="white"/>
+                  <circle cx="50" cy="38" r="14" fill="white"/>
+                  <path d="M30 68C30 55 70 55 70 68C70 78 30 78 30 68Z" fill="white"/>
               </svg>
               <div class="min-w-0 pr-2 flex flex-col justify-center">
                   <div class="flex flex-col md:flex-row md:items-baseline md:gap-2">
@@ -2542,6 +2542,7 @@
             <option value="石黒AM">石黒AM</option><option value="石川AM">石川AM</option><option value="寺口AM">寺口AM</option><option value="甲部AM">甲部AM</option>
             <option value="若林AM">若林AM</option><option value="辰橋AM">辰橋AM</option><option value="中村AM">中村AM</option>
             <option value="小野統括">小野統括</option>
+            <option value="福島部長">福島部長</option>
         </select>
         <select id="office-pulldown" onchange="window.updatePeriodOptions()" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm"></select>
         <div id="week-pulldown-section"><select id="week-pulldown" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm"></select></div>
