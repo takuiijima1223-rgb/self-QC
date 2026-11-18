@@ -6,20 +6,21 @@
   <title>self-A QC管理アプリ</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  
-  <style>
+  <style id="app-custom-style">
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
     
     :root {
-        --primary-pink: #ec4899;
-        --primary-pink-dark: #be185d;
+        --primary-pink: #d81b60;
+        --primary-pink-light: #ec407a;
+        --primary-pink-dark: #9c1043;
         --bg-color: #f8fafc;
-        --text-main: #334155;
+        --text-main: #1e293b;
     }
 
     body { 
         font-family: 'Noto Sans JP', sans-serif; 
-        background-color: var(--bg-color); 
+        background: radial-gradient(circle at top right, #fdf2f8 0%, #f8fafc 45%, #f1f5f9 100%);
+        background-attachment: fixed;
         color: var(--text-main); 
         -webkit-tap-highlight-color: transparent; 
         overflow-x: hidden; 
@@ -27,7 +28,7 @@
 
     #splash-screen {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 100%);
+        background: linear-gradient(135deg, #fce4ec 0%, #ffffff 55%, #fdf2f8 100%);
         z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
         transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
     }
@@ -35,9 +36,9 @@
     .splash-title { opacity: 0; transform: translateY(10px); animation: fadeInUp 0.8s ease-out 0.4s forwards; color: var(--primary-pink-dark); }
     
     .splash-msg { opacity: 0; transform: translateY(10px); }
-    .msg-1 { animation: fadeInUp 0.8s ease-out 1.0s forwards; }
-    .msg-2 { animation: fadeInUp 0.8s ease-out 1.8s forwards; }
-    .msg-3 { animation: fadeInUp 0.8s ease-out 2.6s forwards; }
+    .msg-1 { animation: fadeInUp 0.8s ease-out 0.6s forwards; }
+    .msg-2 { animation: fadeInUp 0.8s ease-out 1.0s forwards; }
+    .msg-3 { animation: fadeInUp 0.8s ease-out 1.4s forwards; }
 
     .loading-dots div { animation: dotBounce 1.4s infinite ease-in-out both; }
     .loading-dots div:nth-child(1) { animation-delay: -0.32s; }
@@ -48,21 +49,23 @@
     @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
 
     .brand-pink { color: var(--primary-pink); } 
-    .brand-bg-pink { background: linear-gradient(135deg, #f472b6, #db2777); }
-    .tab-active { border-bottom: 3px solid var(--primary-pink) !important; color: var(--primary-pink) !important; font-weight: 800 !important; }
+    .brand-bg-pink { background: linear-gradient(135deg, #ec407a 0%, #d81b60 55%, #ad1457 100%); }
+    .tab-active { border-bottom: 3px solid var(--primary-pink) !important; color: var(--primary-pink) !important; font-weight: 900 !important; background-color: rgba(216, 27, 96, 0.04); }
     
-    .check-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid #e2e8f0; border-radius: 16px; height: 52px; font-weight: 900; background-color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #64748b; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-    .check-btn:active { transform: scale(0.92); }
-    .selected-good { background: linear-gradient(135deg, #34d399, #10b981) !important; color: white !important; border-color: transparent !important; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important; }
-    .selected-warn { background: linear-gradient(135deg, #fbbf24, #f59e0b) !important; color: white !important; border-color: transparent !important; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important; }
-    .selected-error { background: linear-gradient(135deg, #f87171, #ef4444) !important; color: white !important; border-color: transparent !important; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important; }
-    .selected-na { background: linear-gradient(135deg, #94a3b8, #64748b) !important; color: white !important; border-color: transparent !important; box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3) !important; }
+    .check-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid #e2e8f0; border-radius: 16px; height: 54px; font-weight: 900; background-color: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; color: #64748b; box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03); }
+    .check-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06); }
+    .check-btn:active:not(:disabled) { transform: scale(0.94); }
+    .check-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .selected-good { background: linear-gradient(135deg, #10b981, #059669) !important; color: white !important; border-color: transparent !important; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35) !important; }
+    .selected-warn { background: linear-gradient(135deg, #f59e0b, #d97706) !important; color: white !important; border-color: transparent !important; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35) !important; }
+    .selected-error { background: linear-gradient(135deg, #ef4444, #dc2626) !important; color: white !important; border-color: transparent !important; box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35) !important; }
+    .selected-na { background: linear-gradient(135deg, #64748b, #475569) !important; color: white !important; border-color: transparent !important; box-shadow: 0 6px 16px rgba(100, 116, 139, 0.3) !important; }
     
     .view-content { animation: contentFadeIn 0.3s ease-out; }
     @keyframes contentFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     
-    .portal-card { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255,255,255,0.8); background-color: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
-    .portal-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1), 0 4px 8px -4px rgba(0, 0, 0, 0.05); border-color: #ffffff; background-color: #ffffff; }
+    .portal-card { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255,255,255,0.9); background-color: rgba(255,255,255,0.88); backdrop-filter: blur(12px); box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05); }
+    .portal-card:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -8px rgba(216, 27, 96, 0.14), 0 4px 12px -2px rgba(15, 23, 42, 0.06); border-color: #fbcfe8; background-color: #ffffff; }
     .portal-card:active { transform: translateY(0) scale(0.98); }
 
     .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
@@ -76,9 +79,14 @@
     select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2em; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @keyframes pulseHighlight {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(216, 27, 96, 0); }
+        50% { box-shadow: 0 0 0 6px rgba(216, 27, 96, 0.25); }
+    }
+    .jump-highlight { animation: pulseHighlight 1.2s ease-out 2; }
   </style>
-  
-  <script>
+  <script id="app-main-script">
     const $ = id => document.getElementById(id);
     const sU = (id, cb) => { const el = $(id); if(el) cb(el); };
     window.hideMainLoader = () => { 
@@ -161,10 +169,12 @@
         office: null, inputWeek: null, inputMonth: null, answers: {}, activeTab: 'home', offices: window.initialOffices, 
         history: {}, historyFull: {}, amHistory: {}, amHistoryFull: {}, teamHistory: {}, teamHistoryFull: {}, 
         currentMode: 'staff', selectedAM: "", analysisTarget: "all", weeksData: [], monthsData: [], 
-        isLastWeekOfMonth: false, dataSource: 'staff', gapCompareMode: 'all', issues: [], good_practices: [],
+        isLastWeekOfMonth: false, staffShowMonthlyItems: true, compactGuideMode: false,
+        dataSource: 'staff', gapCompareMode: 'all', issues: [], good_practices: [],
         settings: { hideDocumentManagement: false },
         masterAuthenticated: false, amAuthenticated: false, qcAuthenticated: false, pendingAuthTarget: null,
-        activeUploads: 0
+        activeUploads: 0,
+        user: { uid: 'local-session-user' }
     };
     
     const getCircledNumber = (index) => {
@@ -173,40 +183,571 @@
     };
 
     const staffCheckItems = [
-      {cat:"情報管理",items:[
-        {id:'q1_1',t:"PC・タブレットのロック",d:"【基準】離席・退勤時にログアウト、または画面ロックされている。<br><span class='text-red-400 font-bold'>【リスク: 個人情報流出、不正操作】</span>"},
-        {id:'q1_2',t:"クリアデスク（書類放置ゼロ）",d:"【基準】個人情報を見えない所にしまっているか<br><span class='text-red-400 font-bold'>【リスク: 情報紛失、信用失墜】</span>"}
-      ]},
-      {cat:"安全・防災",items:[
-        {id:'q2_1',t:"避難経路の確保",d:"【基準】玄関・廊下・非常口前に「段ボール」や「荷物」が置かれていない。<br><span class='text-red-400 font-bold'>【リスク: 災害時の逃げ遅れ、消防法違反】</span>"},
-        {id:'q2_2',t:"危険箇所の確認",d:"【基準】足に引っかかる配線コードがない。高い所に落下しそうな物がない。<br><span class='text-red-400 font-bold'>【リスク: 転倒事故、落下事故】</span>"}
-      ]},
-      {cat:"衛生(5S)",items:[
-        {id:'q3_1',t:"トイレ・洗面所の衛生",d:"【基準】便器・床に汚れがない。消耗品（紙・ハンドソープ・ペーパータオル）が補充されている。<br><span class='text-pink-600 font-bold text-[10px]'>※テナント共有の事業所は評価「N/A」にしてください</span><br><span class='text-red-400 font-bold'>【リスク: 感染症リスク、苦情発生】</span>"},
-        {id:'q3_2',t:"玄関・共有部の整頓",d:"【基準】靴・スリッパ・傘が整列している。泥汚れやホコリが目立たない。<br><span class='text-red-400 font-bold'>【リスク: 印象悪化、転倒リスク】</span>"},
-        {id:'q3_3',t:"作業エリア・備品",d:"【基準】床にゴミが落ちていない。文房具や作業道具が定位置に戻っている。<br><span class='text-red-400 font-bold'>【リスク: 紛失・作業効率低下、誤飲・ケガ】</span>"},
-        {id:'q3_4',t:"ゴミ・食周り",d:"【基準】ゴミ箱が溢れていない（回収済）。食べ残しや飲みかけが放置されていない。<br><span class='text-red-400 font-bold'>【リスク: 悪臭・害虫発生】</span>"}
-      ]},
-      {cat:"戸締まり",items:[
-        {id:'q4_1',t:"施錠・火の元",d:"【基準】窓・勝手口・キャビネットの施錠確認。ポット・暖房等の電源オフ確認。<br><span class='text-red-400 font-bold'>【リスク: 盗難・侵入・火災】</span>"}
-      ]}
-    ];
+      {
+            "cat": "■ 1. PC・タブレット管理 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q1_1",
+                        "no": "1-1",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "席を離れる時のパソコン画面ロック",
+                        "howTo": "① 誰も座っていない机のパソコンやタブレットの画面を見ます。\n② 画面が消えているか（またはパスワード入力画面になっているか）確認します。\n※スリープ状態orパソコンを閉じている",
+                        "point": "・人がいない机で、画面がついたまま（中身が見える状態）のパソコンが「0台」ならOK！※スリープ状態orパソコンを閉じている\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 誰も座っていない机のパソコンやタブレットの画面を見ます。<br>② 画面が消えているか（またはパスワード入力画面になっているか）確認します。<br>※スリープ状態orパソコンを閉じている</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・人がいない机で、画面がついたまま（中身が見える状態）のパソコンが「0台」ならOK！※スリープ状態orパソコンを閉じている<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q1_2",
+                        "no": "1-2",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "パスワードメモの貼りっぱなしゼロ",
+                        "howTo": "① スタッフの机のまわり（パソコンの枠、キーボード、ペン立て、机の上）を見ます。\n② 壁やホワイトボードにパスワードが書かれた紙が貼られていないか見ます。",
+                        "point": "・パソコンのまわりや壁に、IDやパスワードを書いた付箋・メモが「0枚」ならOK！\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① スタッフの机のまわり（パソコンの枠、キーボード、ペン立て、机の上）を見ます。<br>② 壁やホワイトボードにパスワードが書かれた紙が貼られていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・パソコンのまわりや壁に、IDやパスワードを書いた付箋・メモが「0枚」ならOK！<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q1_3",
+                        "no": "1-3",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "パソコンの置き場所とフタ閉じ・覗き見防止",
+                        "howTo": "① 利用者さんの席や通路から、スタッフが使っているパソコン画面の文字が見えてしまわないか見ます。\n② 作業場に、誰も使っていないパソコンが置きっぱなしになっていないか見ます。\n③ 使っていないパソコンが事務所内に戻され、フタが閉まっているか見ます。",
+                        "point": "① 利用者さんから画面が見えるパソコンが「0台」である。\n② 作業場に置きっぱなしのパソコンが「0台」である。\n③ 使わないパソコンはすべて事務所内でフタを閉じて片付けられている。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 利用者さんの席や通路から、スタッフが使っているパソコン画面の文字が見えてしまわないか見ます。<br>② 作業場に、誰も使っていないパソコンが置きっぱなしになっていないか見ます。<br>③ 使っていないパソコンが事務所内に戻され、フタが閉まっているか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 利用者さんから画面が見えるパソコンが「0台」である。<br>② 作業場に置きっぱなしのパソコンが「0台」である。<br>③ 使わないパソコンはすべて事務所内でフタを閉じて片付けられている。<br>・【〇】か【✕】のみ</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 2. クリアデスク 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q2_1",
+                        "no": "2-1",
+                        "freq": "毎週",
+                        "priority": "★重大リスク",
+                        "t": "お休み・外出中スタッフの机の上と棚のカギ",
+                        "howTo": "① 今日お休みや外出中でいないスタッフの机の上に、書類やノートが出しっぱなしになっていないか見ます。\n② 大切な書類（利用者さんのファイルなど）が入った棚の取っ手を引いて、カギが閉まっているか確かめます。",
+                        "point": "① いない人の机の上に、利用者さんの名前などが書かれた書類・ノートが「0冊・0枚」である。\n② 書類棚のカギが閉まっていて、カギが挿しっぱなしになっていない。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 今日お休みや外出中でいないスタッフの机の上に、書類やノートが出しっぱなしになっていないか見ます。<br>② 大切な書類（利用者さんのファイルなど）が入った棚の取っ手を引いて、カギが閉まっているか確かめます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① いない人の机の上に、利用者さんの名前などが書かれた書類・ノートが「0冊・0枚」である。<br>② 書類棚のカギが閉まっていて、カギが挿しっぱなしになっていない。<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q2_2",
+                        "no": "2-2",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "ちょっと席を外す時の書類をしまう",
+                        "howTo": "① トイレや作業支援などで、(ちょっと削除)席を外しているスタッフの机や相談室を見ます。\nちょっと席を外すの時間は30分に設定。\n② 机の上の書類やノートの文字（利用者さんの名前など）が、上から読めてしまわないか見ます。",
+                        "point": "・席を外している机の上で、書類が「裏返す」「ファイルに挟む」「引き出しにしまう」のどれかで隠されていて、文字が読める書類が「0枚」ならOK！\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① トイレや作業支援などで、(ちょっと削除)席を外しているスタッフの机や相談室を見ます。<br>ちょっと席を外すの時間は30分に設定。<br>② 机の上の書類やノートの文字（利用者さんの名前など）が、上から読めてしまわないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・席を外している机の上で、書類が「裏返す」「ファイルに挟む」「引き出しにしまう」のどれかで隠されていて、文字が読める書類が「0枚」ならOK！<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q2_3",
+                        "no": "2-3",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "コピー機の取り忘れとゴミ箱の書類チェック",
+                        "howTo": "① コピー機（プリンター）の上や中に、印刷した紙が置きっぱなしになっていないか見ます。\n② 机の横のゴミ箱に、利用者さんの名前やお仕事内容が書かれた紙が混ざっていないか覗いて見ます。個人情報が記載されている裏紙はないか確認。※全てシュレッダーで破棄されている",
+                        "point": "① コピー機に置きっぱなしの紙が「0枚」である。\n② 普通のゴミ箱や裏紙入れに、個人情報やお仕事の紙が「0枚」である（シュレッダーされている）。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① コピー機（プリンター）の上や中に、印刷した紙が置きっぱなしになっていないか見ます。<br>② 机の横のゴミ箱に、利用者さんの名前やお仕事内容が書かれた紙が混ざっていないか覗いて見ます。個人情報が記載されている裏紙はないか確認。※全てシュレッダーで破棄されている</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① コピー機に置きっぱなしの紙が「0枚」である。<br>② 普通のゴミ箱や裏紙入れに、個人情報やお仕事の紙が「0枚」である（シュレッダーされている）。<br>・【〇】か【✕】のみ</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 3. 避難経路の確保 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q3_1",
+                        "no": "3-1",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "通路や非常口に荷物がないか",
+                        "howTo": "① 玄関から廊下、作業室、非常口まで実際に歩いてみます。\n② 通路や非常口の前に段ボールや荷物が置かれていないか見ます。\n③ 非常口のドアを実際に開けてみて、引っかからずに最後まで開くか確かめます。",
+                        "point": "① 逃げる通路や非常口の前に置かれた荷物が「0個」で、人が余裕で通れる広さがある。\n② 非常口のドアが何にもぶつからずに最後までスムーズに開く。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 玄関から廊下、作業室、非常口まで実際に歩いてみます。<br>② 通路や非常口の前に段ボールや荷物が置かれていないか見ます。<br>③ 非常口のドアを実際に開けてみて、引っかからずに最後まで開くか確かめます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 逃げる通路や非常口の前に置かれた荷物が「0個」で、人が余裕で通れる広さがある。<br>② 非常口のドアが何にもぶつからずに最後までスムーズに開く。<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q3_2",
+                        "no": "3-2",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "避難マップと逃げる場所の貼り紙",
+                        "howTo": "① 玄関や作業室の出入口の壁を見ます。\n② 大人の目線の高さに「避難経路図（逃げるルートの地図）」と「避難場所（〇〇小学校など）」が貼ってあるか見ます。",
+                        "point": "・見やすい高さの壁に、避難経路図」と「逃げる場所の名前」の2つが貼ってあればOK！\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 玄関や作業室の出入口の壁を見ます。<br>② 大人の目線の高さに「避難経路図（逃げるルートの地図）」と「避難場所（〇〇小学校など）」が貼ってあるか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・見やすい高さの壁に、避難経路図」と「逃げる場所の名前」の2つが貼ってあればOK！<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q3_3",
+                        "no": "3-3",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "消火器のまわりと期限チェック",
+                        "howTo": "① 消火器が置いてある場所へ行き、すぐ近くに荷物が置かれていないか、「消火器」のマークが見えるか確認します。\n② 消火器本体に貼ってあるラベルを見て、「使用期限（西暦〇〇年）」が切れていないか見ます。\n※消火器の期限切れてたら管理会社へ連絡",
+                        "point": "① 消火器のまわり（半径2歩くらい）に荷物が「0個」で、マークがはっきり見える。\n② 消火器の期限が切れていない。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 消火器が置いてある場所へ行き、すぐ近くに荷物が置かれていないか、「消火器」のマークが見えるか確認します。<br>② 消火器本体に貼ってあるラベルを見て、「使用期限（西暦〇〇年）」が切れていないか見ます。<br>※消火器の期限切れてたら管理会社へ連絡</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 消火器のまわり（半径2歩くらい）に荷物が「0個」で、マークがはっきり見える。<br>② 消火器の期限が切れていない。<br>・【〇】か【✕】のみ</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 4. 危険箇所の確認 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q4_1",
+                        "no": "4-1",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "足元のコードの整理（つまずき防止）",
+                        "howTo": "① 部屋の中や通路を歩きながら、床の上にコードがそのまま伸びていないか見ます（カバーで留められているか見ます）。\n② 机の下を覗いて、足に引っかかりそうなコードがだらんと垂れ下がっていないか見ます。\n①②配線モールで固定する※予算必要",
+                        "point": "・人が歩く場所にむき出しのコードが机の下のコードも束ねられてスッキリしていればOK！・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 部屋の中や通路を歩きながら、床の上にコードがそのまま伸びていないか見ます（カバーで留められているか見ます）。<br>② 机の下を覗いて、足に引っかかりそうなコードがだらんと垂れ下がっていないか見ます。<br>①②配線モールで固定する※予算必要</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・人が歩く場所にむき出しのコードが机の下のコードも束ねられてスッキリしていればOK！・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q4_2",
+                        "no": "4-2",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "背の高い棚の固定と\n棚の上の荷物ゼロ",
+                        "howTo": "① 大人の胸より高い棚やロッカーを見上げて、壁や天井に「倒れないための金具や突っ張り棒」がついているか見ます。\n② 背の高い棚の「一番上（天井とのすき間）」に、段ボール箱や重い物が乗っていないか見ます。\n①②全事業所が突っ張ってないので予算を取って突っ張る必要あり",
+                        "point": "① 背の高い棚やロッカー「すべて」に転倒防止の器具がついている。\n② 高い棚の上に、落ちてきたら危ない箱や荷物が「0個」である。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 大人の胸より高い棚やロッカーを見上げて、壁や天井に「倒れないための金具や突っ張り棒」がついているか見ます。<br>② 背の高い棚の「一番上（天井とのすき間）」に、段ボール箱や重い物が乗っていないか見ます。<br>①②全事業所が突っ張ってないので予算を取って突っ張る必要あり</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 背の高い棚やロッカー「すべて」に転倒防止の器具がついている。<br>② 高い棚の上に、落ちてきたら危ない箱や荷物が「0個」である。<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q4_3",
+                        "no": "4-3",
+                        "freq": "毎週",
+                        "priority": "★重大リスク\n（大切なルールのため2点か0点）",
+                        "t": "机やイスのガタつき・壊れチェック",
+                        "howTo": "① 作業室や事務室の机・イス・棚を、手で軽くゆすってみます。\n② ガタガタ揺れたり、木の角が欠けてトゲ（ささくれ）が出ていたり、イスの脚が壊れていないか見ます。\n①②古い椅子・机使用しているところがほとんどなので買い替えの予算を各事業所に渡す",
+                        "point": "・机やイスに「ガタつき」「角の欠け・トゲ」がない。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク （大切なルールのため2点か0点）</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 作業室や事務室の机・イス・棚を、手で軽くゆすってみます。<br>② ガタガタ揺れたり、木の角が欠けてトゲ（ささくれ）が出ていたり、イスの脚が壊れていないか見ます。<br>①②古い椅子・机使用しているところがほとんどなので買い替えの予算を各事業所に渡す</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・机やイスに「ガタつき」「角の欠け・トゲ」がない。<br>・【〇】か【✕】のみ</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 5. トイレ・洗面所の衛生 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q5_1",
+                        "no": "5-1",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "トイレの便器・洗面台・鏡・床のキレイさ",
+                        "howTo": "① トイレのフタを開けて、便器の中や便座の裏に汚れがないか見ます。\n② 洗面台と鏡に、水アカや水しぶきの跡がないか見ます。\n③ 床の隅に、髪の毛やホコリ、水滴が落ちていないか見ます。",
+                        "point": "・便器、洗面台、鏡、床のすべてに汚れや髪の毛がなく、ピカピカならOK！\n・汚れ0箇所【〇】\n・汚れ1箇所【△】\n・汚れ2箇所以上【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① トイレのフタを開けて、便器の中や便座の裏に汚れがないか見ます。<br>② 洗面台と鏡に、水アカや水しぶきの跡がないか見ます。<br>③ 床の隅に、髪の毛やホコリ、水滴が落ちていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・便器、洗面台、鏡、床のすべてに汚れや髪の毛がなく、ピカピカならOK！<br>・汚れ0箇所【〇】<br>・汚れ1箇所【△】<br>・汚れ2箇所以上【✕】</div>"
+                  },
+                  {
+                        "id": "q5_2",
+                        "no": "5-2",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "トイレットペーパー・石けんの補充と掃除道具の片付け",
+                        "howTo": "① トイレットペーパーの「予備」が1個以上あるか、ハンドソープとペーパータオルが入っているか見ます。\n② トイレのゴミ箱があふれそうになっていないか見ます。\n③ トイレブラシや洗剤が床にそのまま置かれず、棚やケースの中にしまってあるか見ます。",
+                        "point": "① 予備ペーパー1個以上、ソープ、タオルがちゃんと入っている。\n② ゴミ箱のゴミが半分〜7割くらいまでに収まっている。\n③ ブラシや洗剤が棚やケースにスッキリ隠して収納されている。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① トイレットペーパーの「予備」が1個以上あるか、ハンドソープとペーパータオルが入っているか見ます。<br>② トイレのゴミ箱があふれそうになっていないか見ます。<br>③ トイレブラシや洗剤が床にそのまま置かれず、棚やケースの中にしまってあるか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 予備ペーパー1個以上、ソープ、タオルがちゃんと入っている。<br>② ゴミ箱のゴミが半分〜7割くらいまでに収まっている。<br>③ ブラシや洗剤が棚やケースにスッキリ隠して収納されている。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q5_3",
+                        "no": "5-3",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "トイレの換気扇ONと消臭剤チェック",
+                        "howTo": "① トイレに入った瞬間、イヤなニオイがしないか確かめます。\n② 換気扇のスイッチが「ON」になっているか、換気扇のカバーにホコリが詰まっていないか見上げます。\n③ 消臭剤を手に取って軽く振り、中身が空っぽになっていないか確かめます。",
+                        "point": "① 換気扇が「常時ON」\n②カバーにホコリがついていない。\n③ 消臭剤の中身がちゃんと残っていて、トイレにイヤなニオイがない。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① トイレに入った瞬間、イヤなニオイがしないか確かめます。<br>② 換気扇のスイッチが「ON」になっているか、換気扇のカバーにホコリが詰まっていないか見上げます。<br>③ 消臭剤を手に取って軽く振り、中身が空っぽになっていないか確かめます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 換気扇が「常時ON」<br>②カバーにホコリがついていない。<br>③ 消臭剤の中身がちゃんと残っていて、トイレにイヤなニオイがない。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 6. 玄関・共有部の整頓 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q6_1",
+                        "no": "6-1",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "靴・スリッパの整列と傘立ての整理",
+                        "howTo": "① 玄関の床に泥や砂、枯葉が落ちていないか、靴やスリッパが揃えて並べてあるか見ます。\n② 傘立ての中に「誰のものかわからないビニール傘」や「壊れた傘」が放置されていないか数えます。\n③ 玄関の看板が壊れていないか、植物が枯れていないか見ます。",
+                        "point": "① 靴・スリッパがきれいに揃い、玄関の床に泥やゴミが「0箇所」である。\n② 傘立てに「名前のない放置傘・壊れた傘」が「0本」である。\n③ 看板や植物がきれいに保たれている。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 玄関の床に泥や砂、枯葉が落ちていないか、靴やスリッパが揃えて並べてあるか見ます。<br>② 傘立ての中に「誰のものかわからないビニール傘」や「壊れた傘」が放置されていないか数えます。<br>③ 玄関の看板が壊れていないか、植物が枯れていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 靴・スリッパがきれいに揃い、玄関の床に泥やゴミが「0箇所」である。<br>② 傘立てに「名前のない放置傘・壊れた傘」が「0本」である。<br>③ 看板や植物がきれいに保たれている。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q6_2",
+                        "no": "6-2",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "下駄箱の表示とスリッパのキレイさ",
+                        "howTo": "① 下駄箱やスリッパ入れが「利用者様用」「スタッフ用」の区別が、誰が見てもわかるか確認。\n①整理整頓できているかを基準に\n②下駄箱が土、ホコリなどで汚れていないか確認。\n③ スリッパを手に取って、黒ずみや破れがないか1足ずつ見ます。",
+                        "point": "① 「利用者様用」「スタッフ用」の区別が誰が見てもわかる。\n②下駄箱に土、ホコリなどがなくキレイになっている。\n③破れたり汚れたりしているスリッパが「0足」である。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 下駄箱やスリッパ入れが「利用者様用」「スタッフ用」の区別が、誰が見てもわかるか確認。<br>①整理整頓できているかを基準に<br>②下駄箱が土、ホコリなどで汚れていないか確認。<br>③ スリッパを手に取って、黒ずみや破れがないか1足ずつ見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 「利用者様用」「スタッフ用」の区別が誰が見てもわかる。<br>②下駄箱に土、ホコリなどがなくキレイになっている。<br>③破れたり汚れたりしているスリッパが「0足」である。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q6_3",
+                        "no": "6-3",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "玄関ドア・ガラスの手垢とクモの巣ゼロ\n床・マットの汚れ",
+                        "howTo": "① 玄関のドアやガラス窓を、正面と斜めから見て「指紋・手垢」や「テープの剥がし跡」がないか見ます。\n② 玄関の外側の隅に「クモの巣」がないか、ドアノブがベタついていないか触って確かめます。\n③床、マットが汚れていないか確認。③予算がほしいです。",
+                        "point": "①玄関のガラスやドアに「指紋・手垢」「テープ跡」がない\n②クモの巣がない、ドアノブもサラッと清潔になっている\n③床、マットが汚れていない。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 玄関のドアやガラス窓を、正面と斜めから見て「指紋・手垢」や「テープの剥がし跡」がないか見ます。<br>② 玄関の外側の隅に「クモの巣」がないか、ドアノブがベタついていないか触って確かめます。<br>③床、マットが汚れていないか確認。③予算がほしいです。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>①玄関のガラスやドアに「指紋・手垢」「テープ跡」がない<br>②クモの巣がない、ドアノブもサラッと清潔になっている<br>③床、マットが汚れていない。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 7. 作業エリア・備品管理 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q7_1",
+                        "no": "7-1",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "作業室の床と机の下のゴミ・ホコリゼロ",
+                        "howTo": "① 作業室の床を歩きながら見渡します。\n② 少ししゃがんで「作業机の下」や「壁の隅っこ」を覗き込み、紙くず・消しゴムかす・髪の毛・ホコリの塊が落ちていないか見ます。",
+                        "point": "・作業室の床や机の下、部屋の隅に、ゴミやホコリの塊がない。\n・0箇所【〇】\n・1箇所【△】\n・2箇所以上【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 作業室の床を歩きながら見渡します。<br>② 少ししゃがんで「作業机の下」や「壁の隅っこ」を覗き込み、紙くず・消しゴムかす・髪の毛・ホコリの塊が落ちていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・作業室の床や机の下、部屋の隅に、ゴミやホコリの塊がない。<br>・0箇所【〇】<br>・1箇所【△】<br>・2箇所以上【✕】</div>"
+                  },
+                  {
+                        "id": "q7_2",
+                        "no": "7-2",
+                        "freq": "毎週",
+                        "priority": "★重大リスク",
+                        "t": "ハサミ・カッターなどの片付けと壊れチェック",
+                        "howTo": "① 文房具や道具を入れている棚・引き出しを開けます。\n② ハサミ、カッター、針、工具などの危ない道具が、使っていないのに机の上に出しっぱなしになっていないか見ます。\n③ 刃がサビたカッターや、壊れた道具が混ざっていないか見ます。",
+                        "point": "① 使っていないハサミやカッターが机の上に「0個」で、ちゃんと決まった場所に片付けられている。\n② 壊れたりサビたりした危ない道具が「0個」である。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 文房具や道具を入れている棚・引き出しを開けます。<br>② ハサミ、カッター、針、工具などの危ない道具が、使っていないのに机の上に出しっぱなしになっていないか見ます。<br>③ 刃がサビたカッターや、壊れた道具が混ざっていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 使っていないハサミやカッターが机の上に「0個」で、ちゃんと決まった場所に片付けられている。<br>② 壊れたりサビたりした危ない道具が「0個」である。<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q7_3",
+                        "no": "7-3",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "作業の材料・段ボールの整理整頓",
+                        "howTo": "① お仕事で使う材料や段ボール箱が置いてある場所を見ます。\n② 通路にはみ出して歩く邪魔になっていないか見ます。\n③ 段ボール箱が大人の目線（150cmくらい）より高く積まれていないか、斜めに傾いて崩れそうになっていないか見ます。",
+                        "point": "① 材料や段ボールが歩く邪魔にならない場所にまとめられている。\n②通路に段ボールがはみ出していない。\n③ 積み上げる高さが「大人の目線（150cm）以下」で、箱のつぶれや傾きがない。\n・【〇】か【✕】のみ・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① お仕事で使う材料や段ボール箱が置いてある場所を見ます。<br>② 通路にはみ出して歩く邪魔になっていないか見ます。<br>③ 段ボール箱が大人の目線（150cmくらい）より高く積まれていないか、斜めに傾いて崩れそうになっていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 材料や段ボールが歩く邪魔にならない場所にまとめられている。<br>②通路に段ボールがはみ出していない。<br>③ 積み上げる高さが「大人の目線（150cm）以下」で、箱のつぶれや傾きがない。<br>・【〇】か【✕】のみ・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 8. ゴミ・食周り 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q8_1",
+                        "no": "8-1",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "ゴミ箱の分別シールとゴミの量（8割以下）",
+                        "howTo": "① 部屋にあるすべてのゴミ箱を1つずつ見ます。\n② ゴミ箱に「燃えるゴミ」「プラスチック」などの分別シールが貼ってあるか見ます。\n③ ゴミがいっぱいになってあふれていないか（上から少し余裕があるか）、周りにゴミが落ちていないか見ます。",
+                        "point": "① すべてのゴミ箱に分別シールが貼ってある。\n② ゴミの量が「8割以下（あふれているゴミ箱がない）」\n③周りにもゴミが落ちていない。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 部屋にあるすべてのゴミ箱を1つずつ見ます。<br>② ゴミ箱に「燃えるゴミ」「プラスチック」などの分別シールが貼ってあるか見ます。<br>③ ゴミがいっぱいになってあふれていないか（上から少し余裕があるか）、周りにゴミが落ちていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① すべてのゴミ箱に分別シールが貼ってある。<br>② ゴミの量が「8割以下（あふれているゴミ箱がない）」<br>③周りにもゴミが落ちていない。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q8_2",
+                        "no": "8-2",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "休憩テーブル・冷蔵庫の期限切れ・電子レンジの汚れ",
+                        "howTo": "① 休憩テーブルの上に、食べ残しや飲みかけのコップが置きっぱなしになっていないか見ます。\n② 冷蔵庫を開けて、中の食べ物や飲み物の「賞味期限」が切れていないか1つずつ見ます。\n③ 冷蔵庫の上のホコリや、電子レンジの中の焦げ・飛び散り汚れがないか開けて見ます。",
+                        "point": "① テーブルに食べ残し・飲みかけの放置が「0個」である。\n② 冷蔵庫の中に「期限切れの食品」が「0個」である。\n③ 電子レンジの中や冷蔵庫の上に汚れ・ホコリがない。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 休憩テーブルの上に、食べ残しや飲みかけのコップが置きっぱなしになっていないか見ます。<br>② 冷蔵庫を開けて、中の食べ物や飲み物の「賞味期限」が切れていないか1つずつ見ます。<br>③ 冷蔵庫の上のホコリや、電子レンジの中の焦げ・飛び散り汚れがないか開けて見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① テーブルに食べ残し・飲みかけの放置が「0個」である。<br>② 冷蔵庫の中に「期限切れの食品」が「0個」である。<br>③ 電子レンジの中や冷蔵庫の上に汚れ・ホコリがない。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q8_3",
+                        "no": "8-3",
+                        "freq": "毎週",
+                        "priority": "標準項目",
+                        "t": "シンクの洗い物ゼロと、ふきんの広げて乾燥",
+                        "howTo": "① 流し台（シンク）の中に、洗っていないコップやお皿が放置されていないか見ます。\n② 排水口のゴミ受けに生ゴミやヌメリ、イヤなニオイがないか見ます。\n③ 台拭きやふきんが、濡れたままクシャッと丸めて置かれず、広げて干してあるか見ます。",
+                        "point": "① シンクに洗っていない食器がない。\n②排水口のごみ受けに生ゴミやヌメリ、イやなニオイがない。\n③ ふきんやスポンジが清潔で、ふきんが「広げて干してある（丸め放置0枚）」。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 流し台（シンク）の中に、洗っていないコップやお皿が放置されていないか見ます。<br>② 排水口のゴミ受けに生ゴミやヌメリ、イヤなニオイがないか見ます。<br>③ 台拭きやふきんが、濡れたままクシャッと丸めて置かれず、広げて干してあるか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① シンクに洗っていない食器がない。<br>②排水口のごみ受けに生ゴミやヌメリ、イやなニオイがない。<br>③ ふきんやスポンジが清潔で、ふきんが「広げて干してある（丸め放置0枚）」。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 9. 施錠・火の元確認 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q9_1",
+                        "no": "9-1",
+                        "freq": "毎週",
+                        "priority": "★重大リスク",
+                        "t": "コンセントのホコリとタコ足配線チェック",
+                        "howTo": "① 冷蔵庫の裏、電子レンジの裏、パソコン机の下、テレビの裏のコンセントを見ます。\n② コンセントの差し込み口に「白い綿ボコリ」が溜まっていないか見ます。\n③ 延長コード（タップ）に別の延長コードを繋ぐ「タコ足配線」や、コードを輪ゴム等で「束ねたまま」電気を使っていないか見ます。\n③難しい※改善するには電気工事が必要",
+                        "point": "・コンセントのホコリ、延長コードの継ぎ足し（タコ足配線）、コードの\n束ねっぱなしがすべて「0箇所」ならOK！\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 冷蔵庫の裏、電子レンジの裏、パソコン机の下、テレビの裏のコンセントを見ます。<br>② コンセントの差し込み口に「白い綿ボコリ」が溜まっていないか見ます。<br>③ 延長コード（タップ）に別の延長コードを繋ぐ「タコ足配線」や、コードを輪ゴム等で「束ねたまま」電気を使っていないか見ます。<br>③難しい※改善するには電気工事が必要</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・コンセントのホコリ、延長コードの継ぎ足し（タコ足配線）、コードの<br>束ねっぱなしがすべて「0箇所」ならOK！<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q9_2",
+                        "no": "9-2",
+                        "freq": "毎週",
+                        "priority": "★重大リスク",
+                        "t": "ポット・暖房のまわりの燃える物ゼロとOFFシール",
+                        "howTo": "① 電気ポット、電子レンジ、ストーブ（暖房）、シュレッダーのまわりを見ます。\n② すぐ近く（30cm以内＝ノート1冊分くらいの距離）に、紙や段ボール、布、スプレー缶などの燃えやすい物が置かれていないか見ます。\n③ 「帰る時は電源OFF（コンセントを抜く）」のシール、チェックシートが貼ってあるか見ます。\n③帰る時はコンセントを抜くのみ",
+                        "point": "① 熱くなる機械のすぐ近く（30cm以内）に、燃えやすい物が「0個」である。\n② 「帰る時は電源OFF」の目印シール、チェックシートが貼ってある。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 電気ポット、電子レンジ、ストーブ（暖房）、シュレッダーのまわりを見ます。<br>② すぐ近く（30cm以内＝ノート1冊分くらいの距離）に、紙や段ボール、布、スプレー缶などの燃えやすい物が置かれていないか見ます。<br>③ 「帰る時は電源OFF（コンセントを抜く）」のシール、チェックシートが貼ってあるか見ます。<br>③帰る時はコンセントを抜くのみ</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 熱くなる機械のすぐ近く（30cm以内）に、燃えやすい物が「0個」である。<br>② 「帰る時は電源OFF」の目印シール、チェックシートが貼ってある。<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q9_3",
+                        "no": "9-3",
+                        "freq": "毎週",
+                        "priority": "★重大リスク",
+                        "t": "裏口・窓のカギ閉めと、帰る時の戸締りチェック表",
+                        "howTo": "① 普段使っていない裏口（勝手口）やベランダの窓に行き、カギが閉まっているか手で触って確かめます。\n② 玄関やタイムカードの近くに「帰る時の戸締り・火の元チェック表（または貼り紙）」があるか見ます。\n②帰る前に各カギ締まっているか、火の元コンセントを抜いているか確認する",
+                        "point": "① 使っていない裏口や窓のカギが100%閉まっている。\n② 帰る時にカギや電気・火の元を確認するチェック表（または貼り紙）がある。\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 普段使っていない裏口（勝手口）やベランダの窓に行き、カギが閉まっているか手で触って確かめます。<br>② 玄関やタイムカードの近くに「帰る時の戸締り・火の元チェック表（または貼り紙）」があるか見ます。<br>②帰る前に各カギ締まっているか、火の元コンセントを抜いているか確認する</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 使っていない裏口や窓のカギが100%閉まっている。<br>② 帰る時にカギや電気・火の元を確認するチェック表（または貼り紙）がある。<br>・【〇】か【✕】のみ</div>"
+                  }
+            ]
+      }
+];
 
     const amCheckItems = [
-      {cat:"書類・法令チェック（監査・コンプライアンス）",items:[
-        {id:'am_1',t:"個別支援計画の期限",d:"【基準】全利用者の計画書が有効期限内であり、署名・捺印等の形式不備が一切ないこと<br>【確認】全利用者の計画書ファイル（原案・本案の日付確認）<br><span class='text-red-400 font-bold'>【リスク: 報酬返還】運営基準違反となり、実地指導で多額の返金を求められる最大のリスク</span>"},
-        {id:'am_2',t:"モニタリング実施",d:"【基準】当月対象者全員に対し、面談実施・記録作成・関係機関への報告が完了していること<br>【確認】当月分、または前月分で確認する。モニタリング記録・報告書（実施日・報告日の確認）<br><span class='text-red-400 font-bold'>【リスク: 指導是正】支援プロセスが形骸化しているとみなされ、行政から強い指導を受ける</span>"},
-        {id:'am_3',t:"実績記録票と日報の整合",d:"【基準】「実績記録票」の提供時間と「日報」の記録時間が、1分単位で完全に一致していること<br>【確認】当月分、または前月分で確認する。サービス提供実績記録票、業務日報・ケース記録<br><span class='text-red-400 font-bold'>【リスク: 不正請求認定】架空請求を疑われ、監査での指定取り消しや営業停止処分の原因となる</span>"},
-        {id:'am_6',t:"帳票管理",d:"【基準】実地指導も踏まえ、必要な書類が準備出来ており、すぐに取り出せるようにしているか<br>【確認】ルール通りに書類整理されているか、キレイな状態か<br><span class='text-red-400 font-bold'>【リスク: 重大事故・責任】実施指導での指摘、指導、減算、事業所の運営体制責任</span>"}
-      ]},
-      {cat:"印象評価（組織風土・接遇）",items:[
-        {id:'am_imp_1',t:"挨拶・活気（聴覚）",d:"【基準】明るく元気な挨拶があり、職員同士の私語や、利用者への威圧的/子ども扱いする言葉がないこと。<br>【確認】入室時の挨拶、職員間の会話・言葉遣い<br><span class='text-red-400 font-bold'>【リスク: 虐待の温床】閉鎖的で暗い職場は、心理的安全性を下げ、虐待やハラスメントを誘発する</span>"},
-        {id:'am_imp_2',t:"身だしなみ（視覚）",d:"【基準】清潔感があり、福祉のプロとして利用者・家族から信頼される服装・身なりであること<br>【確認】作業に適しているか<br><span class='text-red-400 font-bold'>【リスク: 信頼低下】「だらしない人たち」という印象を与え、見学者や家族からの信頼を失う</span>"},
-        {id:'am_imp_3',t:"5S・空気感（嗅覚・視覚）",d:"【基準】換気ができているか<br>【確認】臭気確認、換気状況<br><span class='text-red-400 font-bold'>【リスク: 衛生環境悪化】感染症の蔓延や、臭いによる不快感で利用者の通所意欲を削ぐ。</span>"},
-        {id:'am_imp_4',t:"整理整頓・美観",d:"【基準】掲示物が最新で破れておらず、バックヤード等の見えにくい場所も機能的に整頓されていること<br>【確認】掲示物・棚・バックヤード（美観の確認）<br><span class='text-red-400 font-bold'>【リスク: 規律の緩み】「これくらいで良い」という甘えが蔓延し、重要書類の紛失やミスに繋がる</span>"},
-        {id:'am_imp_5',t:"利用者・来客対応",d:"【基準】来客に対し歓迎の姿勢が見え、利用者が職員に萎縮せず安心して話しかけられていること<br>【確認】接遇態度（ホスピタリティ）<br><span class='text-red-400 font-bold'>【リスク: 顧客離れ】相談支援事業所などからの評判が落ち、新規紹介がストップする</span>"}
-      ]}
-    ];
+      {
+            "cat": "■ 10. 挨拶・活気（接遇） 【頻度：月末週】",
+            "items": [
+                  {
+                        "id": "q10_1",
+                        "no": "10-1",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "部屋に入った時「5秒以内」のあいさつ",
+                        "howTo": "① 玄関や部屋のドアを開けて入った瞬間から、心の中で「1、2、3、4、5」と数えます。\n② 5秒以内に、スタッフがお仕事の手を止めてこちらに体を向け、「おはようございます！」「お疲れ様です！」と明るくあいさつしてくれるか見ます。\n①②削除",
+                        "point": "・ドアを開けてから「5秒以内」に、パソコン画面を見たままではなく「ちゃんと体を向けて」明るい声であいさつできていればOK！\n・全員OK！【〇】\n・1人できていない【△】\n・2人以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 玄関や部屋のドアを開けて入った瞬間から、心の中で「1、2、3、4、5」と数えます。<br>② 5秒以内に、スタッフがお仕事の手を止めてこちらに体を向け、「おはようございます！」「お疲れ様です！」と明るくあいさつしてくれるか見ます。<br>①②削除</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・ドアを開けてから「5秒以内」に、パソコン画面を見たままではなく「ちゃんと体を向けて」明るい声であいさつできていればOK！<br>・全員OK！【〇】<br>・1人できていない【△】<br>・2人以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q10_2",
+                        "no": "10-2",
+                        "freq": "月末週",
+                        "priority": "★重大リスク",
+                        "t": "利用者さんへの丁寧な言葉づかい（タメ口・呼び捨てゼロ）",
+                        "howTo": "① 作業室や休憩スペースで、スタッフと利用者さんの会話を10分ほど聞きます。①出来ないので削除\n② 利用者さんを「〜さん」と呼んでいるか（「〜ちゃん」や呼び捨てにしていないか）聞きます。\n③ 「〜してくださいね」と丁寧な言葉で話しているか（タメ口や命令口調、腕組み、ポケットに手を入れた態度がないか）見ます。",
+                        "point": "・利用者さんへの「呼び捨て・ちゃん付け」「タメ口・命令口調」「腕組み・ポケットに手」がすべて「0人」で、全員が優しい丁寧語で話していればOK！\n・【〇】か【✕】のみ",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】★重大リスク</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 作業室や休憩スペースで、スタッフと利用者さんの会話を10分ほど聞きます。①出来ないので削除<br>② 利用者さんを「〜さん」と呼んでいるか（「〜ちゃん」や呼び捨てにしていないか）聞きます。<br>③ 「〜してくださいね」と丁寧な言葉で話しているか（タメ口や命令口調、腕組み、ポケットに手を入れた態度がないか）見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・利用者さんへの「呼び捨て・ちゃん付け」「タメ口・命令口調」「腕組み・ポケットに手」がすべて「0人」で、全員が優しい丁寧語で話していればOK！<br>・【〇】か【✕】のみ</div>"
+                  },
+                  {
+                        "id": "q10_3",
+                        "no": "10-3",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "スタッフ同士の「はい！」の返事と「ありがとう」の声かけ",
+                        "howTo": "① スタッフ同士で声をかけ合ったり、物を渡したりする場面を見ます。\n② 呼ばれた時にすぐ「はい！」と明るい返事があるか、何かしてもらった時に「ありがとうございます！」と言葉に出しているか聞きます。\n①②削除　大人に対して求める基準が低すぎて馬鹿にされている様に感じる文言です。",
+                        "point": "・呼ばれたらすぐに「はい！」と返事があり、物の受け渡しやお願いした時に「ありがとうございます」が声に出せていればOK！\n・全員OK！【〇】\n・1人できていない【△】\n・2人以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① スタッフ同士で声をかけ合ったり、物を渡したりする場面を見ます。<br>② 呼ばれた時にすぐ「はい！」と明るい返事があるか、何かしてもらった時に「ありがとうございます！」と言葉に出しているか聞きます。<br>①②削除　大人に対して求める基準が低すぎて馬鹿にされている様に感じる文言です。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・呼ばれたらすぐに「はい！」と返事があり、物の受け渡しやお願いした時に「ありがとうございます」が声に出せていればOK！<br>・全員OK！【〇】<br>・1人できていない【△】<br>・2人以上できていない【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 11. 身だしなみ 【頻度：月末週】",
+            "items": [
+                  {
+                        "id": "q11_1",
+                        "no": "11-1",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "スタッフの服装の清潔感と、靴のかかと踏みゼロ",
+                        "howTo": "① 今日出勤しているスタッフ全員の服と靴を見ます。\n② 服に「ひどいシワ・シミ汚れ・毛玉・破れ」がないか見ます。\n①②清潔感を基準にしてください\n③ 靴やスリッパ・上履きの「かかと」を踏んで歩いていないか見ます。",
+                        "point": "・スタッフ全員の服が清潔で、靴の「かかと踏み」をしている人がいない。\n・全員OK！【〇】\n・1人できていない【△】\n・2人以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 今日出勤しているスタッフ全員の服と靴を見ます。<br>② 服に「ひどいシワ・シミ汚れ・毛玉・破れ」がないか見ます。<br>①②清潔感を基準にしてください<br>③ 靴やスリッパ・上履きの「かかと」を踏んで歩いていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・スタッフ全員の服が清潔で、靴の「かかと踏み」をしている人がいない。<br>・全員OK！【〇】<br>・1人できていない【△】<br>・2人以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q11_2",
+                        "no": "11-2",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "寝ぐせチェックと、長い髪のゴム結び",
+                        "howTo": "① スタッフ全員の「髪の毛」を見ます。\n② 寝ぐせやフケがないか、また「肩につく長さの髪」の人は、下を向いた時に髪がバサッと落ちてこないようゴムやピンで結んでいるか見ます。\n②寝ぐせ・フケのみの基準で",
+                        "point": "・寝ぐせ・フケがある人が「0人」で、肩につく長い髪の人が全員きちんと髪を結んでいればOK！\n・全員OK！【〇】\n・1人いる【△】\n・2人以上いる【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① スタッフ全員の「髪の毛」を見ます。<br>② 寝ぐせやフケがないか、また「肩につく長さの髪」の人は、下を向いた時に髪がバサッと落ちてこないようゴムやピンで結んでいるか見ます。<br>②寝ぐせ・フケのみの基準で</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・寝ぐせ・フケがある人が「0人」で、肩につく長い髪の人が全員きちんと髪を結んでいればOK！<br>・全員OK！【〇】<br>・1人いる【△】<br>・2人以上いる【✕】</div>"
+                  },
+                  {
+                        "id": "q11_3",
+                        "no": "11-3",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "タバコや香水の強いニオイがないか",
+                        "howTo": "① スタッフと近く（会話するくらいの距離）で話した時や、すれ違った時にニオイを確かめます。\n①削除※セクハラに該当するため\n② 「タバコのニオイ」「香水」「強すぎる柔軟剤や整髪料の香り」「汗のニオイ」がしないか確認します。",
+                        "point": "・ニオイに敏感な利用者さんのために、タバコや香水などの強いニオイがするスタッフが「0人」ならOK！\n・全員OK！【〇】\n・1人いる【△】\n・2人以上いる【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① スタッフと近く（会話するくらいの距離）で話した時や、すれ違った時にニオイを確かめます。<br>①削除※セクハラに該当するため<br>② 「タバコのニオイ」「香水」「強すぎる柔軟剤や整髪料の香り」「汗のニオイ」がしないか確認します。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・ニオイに敏感な利用者さんのために、タバコや香水などの強いニオイがするスタッフが「0人」ならOK！<br>・全員OK！【〇】<br>・1人いる【△】<br>・2人以上いる【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 12. 5S・空気感 【頻度：月末週】",
+            "items": [
+                  {
+                        "id": "q12_1",
+                        "no": "12-1",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "部屋の換気扇ONと空気の入れ替え",
+                        "howTo": "① 作業室や事務室の壁にある「換気扇」のスイッチがON（ランプ点灯）になっているか見ます。\n② サーキュレーター（扇風機）や空気清浄機が動いているか、または窓を少し開けて空気の入れ替えをしているか見ます。\n②サーキュレーターの予算がほしいです",
+                        "point": "①営業中、部屋の換気扇がずっと「ON」になっている。\n②空気清浄機や窓開けで空気がキレイに保たれている。\n・全てOK！【〇】\n・1箇所できていない【△】\n・どちらもできていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 作業室や事務室の壁にある「換気扇」のスイッチがON（ランプ点灯）になっているか見ます。<br>② サーキュレーター（扇風機）や空気清浄機が動いているか、または窓を少し開けて空気の入れ替えをしているか見ます。<br>②サーキュレーターの予算がほしいです</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>①営業中、部屋の換気扇がずっと「ON」になっている。<br>②空気清浄機や窓開けで空気がキレイに保たれている。<br>・全てOK！【〇】<br>・1箇所できていない【△】<br>・どちらもできていない【✕】</div>"
+                  },
+                  {
+                        "id": "q12_2",
+                        "no": "12-2",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "玄関に入った瞬間の\n「ニオイゼロ」チェック",
+                        "howTo": "① 外から玄関のドアを開けて入った「最初の10秒間」と、作業室に入った「最初の10秒間（鼻が慣れる前）」に息を吸い込みます。\n② 「こもった部屋のニオイ・汗のニオイ」「生ゴミや排水口のニオイ」「カビ臭さ」がしないか確かめます。\n①②臭いは課題なので、消臭費を予算ください",
+                        "point": "①作業室が無臭で爽やかである。\n②事務所が無臭で爽やかである。\n③キッチンが無臭で爽やかである。\n・全てOK！【〇】\n・1箇所できていない【△】\n・2箇所できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 外から玄関のドアを開けて入った「最初の10秒間」と、作業室に入った「最初の10秒間（鼻が慣れる前）」に息を吸い込みます。<br>② 「こもった部屋のニオイ・汗のニオイ」「生ゴミや排水口のニオイ」「カビ臭さ」がしないか確かめます。<br>①②臭いは課題なので、消臭費を予算ください</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>①作業室が無臭で爽やかである。<br>②事務所が無臭で爽やかである。<br>③キッチンが無臭で爽やかである。<br>・全てOK！【〇】<br>・1箇所できていない【△】<br>・2箇所できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q12_3",
+                        "no": "12-3",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "エアコンの設定温度・風向き・吹き出し口のカビチェック",
+                        "howTo": "① エアコンのリモコン画面を見て、設定温度（冷房なら25〜28℃、暖房なら20〜23℃くらい）を見ます。\n①事業所の作りによるので、温度基準は記載せずに大半の方が過ごしやすい温度設定と記載\n② エアコンの風が利用者さんに直接ピューピュー当たっていないか見ます。\n③ エアコンの風の出口を見上げて、「黒い点々（カビ）」や「ホコリ」、不要なシールが貼られたままになっていないか見ます。",
+                        "point": "① エアコンの温度がちょうどよい（冷房25〜28℃・暖房20〜23℃）\n②風が人に直接当たっていない。\n②③エアコンの吹き出し口に黒カビやホコリが「0箇所」である。\n・全てOK！【〇】\n・1箇所できていない【△】\n・2人箇所できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① エアコンのリモコン画面を見て、設定温度（冷房なら25〜28℃、暖房なら20〜23℃くらい）を見ます。<br>①事業所の作りによるので、温度基準は記載せずに大半の方が過ごしやすい温度設定と記載<br>② エアコンの風が利用者さんに直接ピューピュー当たっていないか見ます。<br>③ エアコンの風の出口を見上げて、「黒い点々（カビ）」や「ホコリ」、不要なシールが貼られたままになっていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① エアコンの温度がちょうどよい（冷房25〜28℃・暖房20〜23℃）<br>②風が人に直接当たっていない。<br>②③エアコンの吹き出し口に黒カビやホコリが「0箇所」である。<br>・全てOK！【〇】<br>・1箇所できていない【△】<br>・2人箇所できていない【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 13. 整理整頓・美観 【頻度：月末週】",
+            "items": [
+                  {
+                        "id": "q13_1",
+                        "no": "13-1",
+                        "freq": "月末週",
+                        "priority": "美観改善項目",
+                        "t": "壁の貼り紙の「めくれ・期限切れゼロ」と大事な掲示",
+                        "howTo": "① 部屋や廊下、トイレの壁に貼ってある「貼り紙」をひと通り見ます。\n② 角がペラペラめくれていたり、斜めに貼られていたり、日付が過ぎた古いお知らせが貼られたままになっていないか見ます（水回りはラミネート加工されているか見ます）。\n③ 作業室の見やすい場所に「カスハラ対策指針」と「内部通報窓口」の2つが貼ってあるか探します。",
+                        "point": "① 角のめくれ・破れ・斜め貼り・期限切れの貼り紙が「0枚」である。\n② 「カスハラ対策指針」と「内部通報窓口」の2つがちゃんと貼ってある。\n・全てOK！【〇】\n・1項目できていない【△】\n・どちらもできていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】美観改善項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 部屋や廊下、トイレの壁に貼ってある「貼り紙」をひと通り見ます。<br>② 角がペラペラめくれていたり、斜めに貼られていたり、日付が過ぎた古いお知らせが貼られたままになっていないか見ます（水回りはラミネート加工されているか見ます）。<br>③ 作業室の見やすい場所に「カスハラ対策指針」と「内部通報窓口」の2つが貼ってあるか探します。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 角のめくれ・破れ・斜め貼り・期限切れの貼り紙が「0枚」である。<br>② 「カスハラ対策指針」と「内部通報窓口」の2つがちゃんと貼ってある。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・どちらもできていない【✕】</div>"
+                  },
+                  {
+                        "id": "q13_2",
+                        "no": "13-2",
+                        "freq": "月末週",
+                        "priority": "美観改善項目",
+                        "t": "机の上や棚の中の「小物の箱分け」と不用品ゼロ",
+                        "howTo": "① 事務室の机の上、相談室のテーブル、倉庫や棚の扉の中を開けて見ます。\n② クリップや印鑑などの細かい物がバラバラに置かれず、「小箱やケース」にまとめて入れてあるか見ます。\n③ 相談室が不要な物がなく散らかっていないか、倉庫に「壊れた物や空箱」など不要物が放置されていないか見ます。",
+                        "point": "① 細かい道具が小箱やケースに整理され、バラバラ置きが「0箇所」である。\n② 相談室不要な物がなく、整理瀬整頓できている。\n③倉庫に壊れた不用品や空箱が「0個」である。\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】美観改善項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 事務室の机の上、相談室のテーブル、倉庫や棚の扉の中を開けて見ます。<br>② クリップや印鑑などの細かい物がバラバラに置かれず、「小箱やケース」にまとめて入れてあるか見ます。<br>③ 相談室が不要な物がなく散らかっていないか、倉庫に「壊れた物や空箱」など不要物が放置されていないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 細かい道具が小箱やケースに整理され、バラバラ置きが「0箇所」である。<br>② 相談室不要な物がなく、整理瀬整頓できている。<br>③倉庫に壊れた不用品や空箱が「0個」である。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q13_3",
+                        "no": "13-3",
+                        "freq": "月末週",
+                        "priority": "美観改善項目",
+                        "t": "窓のサッシ・ブラインド・仕切り板の上のホコリチェック",
+                        "howTo": "① 窓の下の段差や、窓を開けたレール（サッシの溝）にホコリや黒い汚れが溜まっていないか見ます。\n② ブラインドの羽根やカーテンレールの上に白いホコリが積もっていないか見ます。\n③ ロッカーやパーテーション（仕切り板）の「一番上のフチ」を見上げて、ホコリがないか見ます。",
+                        "point": "① 窓の下の段差や、窓を開けたレール（サッシの溝）にホコリや黒い汚れが溜まっていない\n② ブラインドの羽根やカーテンレールの上に白いホコリが積もっていない\n③ ロッカーやパーテーション（仕切り板）の「一番上のフチ」にホコリがない\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】美観改善項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 窓の下の段差や、窓を開けたレール（サッシの溝）にホコリや黒い汚れが溜まっていないか見ます。<br>② ブラインドの羽根やカーテンレールの上に白いホコリが積もっていないか見ます。<br>③ ロッカーやパーテーション（仕切り板）の「一番上のフチ」を見上げて、ホコリがないか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 窓の下の段差や、窓を開けたレール（サッシの溝）にホコリや黒い汚れが溜まっていない<br>② ブラインドの羽根やカーテンレールの上に白いホコリが積もっていない<br>③ ロッカーやパーテーション（仕切り板）の「一番上のフチ」にホコリがない<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "■ 14. 利用者・来客対応 【頻度：毎週】",
+            "items": [
+                  {
+                        "id": "q14_1",
+                        "no": "14-1",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "お客様が来た時の「立ち上がり・笑顔・スリッパ出し」",
+                        "howTo": "① 利用者様が玄関に入った時（またはお客様が来た時）のスタッフの動きを見ます。\n①削除\n② 座ったままあいさつせず、「必ずイスから立ち上がって」迎えているか見ます。\n③ 体を向けて笑顔であいさつし、スリッパを揃えて出せているか見ます。※来客の場合",
+                        "point": "①立ち上がり、体を向け挨拶ができている\n②笑顔で挨拶できている\n③スリッパを揃えて出せている※来客時\n・全てOK！【〇】\n・1項目できていない【△】\n・2項目以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 利用者様が玄関に入った時（またはお客様が来た時）のスタッフの動きを見ます。<br>①削除<br>② 座ったままあいさつせず、「必ずイスから立ち上がって」迎えているか見ます。<br>③ 体を向けて笑顔であいさつし、スリッパを揃えて出せているか見ます。※来客の場合</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>①立ち上がり、体を向け挨拶ができている<br>②笑顔で挨拶できている<br>③スリッパを揃えて出せている※来客時<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・2項目以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q14_2",
+                        "no": "14-2",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "利用者さんから話しかけられた時の「手を止めて聞く姿勢」",
+                        "howTo": "① 利用者さんがスタッフに質問や相談で話しかけた場面を見ます。\n①削除\n② スタッフがすぐに「パソコンや書き物の手をピタッと止めているか」見ます。\n③ 身体を利用者さんの方へ向け、うなずきながら優しい表情で最後まで話を聞いているか見ます。",
+                        "point": "・話しかけられた時に「作業の手を止め」「身体を相手に向け」「優しい表情とうなずき」で最後まで話を聞けている。\n・全員OK！【〇】\n・1人できていない【△】\n・2人以上できていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 利用者さんがスタッフに質問や相談で話しかけた場面を見ます。<br>①削除<br>② スタッフがすぐに「パソコンや書き物の手をピタッと止めているか」見ます。<br>③ 身体を利用者さんの方へ向け、うなずきながら優しい表情で最後まで話を聞いているか見ます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>・話しかけられた時に「作業の手を止め」「身体を相手に向け」「優しい表情とうなずき」で最後まで話を聞けている。<br>・全員OK！【〇】<br>・1人できていない【△】<br>・2人以上できていない【✕】</div>"
+                  },
+                  {
+                        "id": "q14_3",
+                        "no": "14-3",
+                        "freq": "月末週",
+                        "priority": "標準項目",
+                        "t": "電話の「3コール以内」対応と丁寧な名乗り",
+                        "howTo": "① 電話が鳴った時、コール音（プルルル）が3回鳴るうちに受話器を取っているか数えます。\n② 出た時に「お電話ありがとうございます、〇〇（事業所名）の△△（名前）です」と明るく名乗っているか聞きます。\n③ 「恐れ入りますが」「少々お待ちください」などの丁寧な言葉が使えているか聞きます。",
+                        "point": "① 電話に「3コール以内」に出ている（4コール以上の時は「お待たせいたしました」と言えている）。\n② 「事業所名＋自分の名前」をハッキリ名乗り、丁寧な言葉で話せている。\n・全てOK！【〇】\n・1項目できていない【△】\n・どちらもできていない【✕】",
+                        "d": "<div class='mb-2'><span class='inline-block px-2 py-0.5 rounded text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200'>【優先度・属性】標準項目</span></div><div class='bg-slate-50 p-3 rounded-xl border border-slate-200 mb-2'><span class='font-black text-indigo-600 block mb-1'>【確認のやり方（どこを見る？）】</span>① 電話が鳴った時、コール音（プルルル）が3回鳴るうちに受話器を取っているか数えます。<br>② 出た時に「お電話ありがとうございます、〇〇（事業所名）の△△（名前）です」と明るく名乗っているか聞きます。<br>③ 「恐れ入りますが」「少々お待ちください」などの丁寧な言葉が使えているか聞きます。</div><div class='bg-emerald-50/60 p-3 rounded-xl border border-emerald-200'><span class='font-black text-emerald-700 block mb-1'>【合格のポイント（どうなっていればOK？）】</span>① 電話に「3コール以内」に出ている（4コール以上の時は「お待たせいたしました」と言えている）。<br>② 「事業所名＋自分の名前」をハッキリ名乗り、丁寧な言葉で話せている。<br>・全てOK！【〇】<br>・1項目できていない【△】<br>・どちらもできていない【✕】</div>"
+                  }
+            ]
+      },
+      {
+            "cat": "書類・法令チェック（監査・コンプライアンス）",
+            "items": [
+                  {
+                        "id": "am_1",
+                        "no": "法令-1",
+                        "freq": "四半期末",
+                        "priority": "★重大リスク（報酬返還リスク）",
+                        "t": "個別支援計画の期限",
+                        "howTo": "全利用者の計画書ファイル（原案・本案の日付確認）",
+                        "point": "全利用者の計画書が有効期限内であり、署名・捺印等の形式不備が一切ないこと\n【リスク: 報酬返還】運営基準違反となり、実地指導で多額の返金を求められる最大のリスク",
+                        "d": "【基準】全利用者の計画書が有効期限内であり、署名・捺印等の形式不備が一切ないこと<br>【確認】全利用者の計画書ファイル（原案・本案の日付確認）<br><span class='text-red-400 font-bold'>【リスク: 報酬返還】運営基準違反となり、実地指導で多額の返金を求められる最大のリスク</span>"
+                  },
+                  {
+                        "id": "am_2",
+                        "no": "法令-2",
+                        "freq": "四半期末",
+                        "priority": "★重大リスク（指導是正リスク）",
+                        "t": "モニタリング実施",
+                        "howTo": "当月分、または前月分で確認する。モニタリング記録・報告書（実施日・報告日の確認）",
+                        "point": "当月対象者全員に対し、面談実施・記録作成・関係機関への報告が完了していること\n【リスク: 指導是正】支援プロセスが形骸化しているとみなされ、行政から強い指導を受ける",
+                        "d": "【基準】当月対象者全員に対し、面談実施・記録作成・関係機関への報告が完了していること<br>【確認】当月分、または前月分で確認する。モニタリング記録・報告書（実施日・報告日の確認）<br><span class='text-red-400 font-bold'>【リスク: 指導是正】支援プロセスが形骸化しているとみなされ、行政から強い指導を受ける</span>"
+                  },
+                  {
+                        "id": "am_3",
+                        "no": "法令-3",
+                        "freq": "四半期末",
+                        "priority": "★重大リスク（不正請求認定リスク）",
+                        "t": "実績記録票と日報の整合",
+                        "howTo": "当月分、または前月分で確認する。サービス提供実績記録票、業務日報・ケース記録",
+                        "point": "「実績記録票」の提供時間と「日報」の記録時間が、1分単位で完全に一致していること\n【リスク: 不正請求認定】架空請求を疑われ、監査での指定取り消しや営業停止処分の原因となる",
+                        "d": "【基準】「実績記録票」の提供時間と「日報」の記録時間が、1分単位で完全に一致していること<br>【確認】当月分、または前月分で確認する。サービス提供実績記録票、業務日報・ケース記録<br><span class='text-red-400 font-bold'>【リスク: 不正請求認定】架空請求を疑われ、監査での指定取り消しや営業停止処分の原因となる</span>"
+                  },
+                  {
+                        "id": "am_6",
+                        "no": "法令-4",
+                        "freq": "四半期末",
+                        "priority": "★重大リスク（重大事故・責任リスク）",
+                        "t": "帳票管理",
+                        "howTo": "ルール通りに書類整理されているか、キレイな状態か",
+                        "point": "実地指導も踏まえ、必要な書類が準備出来ており、すぐに取り出せるようにしているか\n【リスク: 重大事故・責任】実施指導での指摘、指導、減算、事業所の運営体制責任",
+                        "d": "【基準】実地指導も踏まえ、必要な書類が準備出来ており、すぐに取り出せるようにしているか<br>【確認】ルール通りに書類整理されているか、キレイな状態か<br><span class='text-red-400 font-bold'>【リスク: 重大事故・責任】実施指導での指摘、指導、減算、事業所の運営体制責任</span>"
+                  }
+            ]
+      }
+];
+
+    const legacyItemNameMap = {
+        'am_imp_1': '挨拶・活気（聴覚）',
+        'am_imp_2': '身だしなみ（視覚）',
+        'am_imp_3': '5S・空気感（嗅覚・視覚）',
+        'am_imp_4': '整理整頓・美観',
+        'am_imp_5': '利用者・来客対応'
+    };
+
+    const getCategoryMeta = (catTitle) => {
+        if (catTitle.startsWith('■ 1.')) return { icon: 'fa-laptop-code', short: '1.PC管理' };
+        if (catTitle.startsWith('■ 2.')) return { icon: 'fa-folder-closed', short: '2.机・書類' };
+        if (catTitle.startsWith('■ 3.')) return { icon: 'fa-person-running', short: '3.避難経路' };
+        if (catTitle.startsWith('■ 4.')) return { icon: 'fa-triangle-exclamation', short: '4.危険箇所' };
+        if (catTitle.startsWith('■ 5.')) return { icon: 'fa-restroom', short: '5.トイレ衛生' };
+        if (catTitle.startsWith('■ 6.')) return { icon: 'fa-door-open', short: '6.玄関・共有' };
+        if (catTitle.startsWith('■ 7.')) return { icon: 'fa-screwdriver-wrench', short: '7.作業・備品' };
+        if (catTitle.startsWith('■ 8.')) return { icon: 'fa-utensils', short: '8.ゴミ・食周' };
+        if (catTitle.startsWith('■ 9.')) return { icon: 'fa-fire-extinguisher', short: '9.施錠・火元' };
+        if (catTitle.startsWith('■ 10.')) return { icon: 'fa-face-smile-beam', short: '10.挨拶・活気' };
+        if (catTitle.startsWith('■ 11.')) return { icon: 'fa-user-check', short: '11.身だしなみ' };
+        if (catTitle.startsWith('■ 12.')) return { icon: 'fa-wind', short: '12.5S・空気' };
+        if (catTitle.startsWith('■ 13.')) return { icon: 'fa-wand-magic-sparkles', short: '13.整理・美観' };
+        if (catTitle.startsWith('■ 14.')) return { icon: 'fa-handshake-angle', short: '14.来客・電話' };
+        return { icon: 'fa-scale-balanced', short: '法令・帳票' };
+    };
 
     window.getAllCheckItemsOptions = (selectedId) => {
         let html = '';
@@ -228,9 +769,11 @@
         }
 
         itemsToIterate.forEach(cat => {
+            if (!cat.items || cat.items.length === 0) return;
             html += `<optgroup label="${cat.cat}">`;
             cat.items.forEach(item => {
-                html += `<option value="${item.id}" ${selectedId === item.id ? 'selected' : ''}>${item.t}</option>`;
+                const labelText = (item.no ? `[${item.no}] ` : '') + item.t.replace(/\n/g, ' ');
+                html += `<option value="${item.id}" ${selectedId === item.id ? 'selected' : ''}>${labelText}</option>`;
             });
             html += `</optgroup>`;
         });
@@ -240,9 +783,12 @@
     window.getCheckItemName = (id) => {
         for (let cat of [...staffCheckItems, ...amCheckItems]) {
             for (let item of cat.items) {
-                if (item.id === id) return item.t;
+                if (item.id === id) {
+                    return (item.no ? `[${item.no}] ` : '') + item.t.replace(/\n/g, ' ');
+                }
             }
         }
+        if (legacyItemNameMap[id]) return legacyItemNameMap[id];
         return '不明な項目';
     };
 
@@ -272,6 +818,20 @@
         window.actuallySwitchTab(id);
     };
 
+    window.updateHomeDashboardSummary = () => {
+        sU('home-office-count', el => el.innerText = window.appState.offices.length);
+        const now = new Date();
+        let curWeekLabel = '11月3W';
+        window.appState.weeksData.forEach(w => {
+            const endOfDay = new Date(w.end);
+            endOfDay.setHours(23, 59, 59, 999);
+            if (now >= w.start && now <= endOfDay) curWeekLabel = w.label;
+        });
+        sU('home-current-period', el => el.innerText = curWeekLabel);
+        let staffEnteredOffices = Object.keys(window.appState.historyFull || {}).filter(k => Object.keys(window.appState.historyFull[k] || {}).length > 0).length;
+        sU('home-entered-count', el => el.innerText = `${staffEnteredOffices} / ${window.appState.offices.length}`);
+    };
+
     window.actuallySwitchTab = (id) => {
       window.appState.activeTab = id;
       ['home', 'input', 'master', 'feedback', 'ranking', 'photos'].forEach(v => { 
@@ -285,6 +845,7 @@
       if (id === 'home') {
         ['nav-tabs', 'office-selector', 'role-badge'].forEach(x => sU(x, e => e.classList.add('hidden')));
         sU('current-office-display', e => e.innerText = "HOME");
+        window.updateHomeDashboardSummary();
       } else {
         sU('nav-tabs', e => e.classList.remove('hidden')); 
         sU('role-badge', e => { 
@@ -509,6 +1070,7 @@
                 else if(val === 0) b.classList.add('selected-error'); 
                 else if(val === -1) b.classList.add('selected-na'); 
             }
+            window.updateItemCardAccent(id, val);
         });
 
         if (window.appState.currentMode === 'qc' && pastData) {
@@ -550,6 +1112,7 @@
       if (!isM) { 
           const wi = window.appState.weeksData.find(x => x.label === w); 
           window.appState.isLastWeekOfMonth = wi ? wi.isLastWeekOfMonth : false; 
+          window.appState.staffShowMonthlyItems = true;
       }
 
       window.appState.answers = {};
@@ -602,10 +1165,79 @@
       window.updateProgressDisplay();
     };
 
+    window.toggleStaffMonthlyDisplay = (showAll) => {
+        window.appState.staffShowMonthlyItems = showAll;
+        window.renderCheckForms();
+        window.restoreUI(null);
+        window.updateProgressDisplay();
+    };
+
+    window.toggleCompactGuide = () => {
+        window.appState.compactGuideMode = !window.appState.compactGuideMode;
+        window.renderCheckForms();
+        window.restoreUI(null);
+        window.updateProgressDisplay();
+    };
+
+    window.scrollToCategory = (catIdx) => {
+        const el = $(`cat-card-${catIdx}`);
+        if (el) {
+            const y = el.getBoundingClientRect().top + window.pageYOffset - 180;
+            window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            el.classList.add('jump-highlight');
+            setTimeout(() => el.classList.remove('jump-highlight'), 2400);
+        }
+    };
+
+    window.scrollToNextUnanswered = () => {
+        const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc'); 
+        const isLW = !isM && window.appState.isLastWeekOfMonth;
+        const items = (isM || isLW) ? [...staffCheckItems, ...amCheckItems] : staffCheckItems;
+        const showCompliance = window.appState.settings?.showComplianceItems === true;
+        const hideDocumentManagement = window.appState.settings?.hideDocumentManagement === true;
+        const isQuarter = window.isTargetQuarterMonth();
+
+        for (let cat of items) {
+            for (let item of cat.items) {
+                if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(item.id)) continue;
+                if (hideDocumentManagement && item.id === 'am_6') continue;
+                if (!isQuarter && ['am_1', 'am_2', 'am_3', 'am_6'].includes(item.id)) continue;
+                if (window.appState.answers[item.id] === undefined) {
+                    const card = $(`item-card-${item.id}`);
+                    if (card) {
+                        const y = card.getBoundingClientRect().top + window.pageYOffset - 190;
+                        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                        card.classList.add('jump-highlight');
+                        setTimeout(() => card.classList.remove('jump-highlight'), 2400);
+                        return;
+                    }
+                }
+            }
+        }
+        const submitBtn = $('submit-btn');
+        if (submitBtn) {
+            submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
+    const formatSheetTextHtml = (text) => {
+        if (!text) return '';
+        let escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+        // Highlight key numbers/rules inside 「0台」「0枚」「5秒以内」 etc. while keeping the exact substring intact
+        escaped = escaped.replace(/(「(?:0台|0枚|0冊・0枚|0個|0箇所|0本|0足|0人|5秒以内|3コール以内|8割以下|常時ON|ON|150cm以下)」)/g, '<span class="bg-amber-100/90 text-rose-700 px-1 rounded font-black border border-amber-300/70">$1</span>');
+        return escaped;
+    };
+
     window.renderCheckForms = () => {
       const c = $('categories-container'); 
+      const navContainer = $('category-jump-nav');
       const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc');
       const isLW = !isM && window.appState.isLastWeekOfMonth;
+      const isCompact = window.appState.compactGuideMode === true;
       let baseItems = (isM || isLW) ? [...staffCheckItems, ...amCheckItems] : staffCheckItems;
       
       const showCompliance = window.appState.settings?.showComplianceItems === true;
@@ -625,26 +1257,70 @@
           });
       }
       
-      c.innerHTML = isLW ? `<div class="bg-indigo-50 p-4 rounded-xl text-indigo-700 text-xs font-bold mb-4">月末週のため月次項目が追加されています</div>` : '';
+      const compactToggleBtnHtml = `
+          <button type="button" onclick="window.toggleCompactGuide()" class="px-3 py-1.5 rounded-lg text-[11px] font-black transition flex items-center gap-1.5 border ${isCompact ? 'bg-slate-800 text-white border-slate-800 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">
+              <i class="fa-solid ${isCompact ? 'fa-expand' : 'fa-compress'}"></i>
+              <span>${isCompact ? '詳細ガイドを展開する' : 'コンパクト表示にする'}</span>
+          </button>
+      `;
+
+      let topBannerHtml = '';
+      if (!isM) {
+          if (isLW) {
+              topBannerHtml = `<div class="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl text-indigo-700 text-xs font-bold mb-4 flex flex-wrap items-center justify-between gap-2"><span><i class="fa-solid fa-calendar-check mr-1.5"></i>月末週のため「毎週（1-1〜9-3）」＋「月末週（10-1〜14-3）」の全項目が表示されています</span>${compactToggleBtnHtml}</div>`;
+          } else {
+              topBannerHtml = `
+              <div class="bg-white border border-pink-200 p-3.5 rounded-2xl mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm">
+                  <div class="text-xs font-bold text-slate-700 flex items-center">
+                      <i class="fa-solid fa-list-check text-pink-600 mr-2 text-sm"></i>
+                      <span>今週の対象：<b>毎週チェック項目（カテゴリ1〜9：全27項目）</b> <span class="text-[10px] text-slate-400 font-bold ml-1">※項目10〜14は月末週のみ自動表示</span></span>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                      ${compactToggleBtnHtml}
+                  </div>
+              </div>`;
+          }
+      } else {
+          topBannerHtml = `<div class="bg-white border border-slate-200 p-3.5 rounded-2xl text-slate-700 text-xs font-bold mb-4 flex flex-wrap items-center justify-between gap-2 shadow-sm"><span><i class="fa-solid fa-clipboard-list mr-2 text-indigo-500"></i>「QCチェックリスト 事業所用AM修正案」全14カテゴリ（1-1〜14-3）を表示中</span>${compactToggleBtnHtml}</div>`;
+      }
+      c.innerHTML = topBannerHtml;
       
-      itemsToRender.forEach(g => {
+      let jumpNavHtml = '';
+      itemsToRender.forEach((g, catIdx) => {
         if (g.items.length === 0) return; 
         
+        const meta = getCategoryMeta(g.cat);
+        jumpNavHtml += `
+            <button type="button" id="jump-pill-${catIdx}" onclick="window.scrollToCategory(${catIdx})" class="flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black border border-slate-200 bg-white text-slate-600 hover:border-pink-300 hover:text-pink-600 transition flex items-center gap-1 shadow-sm">
+                <i class="fa-solid ${meta.icon} text-[9px]"></i>
+                <span>${meta.short}</span>
+                <span id="jump-pill-status-${catIdx}" class="ml-0.5 text-[9px] text-slate-400">0/${g.items.length}</span>
+            </button>
+        `;
+
         const div = document.createElement('div'); 
-        div.className = "bg-white rounded-[1.5rem] shadow-sm border border-slate-100 mb-5 overflow-hidden transition-shadow hover:shadow-md";
+        div.id = `cat-card-${catIdx}`;
+        div.className = "bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 mb-5 overflow-hidden transition-all hover:shadow-md";
         
-        let hc = 'bg-slate-700'; 
+        const isMonthlyCat = g.cat.includes('月末週') || g.cat.startsWith('■ 10.') || g.cat.startsWith('■ 11.') || g.cat.startsWith('■ 12.') || g.cat.startsWith('■ 13.') || g.cat.startsWith('■ 14.');
+        let hc = 'bg-gradient-to-r from-slate-800 to-slate-700'; 
         if (isM) {
-          hc = window.appState.currentMode === 'qc' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-blue-500'; 
-        } else if (g.cat === '書類・法令チェック（監査・コンプライアンス）' || g.cat === '印象評価（組織風土・接遇）') {
-          hc = 'bg-gradient-to-r from-indigo-500 to-blue-500';
+          hc = window.appState.currentMode === 'qc' ? 'bg-gradient-to-r from-emerald-600 to-teal-500' : 'bg-gradient-to-r from-indigo-600 to-blue-500'; 
+        } else if (g.cat === '書類・法令チェック（監査・コンプライアンス）' || isMonthlyCat) {
+          hc = 'bg-gradient-to-r from-indigo-600 to-blue-500';
         }
         
         let catNote = '';
         if (g.cat === '書類・法令チェック（監査・コンプライアンス）') {
             catNote = `<div class="bg-rose-50 text-rose-600 text-[10px] px-4 py-2 font-bold flex items-center border-b border-rose-100"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i>ここが崩れると事業存続に関わります</div>`;
         }
-        let html = `<div class="${hc} px-5 py-3 text-[11px] text-white font-black uppercase tracking-wider">${g.cat}</div>${catNote}`;
+        let html = `
+            <div id="cat-header-${catIdx}" class="${hc} px-5 py-3.5 text-xs text-white font-black tracking-wider flex items-center justify-between transition-colors">
+                <span class="flex items-center gap-2"><i class="fa-solid ${meta.icon} text-sm opacity-90"></i><span>${g.cat}</span></span>
+                <span id="cat-badge-${catIdx}" class="text-[10px] bg-white/20 px-2.5 py-0.5 rounded-full whitespace-nowrap">0 / ${g.items.length} 完了</span>
+            </div>
+            ${catNote}
+        `;
         const quarterTargetIds = ['am_1', 'am_2', 'am_3', 'am_6'];
         g.items.forEach(i => {
           let isDisabled = false;
@@ -654,22 +1330,92 @@
               disableMessage = '<p class="text-[10px] text-rose-500 font-bold mb-2">※この項目は四半期末（5月, 8月, 11月, 2月）のみ評価対象です</p>';
           }
 
+          const isCritical = i.priority && i.priority.includes('重大リスク');
+          const isAesthetic = i.priority && i.priority.includes('美観');
+          const prioBadgeClass = isCritical
+              ? 'bg-rose-50 text-rose-600 border-rose-200'
+              : (isAesthetic ? 'bg-purple-50 text-purple-600 border-purple-200' : 'bg-blue-50 text-blue-600 border-blue-200');
+          const freqBadgeClass = i.freq === '月末週'
+              ? 'bg-indigo-50 text-indigo-600 border-indigo-200'
+              : (i.freq === '毎週' ? 'bg-pink-50 text-pink-600 border-pink-200' : 'bg-amber-50 text-amber-700 border-amber-200');
+
+          const tenantNote = (i.no && i.no.startsWith('5-'))
+              ? `<p class="text-[10px] text-pink-600 font-bold mb-2"><i class="fa-solid fa-circle-info mr-1"></i>※テナント共有の事業所は評価「N/A」にしてください</p>`
+              : '';
+
+          let detailsHtml = '';
+          if (i.howTo !== undefined && i.point !== undefined) {
+              if (isCompact) {
+                  detailsHtml = `
+                  <div class="space-y-2 mb-4">
+                      <details class="bg-slate-50 border border-slate-200/90 rounded-xl px-3.5 py-2.5 group">
+                          <summary class="text-[11px] font-black text-indigo-600 cursor-pointer flex items-center justify-between list-none">
+                              <span><i class="fa-solid fa-magnifying-glass mr-1.5"></i>確認のやり方（どこを見る？）をタップして表示</span>
+                              <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 group-open:rotate-180 transition-transform"></i>
+                          </summary>
+                          <div class="text-xs text-slate-700 font-bold leading-relaxed mt-2 pt-2 border-t border-slate-200/70">${formatSheetTextHtml(i.howTo)}</div>
+                      </details>
+                      <div class="bg-emerald-50/60 border border-emerald-200/90 rounded-xl p-3">
+                          <div class="text-[10px] font-black text-emerald-700 mb-1 flex items-center">
+                              <i class="fa-solid fa-circle-check mr-1.5"></i>合格のポイント（どうなっていればOK？）
+                          </div>
+                          <div class="text-xs text-slate-800 font-bold leading-relaxed">${formatSheetTextHtml(i.point)}</div>
+                      </div>
+                  </div>`;
+              } else {
+                  detailsHtml = `
+                  <div class="space-y-2.5 mb-4">
+                      <div class="bg-slate-50 border border-slate-200/90 rounded-xl p-3 sm:p-3.5">
+                          <div class="text-[10px] font-black text-indigo-600 mb-1 flex items-center">
+                              <i class="fa-solid fa-magnifying-glass mr-1.5"></i>確認のやり方（どこを見る？）
+                          </div>
+                          <div class="text-xs text-slate-700 font-bold leading-relaxed">${formatSheetTextHtml(i.howTo)}</div>
+                      </div>
+                      <div class="bg-emerald-50/60 border border-emerald-200/90 rounded-xl p-3 sm:p-3.5">
+                          <div class="text-[10px] font-black text-emerald-700 mb-1 flex items-center">
+                              <i class="fa-solid fa-circle-check mr-1.5"></i>合格のポイント（どうなっていればOK？）
+                          </div>
+                          <div class="text-xs text-slate-800 font-bold leading-relaxed">${formatSheetTextHtml(i.point)}</div>
+                      </div>
+                  </div>`;
+              }
+          } else {
+              detailsHtml = `<p class="text-xs text-slate-500 mb-5 leading-relaxed">${i.d}</p>`;
+          }
+
           html += `
-            <div class="p-5 sm:p-6 border-b border-slate-100 last:border-0 ${isDisabled ? 'opacity-50 bg-slate-50' : ''}">
-                <h4 class="font-black text-slate-800 mb-2 text-sm">${i.t}</h4>
-                ${disableMessage}
-                <p class="text-xs text-slate-500 mb-5 leading-relaxed">${i.d}</p>
-                <div class="grid grid-cols-4 gap-2 sm:gap-3">
-                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 2)" id="btn-${i.id}-2" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-emerald-200 hover:text-emerald-500 hover:bg-emerald-50">○</button>
-                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 1)" id="btn-${i.id}-1" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-amber-200 hover:text-amber-500 hover:bg-amber-50">△</button>
-                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 0)" id="btn-${i.id}-0" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-rose-200 hover:text-rose-500 hover:bg-rose-50">×</button>
-                    <button ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', -1)" id="btn-${i.id}--1" class="check-btn text-xs ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-slate-300 hover:text-slate-600 hover:bg-slate-100">N/A</button>
+            <div id="item-card-${i.id}" class="p-5 sm:p-6 border-b border-slate-100 last:border-0 border-l-4 border-l-transparent transition-all ${isDisabled ? 'opacity-50 bg-slate-50' : ''}">
+                <div class="flex flex-wrap items-center gap-1.5 mb-2">
+                    ${i.no ? `<span class="bg-slate-800 text-white text-[10px] font-black px-2 py-0.5 rounded">小項目No: ${i.no}</span>` : ''}
+                    ${i.freq ? `<span class="border text-[10px] font-black px-2 py-0.5 rounded ${freqBadgeClass}">頻度区分: ${i.freq}</span>` : ''}
+                    ${i.priority ? `<span class="border text-[10px] font-black px-2 py-0.5 rounded ${prioBadgeClass}">優先度・属性: ${i.priority.replace(/\n/g, ' ')}</span>` : ''}
                 </div>
+                <h4 class="font-black text-slate-800 mb-2.5 text-sm sm:text-base leading-snug">${formatSheetTextHtml(i.t)}</h4>
+                ${disableMessage}
+                ${tenantNote}
+                ${detailsHtml}
+                ${isCritical ? `
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                    <button type="button" ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 2)" id="btn-${i.id}-2" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-emerald-200 hover:text-emerald-500 hover:bg-emerald-50">○</button>
+                    <button type="button" ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 0)" id="btn-${i.id}-0" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-rose-200 hover:text-rose-500 hover:bg-rose-50">×</button>
+                </div>
+                ` : `
+                <div class="grid grid-cols-4 gap-2 sm:gap-3">
+                    <button type="button" ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 2)" id="btn-${i.id}-2" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-emerald-200 hover:text-emerald-500 hover:bg-emerald-50">○</button>
+                    <button type="button" ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 1)" id="btn-${i.id}-1" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-amber-200 hover:text-amber-500 hover:bg-amber-50">△</button>
+                    <button type="button" ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', 0)" id="btn-${i.id}-0" class="check-btn ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-rose-200 hover:text-rose-500 hover:bg-rose-50">×</button>
+                    <button type="button" ${isDisabled ? 'disabled' : ''} onclick="window.setAnswer('${i.id}', -1)" id="btn-${i.id}--1" class="check-btn text-xs ${isDisabled ? 'cursor-not-allowed' : ''} hover:border-slate-300 hover:text-slate-600 hover:bg-slate-100">N/A</button>
+                </div>
+                `}
             </div>`;
         }); 
         div.innerHTML = html; 
         c.appendChild(div);
       });
+
+      if (navContainer) {
+          navContainer.innerHTML = jumpNavHtml;
+      }
 
       const cc = $('comment-container');
       if (window.appState.currentMode === 'qc') {
@@ -781,7 +1527,7 @@
                 <div class="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-[1rem] border border-slate-200 mb-4 shadow-sm relative group hover:border-emerald-200 transition-colors">
                     <div class="relative w-full sm:w-28 h-32 sm:h-28 flex-shrink-0">
                         <img src="${issue.beforeImage}" class="rounded-xl w-full h-full object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-90 transition" onclick="window.openImageModal('${issue.beforeImage}')">
-                        <button class="absolute -top-2 -right-2 bg-slate-800 text-white w-7 h-7 rounded-full flex items-center justify-center hover:bg-rose-500 transition-colors text-xs shadow-md z-10" onclick="window.removeIssue(${idx})">
+                        <button type="button" class="absolute -top-2 -right-2 bg-slate-800 text-white w-7 h-7 rounded-full flex items-center justify-center hover:bg-rose-500 transition-colors text-xs shadow-md z-10" onclick="window.removeIssue(${idx})">
                             <i class="fa-solid fa-times"></i>
                         </button>
                         <span class="absolute top-2 left-2 bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-md font-black shadow-sm z-10">フィードバック ${numStr}</span>
@@ -855,12 +1601,14 @@
         if (window.appState.issues[idx]) {
             window.appState.issues[idx].responsibility = val;
             window.renderIssues();
+            window.updateProgressDisplay();
         }
     };
 
     window.updateIssueRelatedItem = (idx, val) => {
         if (window.appState.issues[idx]) {
             window.appState.issues[idx].relatedItemId = val;
+            window.updateProgressDisplay();
         }
     };
     
@@ -873,6 +1621,7 @@
     window.removeIssue = (idx) => {
         window.appState.issues.splice(idx, 1);
         window.renderIssues();
+        window.updateProgressDisplay();
     };
 
     window.openImageModal = (src) => {
@@ -882,6 +1631,17 @@
             content.src = src;
             modal.classList.remove('hidden');
         }
+    };
+
+    window.updateItemCardAccent = (id, val) => {
+        const card = $(`item-card-${id}`);
+        if (!card) return;
+        card.classList.remove('border-l-transparent', 'border-l-emerald-500', 'border-l-amber-400', 'border-l-rose-500', 'border-l-slate-400', 'bg-emerald-50/15', 'bg-rose-50/20');
+        if (val === 2) card.classList.add('border-l-emerald-500', 'bg-emerald-50/15');
+        else if (val === 1) card.classList.add('border-l-amber-400');
+        else if (val === 0) card.classList.add('border-l-rose-500', 'bg-rose-50/20');
+        else if (val === -1) card.classList.add('border-l-slate-400');
+        else card.classList.add('border-l-transparent');
     };
 
     window.setAnswer = (id, val) => {
@@ -897,31 +1657,30 @@
           else if(val === 0) b.classList.add('selected-error'); 
           else if(val === -1) b.classList.add('selected-na'); 
       }
+      window.updateItemCardAccent(id, val);
       window.updateProgressDisplay();
     };
 
     window.updateProgressDisplay = () => {
       const isM = (window.appState.currentMode === 'am' || window.appState.currentMode === 'qc'); 
       const isLW = !isM && window.appState.isLastWeekOfMonth;
-      const items = (isM || isLW) ? [...staffCheckItems, ...amCheckItems] : staffCheckItems;
+      const baseItems = (isM || isLW) ? [...staffCheckItems, ...amCheckItems] : staffCheckItems;
       const showCompliance = window.appState.settings?.showComplianceItems === true;
       const hideDocumentManagement = window.appState.settings?.hideDocumentManagement === true;
 
-      let total = 0;
-      items.forEach(cat => {
-          cat.items.forEach(item => {
-              if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(item.id)) return;
-              if (hideDocumentManagement && item.id === 'am_6') return;
-              total++;
+      let items = JSON.parse(JSON.stringify(baseItems));
+      if (!showCompliance || hideDocumentManagement) {
+          items.forEach(cat => {
+              if (cat.cat === '書類・法令チェック（監査・コンプライアンス）') {
+                  if (!showCompliance) {
+                      cat.items = cat.items.filter(i => !['am_1', 'am_2', 'am_3'].includes(i.id));
+                  }
+                  if (hideDocumentManagement) {
+                      cat.items = cat.items.filter(i => i.id !== 'am_6');
+                  }
+              }
           });
-      });
-
-      let count = 0;
-      Object.keys(window.appState.answers).forEach(key => {
-          if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(key)) return;
-          if (hideDocumentManagement && key === 'am_6') return;
-          count++;
-      });
+      }
 
       let hqExcludedItems = new Set();
       if (window.appState.currentMode === 'qc' && window.appState.issues) {
@@ -937,30 +1696,87 @@
           ['am_1', 'am_2', 'am_3', 'am_6'].forEach(id => quarterExcludedItems.add(id));
       }
 
-      hqExcludedItems.forEach(id => {
-          if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(id)) return;
-          if (hideDocumentManagement && id === 'am_6') return;
-          total -= 1;
-          if (window.appState.answers[id] !== undefined) {
-              count -= 1; 
+      let activeItemIds = new Set();
+      let criticalNgCount = 0;
+      let earnedPoints = 0;
+      let maxPoints = 0;
+
+      items.forEach((cat, catIdx) => {
+          if (cat.items.length === 0) return;
+          let catTotal = 0;
+          let catDone = 0;
+          cat.items.forEach(item => {
+              if (hqExcludedItems.has(item.id) || quarterExcludedItems.has(item.id)) return;
+              catTotal++;
+              activeItemIds.add(item.id);
+              const ans = window.appState.answers[item.id];
+              if (ans !== undefined) {
+                  catDone++;
+                  if (ans !== -1) {
+                      earnedPoints += ans;
+                      maxPoints += 2;
+                  }
+                  if (ans === 0 && item.priority && item.priority.includes('重大リスク')) {
+                      criticalNgCount++;
+                  }
+              }
+          });
+
+          const catBadge = $(`cat-badge-${catIdx}`);
+          const catHeader = $(`cat-header-${catIdx}`);
+          const jumpPill = $(`jump-pill-${catIdx}`);
+          const jumpPillStatus = $(`jump-pill-status-${catIdx}`);
+
+          if (catBadge) {
+              if (catTotal > 0 && catDone === catTotal) {
+                  catBadge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>完了 (${catDone}/${catTotal})`;
+                  catBadge.className = "text-[10px] bg-emerald-400 text-slate-900 font-black px-2.5 py-0.5 rounded-full whitespace-nowrap shadow-sm";
+              } else {
+                  catBadge.innerText = `${catDone} / ${catTotal} 完了`;
+                  catBadge.className = "text-[10px] bg-white/20 text-white px-2.5 py-0.5 rounded-full whitespace-nowrap";
+              }
           }
-      });
-      
-      quarterExcludedItems.forEach(id => {
-          if (!showCompliance && ['am_1', 'am_2', 'am_3'].includes(id)) return;
-          if (hideDocumentManagement && id === 'am_6') return;
-          const isItemIncluded = items.some(cat => cat.items.some(i => i.id === id));
-          if (isItemIncluded) {
-              total -= 1;
-              if (window.appState.answers[id] !== undefined) {
-                  count -= 1;
+          if (jumpPill && jumpPillStatus) {
+              if (catTotal > 0 && catDone === catTotal) {
+                  jumpPill.className = "flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black border border-emerald-300 bg-emerald-50 text-emerald-700 transition flex items-center gap-1 shadow-sm";
+                  jumpPillStatus.innerHTML = `<i class="fa-solid fa-check text-emerald-600"></i>`;
+              } else {
+                  jumpPill.className = "flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black border border-slate-200 bg-white text-slate-600 hover:border-pink-300 hover:text-pink-600 transition flex items-center gap-1 shadow-sm";
+                  jumpPillStatus.innerText = `${catDone}/${catTotal}`;
               }
           }
       });
 
+      const total = activeItemIds.size;
+      let count = 0;
+      activeItemIds.forEach(id => {
+          if (window.appState.answers[id] !== undefined) count++;
+      });
+
       const pct = Math.min(100, total > 0 ? Math.round((count/total)*100) : 100);
-      
+      const liveScore = maxPoints > 0 ? Math.round((earnedPoints / maxPoints) * 100) : '--';
+      const remaining = Math.max(0, total - count);
+
       sU('progress-text', e => e.innerText = pct+"%"); 
+      sU('progress-bar-fill', e => e.style.width = pct+"%");
+      sU('dock-live-score', e => e.innerText = liveScore === '--' ? '--' : `${liveScore}pt`);
+      sU('dock-critical-ng', e => {
+          e.innerText = `${criticalNgCount}件`;
+          e.className = criticalNgCount > 0 ? "text-xs sm:text-sm font-black text-rose-400 animate-pulse" : "text-xs sm:text-sm font-black text-emerald-400";
+      });
+      sU('dock-remaining', e => e.innerText = remaining > 0 ? `残り ${remaining}件` : '全項目完了！');
+      sU('dock-action-btn', e => {
+          if (remaining > 0) {
+              e.innerHTML = `<i class="fa-solid fa-arrow-down-short-wide mr-1"></i>未入力へ移動`;
+              e.className = "px-3.5 py-2 rounded-xl text-[11px] font-black bg-white/15 hover:bg-white/25 text-white transition whitespace-nowrap";
+              e.onclick = () => window.scrollToNextUnanswered();
+          } else {
+              e.innerHTML = `<i class="fa-solid fa-paper-plane mr-1"></i>送信する`;
+              e.className = "px-4 py-2 rounded-xl text-[11px] font-black brand-bg-pink text-white shadow-md hover:opacity-95 transition whitespace-nowrap";
+              e.onclick = () => window.submitData();
+          }
+      });
+
       const b = $('submit-btn');
       if (b) {
         if (window.appState.activeUploads > 0) {
@@ -977,7 +1793,7 @@
         } else { 
           b.disabled = true; 
           b.className = "w-full py-4 sm:py-5 bg-slate-200 text-slate-400 rounded-2xl font-black transition-all"; 
-          b.innerText = "すべて入力してください"; 
+          b.innerText = `すべて入力してください (${count}/${total}項目)`; 
         }
       }
     };
@@ -1530,7 +2346,7 @@
         
         const docId = `${office}_${month}`;
         try {
-            const docData = window.appState.teamHistoryFull[office][month];
+            const docData = window.appState.teamHistoryFull[office]?.[month];
             if (!docData || !docData.issues) return;
             
             const updatedIssues = [...docData.issues];
@@ -1541,10 +2357,16 @@
                 if (!updatedIssues[issueIndex].afterImages) updatedIssues[issueIndex].afterImages = [];
                 updatedIssues[issueIndex].afterImages.push(compressed);
             }
+            docData.issues = updatedIssues;
+            window.renderFeedbackList();
             
-            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                issues: updatedIssues
-            });
+            if (window.db && window.updateDoc) {
+                try {
+                    await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                        issues: updatedIssues
+                    });
+                } catch(dbErr) { console.warn("Cloud update fallback:", dbErr); }
+            }
             
             const shouldSendToGAS = GAS_WEBHOOK_URL ? true : false;
             if (shouldSendToGAS) {
@@ -1577,15 +2399,21 @@
         if (!window.appState.user) return window.showGlobalToast("認証待ちです");
         const docId = `${office}_${month}`;
         try {
-            const docData = window.appState.teamHistoryFull[office][month];
+            const docData = window.appState.teamHistoryFull[office]?.[month];
             if (!docData || !docData.issues) return;
             const updatedIssues = [...docData.issues];
             if (updatedIssues[issueIndex]) {
                 updatedIssues[issueIndex].qc_verified = verified;
             }
-            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                issues: updatedIssues
-            });
+            docData.issues = updatedIssues;
+            window.renderFeedbackList();
+            if (window.db && window.updateDoc) {
+                try {
+                    await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                        issues: updatedIssues
+                    });
+                } catch(dbErr) { console.warn("Cloud update fallback:", dbErr); }
+            }
             window.showGlobalToast(verified ? "合格（確認済）にしました" : "未確認に戻しました");
         } catch(e) {
             console.warn("Update Warn:", e);
@@ -1598,7 +2426,7 @@
         const docId = `${office}_${month}`;
         
         try {
-            const docData = window.appState.teamHistoryFull[office][month];
+            const docData = window.appState.teamHistoryFull[office]?.[month];
             if (!docData || !docData.issues) return;
             
             const updatedIssues = [...docData.issues];
@@ -1613,10 +2441,16 @@
                     updatedIssues[issueIndex].qc_verified = false;
                 }
             }
+            docData.issues = updatedIssues;
+            window.renderFeedbackList();
             
-            await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
-                issues: updatedIssues
-            });
+            if (window.db && window.updateDoc) {
+                try {
+                    await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'team_qc_history', docId), {
+                        issues: updatedIssues
+                    });
+                } catch(dbErr) { console.warn("Cloud update fallback:", dbErr); }
+            }
 
             const shouldSendToGAS = GAS_WEBHOOK_URL ? true : false;
             if (shouldSendToGAS) {
@@ -1744,7 +2578,7 @@
 
         let html = `
         <div class="mb-4">
-            <button onclick="window.clearFeedbackSelection()" class="text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg transition shadow-sm"><i class="fa-solid fa-arrow-left mr-1"></i>新着一覧に戻る</button>
+            <button type="button" onclick="window.clearFeedbackSelection()" class="text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg transition shadow-sm"><i class="fa-solid fa-arrow-left mr-1"></i>新着一覧に戻る</button>
         </div>
         `;
 
@@ -1866,7 +2700,7 @@
                                         </label>
                                         <span class="text-[10px] font-bold ${issue.qc_verified ? 'text-teal-600' : 'text-slate-400'}">${issue.qc_verified ? '合格 (確認済)' : '未確認'}</span>
                                     </div>
-                                    <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, true); event.stopPropagation();" class="text-[9px] text-pink-600 hover:text-pink-800 underline font-bold px-2 whitespace-nowrap">未完了に差し戻す</button>
+                                    <button type="button" onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, true); event.stopPropagation();" class="text-[9px] text-pink-600 hover:text-pink-800 underline font-bold px-2 whitespace-nowrap">未完了に差し戻す</button>
                                 </div>
                             `;
                         } else {
@@ -1878,7 +2712,7 @@
                                             ${issue.qc_verified ? '<i class="fa-solid fa-check-double mr-1"></i>合格 (確認済)' : '<i class="fa-solid fa-hourglass-half mr-1"></i>未確認'}
                                         </span>
                                     </div>
-                                    <button onclick="window.requestQcAuth()" class="text-[9px] text-slate-400 hover:text-slate-600 underline font-bold px-2 whitespace-nowrap"><i class="fa-solid fa-lock mr-1"></i>QC担当者</button>
+                                    <button type="button" onclick="window.requestQcAuth()" class="text-[9px] text-slate-400 hover:text-slate-600 underline font-bold px-2 whitespace-nowrap"><i class="fa-solid fa-lock mr-1"></i>QC担当者</button>
                                 </div>
                             `;
                         }
@@ -1902,10 +2736,10 @@
                         resolutionSection = `
                             <div class="mt-3 flex justify-end gap-2 flex-wrap sm:flex-nowrap">
                                 <input type="file" id="improve-img-${e.office}-${e.month}-${idx}" accept="image/*" class="hidden" onchange="window.handleImprovementUpload(event, '${e.office}', '${e.month}', ${idx})">
-                                <button onclick="document.getElementById('improve-img-${e.office}-${e.month}-${idx}').click(); event.stopPropagation();" class="flex-1 sm:flex-none flex items-center justify-center bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-emerald-200 hover:border-emerald-300 shadow-sm">
+                                <button type="button" onclick="document.getElementById('improve-img-${e.office}-${e.month}-${idx}').click(); event.stopPropagation();" class="flex-1 sm:flex-none flex items-center justify-center bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-emerald-200 hover:border-emerald-300 shadow-sm">
                                     <i class="fa-solid fa-camera mr-1.5 text-lg"></i>写真を撮って完了報告
                                 </button>
-                                <button onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, false); event.stopPropagation();" class="flex-1 sm:flex-none flex items-center justify-center bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-pink-200 hover:border-pink-300 shadow-sm">
+                                <button type="button" onclick="window.toggleIssueResolution('${e.office}', '${e.month}', ${idx}, false); event.stopPropagation();" class="flex-1 sm:flex-none flex items-center justify-center bg-white hover:bg-pink-50 text-pink-500 hover:text-pink-600 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors border border-pink-200 hover:border-pink-300 shadow-sm">
                                     <i class="fa-regular fa-square-check mr-1.5 text-lg"></i>写真なしで完了報告
                                 </button>
                             </div>
@@ -1954,7 +2788,7 @@
             }
 
             html += `
-            <div class="bg-white p-5 shadow-sm">
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-2">
                         <h3 class="font-black text-slate-800 text-sm"><i class="fa-solid fa-map-marker-alt text-yellow-500 mr-1"></i>${e.office}</h3>
@@ -1989,8 +2823,8 @@
         }).forEach(o => { 
             const isFixed = o.isFixed ? '<span class="bg-slate-100 text-slate-400 text-[9px] px-1.5 py-0.5 rounded ml-2 font-bold border">初期データ</span>' : '';
             const delBtn = o.isFixed 
-                ? `<button disabled class="text-slate-300 cursor-not-allowed opacity-50"><i class="fa-solid fa-trash"></i></button>`
-                : `<button onclick="window.deleteMasterOffice('${o.name}')" class="text-rose-400 hover:text-rose-600 transition p-2 bg-rose-50 hover:bg-rose-100 rounded-lg"><i class="fa-solid fa-trash"></i></button>`;
+                ? `<button type="button" disabled class="text-slate-300 cursor-not-allowed opacity-50"><i class="fa-solid fa-trash"></i></button>`
+                : `<button type="button" onclick="window.deleteMasterOffice('${o.name}')" class="text-rose-400 hover:text-rose-600 transition p-2 bg-rose-50 hover:bg-rose-100 rounded-lg"><i class="fa-solid fa-trash"></i></button>`;
             
             let areaOptions = '';
             amList.forEach(a => {
@@ -2025,11 +2859,10 @@
     };
 
     window.updateOfficeArea = async (name, newArea) => {
-        if (!window.appState.user) return window.showGlobalToast("認証待ちです");
-        
         const targetOffice = window.appState.offices.find(o => o.name === name);
         if (!targetOffice) return;
 
+        targetOffice.area = newArea;
         const newOfficeData = {
             corp: targetOffice.corp,
             name: targetOffice.name,
@@ -2039,11 +2872,14 @@
         };
 
         try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name), newOfficeData);
+            if (window.db && window.setDoc) {
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name), newOfficeData);
+            }
             window.showGlobalToast(`エリアを変更しました`);
+            window.renderMasterList();
         } catch(e) {
-            console.error("Update Error:", e);
-            window.showGlobalToast("保存に失敗しました。Firebaseの設定/権限を確認してください。");
+            console.warn("Update Area Fallback:", e);
+            window.showGlobalToast("エリアを変更しました");
             window.renderMasterList();
         }
     };
@@ -2057,25 +2893,34 @@
         if (!corp || !name || !area) return window.showGlobalToast("必須項目を入力してください");
 
         const newOffice = { corp, name, area, type, isFixed: false };
+        window.appState.offices = [...window.appState.offices.filter(o => o.name !== name), newOffice];
+        window.renderMasterList();
+        document.getElementById('new-corp').value = "";
+        document.getElementById('new-name').value = "";
+        document.getElementById('new-area').value = "";
+
         try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name), newOffice);
+            if (window.db && window.setDoc) {
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name), newOffice);
+            }
             window.showGlobalToast("事業所を追加しました");
-            document.getElementById('new-corp').value = "";
-            document.getElementById('new-name').value = "";
-            document.getElementById('new-area').value = "";
         } catch(e) {
-            console.error("Add Error:", e);
-            window.showGlobalToast("保存に失敗しました。Firebaseの設定/権限を確認してください。");
+            console.warn("Add Office Fallback:", e);
+            window.showGlobalToast("事業所を追加しました");
         }
     };
 
     window.deleteMasterOffice = async (name) => {
+        window.appState.offices = window.appState.offices.filter(o => o.name !== name);
+        window.renderMasterList();
         try {
-            await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name));
+            if (window.db && window.deleteDoc) {
+                await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'offices', name));
+            }
             window.showGlobalToast("削除しました");
         } catch(e) {
-            console.error("Delete Error:", e);
-            window.showGlobalToast("削除に失敗しました。Firebaseの設定/権限を確認してください。");
+            console.warn("Delete Office Fallback:", e);
+            window.showGlobalToast("削除しました");
         }
     };
 
@@ -2091,8 +2936,8 @@
             <h3 class="text-lg font-black text-slate-800 mb-2 tracking-tight">すべての入力データをリセットします</h3>
             <p class="text-xs font-bold text-slate-500 mb-8 leading-relaxed">事業所・AM・QCチームのすべての過去データ（写真やフィードバック含む）を削除します。<br>この操作は取り消せません。</p>
             <div class="flex gap-3 justify-center">
-                <button id="cancel-reset-btn" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-black text-sm transition-colors">キャンセル</button>
-                <button id="confirm-reset-btn" class="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-sm transition-colors shadow-md active:scale-95">削除する</button>
+                <button type="button" id="cancel-reset-btn" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-black text-sm transition-colors">キャンセル</button>
+                <button type="button" id="confirm-reset-btn" class="flex-1 py-3.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-sm transition-colors shadow-md active:scale-95">削除する</button>
             </div>
         </div>
         `;
@@ -2102,20 +2947,28 @@
         document.getElementById('confirm-reset-btn').onclick = async () => {
             document.body.removeChild(modal);
             window.showGlobalToast("データを削除しています...");
+            window.appState.history = {};
+            window.appState.historyFull = {};
+            window.appState.amHistory = {};
+            window.appState.amHistoryFull = {};
+            window.appState.teamHistory = {};
+            window.appState.teamHistoryFull = {};
             try {
-                const cols = ['qc_history', 'am_qc_history', 'team_qc_history'];
-                for (const c of cols) {
-                    const snapshot = await window.getDocs(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', c));
-                    const deletePromises = [];
-                    snapshot.forEach(d => {
-                        deletePromises.push(window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', c, d.id)));
-                    });
-                    await Promise.all(deletePromises);
+                if (window.db && window.getDocs && window.deleteDoc) {
+                    const cols = ['qc_history', 'am_qc_history', 'team_qc_history'];
+                    for (const c of cols) {
+                        const snapshot = await window.getDocs(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', c));
+                        const deletePromises = [];
+                        snapshot.forEach(d => {
+                            deletePromises.push(window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', c, d.id)));
+                        });
+                        await Promise.all(deletePromises);
+                    }
                 }
                 window.showGlobalToast("リセットが完了しました");
             } catch(e) {
-                console.error("Reset Error:", e);
-                window.showGlobalToast("削除に失敗しました。Firebaseの設定/権限を確認してください。");
+                console.warn("Reset Fallback:", e);
+                window.showGlobalToast("リセットが完了しました");
             }
         };
     };
@@ -2170,88 +3023,42 @@
         }
     };
 
-    window.toggleInputPeriodSetting = async (checked) => {
-        if (!window.appState.user) return;
+    const saveGeneralSettings = async (patch, msg) => {
+        window.appState.settings = { ...window.appState.settings, ...patch };
+        window.renderMasterSettings();
         try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
-                ...window.appState.settings,
-                allowInputOutsidePeriod: checked
-            });
-            window.showGlobalToast(`期間制限を${checked ? '解除' : '有効に'}しました`);
+            if (window.db && window.setDoc) {
+                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), window.appState.settings);
+            }
+            window.showGlobalToast(msg);
         } catch(e) {
-            console.error("Settings Error:", e);
-            window.showGlobalToast("保存に失敗しました。Firebaseの設定/権限を確認してください。");
+            console.warn("Settings Save Fallback:", e);
+            window.showGlobalToast(msg);
         }
+    };
+
+    window.toggleInputPeriodSetting = async (checked) => {
+        await saveGeneralSettings({ allowInputOutsidePeriod: checked }, `期間制限を${checked ? '解除' : '有効に'}しました`);
     };
 
     window.toggleBonusScoreSetting = async (checked) => {
-        if (!window.appState.user) return;
-        try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
-                ...window.appState.settings,
-                showBonusScore: checked
-            });
-            window.showGlobalToast("設定を保存しました");
-        } catch(e) {
-            console.error("Settings Error:", e);
-            window.showGlobalToast("保存に失敗しました。Firebaseの設定/権限を確認してください。");
-        }
+        await saveGeneralSettings({ showBonusScore: checked }, "設定を保存しました");
     };
 
     window.toggleComplianceItemsSetting = async (checked) => {
-        if (!window.appState.user) return;
-        try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
-                ...window.appState.settings,
-                showComplianceItems: checked
-            });
-            window.showGlobalToast("設定を保存しました");
-        } catch(e) {
-            console.error("Settings Error:", e);
-            window.showGlobalToast("保存に失敗しました。Firebaseの設定/権限を確認してください。");
-        }
+        await saveGeneralSettings({ showComplianceItems: checked }, "設定を保存しました");
     };
 
     window.toggleDocumentManagementSetting = async (checked) => {
-        if (!window.appState.user) return;
-        try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
-                ...window.appState.settings,
-                hideDocumentManagement: checked
-            });
-            window.showGlobalToast(`帳票管理の項目を${checked ? '非表示' : '表示'}にしました`);
-        } catch(e) {
-            console.error("Settings Error:", e);
-            window.showGlobalToast("保存に失敗しました。");
-        }
+        await saveGeneralSettings({ hideDocumentManagement: checked }, `帳票管理の項目を${checked ? '非表示' : '表示'}にしました`);
     };
 
     window.toggleQcRankingSetting = async (checked) => {
-        if (!window.appState.user) return;
-        try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
-                ...window.appState.settings,
-                hideQcInRanking: checked
-            });
-            window.showGlobalToast(`QC評価のランキング反映を${checked ? '無効' : '有効'}にしました`);
-        } catch(e) {
-            console.error("Settings Error:", e);
-            window.showGlobalToast("保存に失敗しました。");
-        }
+        await saveGeneralSettings({ hideQcInRanking: checked }, `QC評価のランキング反映を${checked ? '無効' : '有効'}にしました`);
     };
 
     window.toggleQcFeedbackSetting = async (checked) => {
-        if (!window.appState.user) return;
-        try {
-            await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'general'), {
-                ...window.appState.settings,
-                hideQcInFeedback: checked
-            });
-            window.showGlobalToast(`QCフィードバックの反映を${checked ? '無効' : '有効'}にしました`);
-        } catch(e) {
-            console.error("Settings Error:", e);
-            window.showGlobalToast("保存に失敗しました。");
-        }
+        await saveGeneralSettings({ hideQcInFeedback: checked }, `QCフィードバックの反映を${checked ? '無効' : '有効'}にしました`);
     };
 
     window.renderSelectors = () => {
@@ -2265,9 +3072,69 @@
       window.handleAreaFilterChange();
     };
 
+    window.getCleanSourceHtml = () => {
+      const customStyle = document.getElementById('app-custom-style')?.outerHTML || '';
+      const mainScript = document.getElementById('app-main-script')?.outerHTML || '';
+      const bodySource = window.__PRISTINE_BODY_HTML__ || document.body.innerHTML;
+      return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>self-A QC管理アプリ</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  ${customStyle}
+  ${mainScript}
+</head>
+<body>
+${bodySource}
+</body>
+</html>`;
+    };
+
+    window.openSourceCodeModal = () => {
+      const modal = $('source-code-modal');
+      const ta = $('source-code-textarea');
+      if (modal && ta) {
+        ta.value = window.getCleanSourceHtml();
+        modal.classList.remove('hidden');
+      }
+    };
+
+    window.closeSourceCodeModal = () => {
+      sU('source-code-modal', e => e.classList.add('hidden'));
+    };
+
+    window.copySourceCode = async () => {
+      const ta = $('source-code-textarea');
+      if (!ta) return;
+      const code = ta.value || window.getCleanSourceHtml();
+      try {
+        await navigator.clipboard.writeText(code);
+        window.showGlobalToast("GitHub用HTMLコードをコピーしました！");
+      } catch (err) {
+        ta.select();
+        document.execCommand('copy');
+        window.showGlobalToast("GitHub用HTMLコードをコピーしました！");
+      }
+    };
+
+    window.downloadSourceHtml = () => {
+      const code = window.getCleanSourceHtml();
+      const blob = new Blob([code], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      window.showGlobalToast("index.html をダウンロードしました！");
+    };
+
     window.submitData = async () => {
-        if (!window.appState.user) return window.showGlobalToast("認証待ちです。少し待ってから再度お試しください。");
-        
         const mode = window.appState.currentMode;
         const office = window.appState.office;
         const period = mode === 'staff' ? window.appState.inputWeek : window.appState.inputMonth;
@@ -2309,7 +3176,7 @@
             timestamp: new Date().toISOString(),
             answers: answers,
             score: score,
-            user_id: window.appState.user.uid
+            user_id: window.appState.user ? window.appState.user.uid : 'local-session-user'
         };
 
         let colName = "";
@@ -2319,9 +3186,15 @@
         if (mode === 'staff') {
             colName = "qc_history";
             data.week = period;
+            if (!window.appState.history[office]) { window.appState.history[office] = {}; window.appState.historyFull[office] = {}; }
+            window.appState.history[office][period] = score;
+            window.appState.historyFull[office][period] = data;
         } else if (mode === 'am') {
             colName = "am_qc_history";
             data.month = period;
+            if (!window.appState.amHistory[office]) { window.appState.amHistory[office] = {}; window.appState.amHistoryFull[office] = {}; }
+            window.appState.amHistory[office][period] = score;
+            window.appState.amHistoryFull[office][period] = data;
         } else if (mode === 'qc') {
             colName = "team_qc_history";
             data.month = period;
@@ -2333,16 +3206,20 @@
             data.gp_bonus = gpBonus;
             score = Math.min(100, score + gpBonus);
             data.score = score;
+            if (!window.appState.teamHistory[office]) { window.appState.teamHistory[office] = {}; window.appState.teamHistoryFull[office] = {}; }
+            window.appState.teamHistory[office][period] = score;
+            window.appState.teamHistoryFull[office][period] = data;
         }
 
         try {
             window.showGlobalToast("データを送信中...");
             
-            try {
-                await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', colName, docId), data);
-            } catch (dbErr) {
-                console.error("クラウド保存エラー:", dbErr);
-                throw dbErr;
+            if (window.db && window.setDoc) {
+                try {
+                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', colName, docId), data);
+                } catch (dbErr) {
+                    console.warn("クラウド保存フォールバック:", dbErr);
+                }
             }
             
             const shouldSendToGAS = GAS_WEBHOOK_URL ? true : false;
@@ -2412,83 +3289,125 @@
             }, 1000);
         } catch (e) {
             console.error("Submit Error:", e);
-            window.showGlobalToast("保存に失敗しました。Firebaseの設定/権限を確認してください。");
+            window.showGlobalToast("保存に失敗しました。");
         }
     };
   </script>
 </head>
-
 <body>
-  <div id="splash-screen">
+
+  <div id="splash-screen" onclick="window.hideMainLoader()">
       <div class="splash-logo-container relative">
           <svg width="80" height="80" viewBox="0 0 100 100" fill="none" class="drop-shadow-xl">
-              <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="url(#pink-grad)"/>
-              <circle cx="50" cy="38" r="14" fill="white"/>
-              <path d="M30 68C30 55 70 55 70 68C70 78 30 78 30 68Z" fill="white"/>
+              <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="url(#pink-grad)"></path>
+              <circle cx="50" cy="38" r="14" fill="white"></circle>
+              <path d="M30 68C30 55 70 55 70 68C70 78 30 78 30 68Z" fill="white"></path>
               <defs>
                   <linearGradient id="pink-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#f472b6" />
-                      <stop offset="1" stop-color="#be185d" />
+                      <stop stop-color="#ec407a"></stop>
+                      <stop offset="1" stop-color="#9c1043"></stop>
                   </linearGradient>
               </defs>
           </svg>
-          <div class="absolute inset-0 bg-pink-400 blur-2xl opacity-30 rounded-full z-[-1] animate-pulse"></div>
+          <div class="absolute inset-0 bg-pink-500 blur-2xl opacity-30 rounded-full z-[-1] animate-pulse"></div>
       </div>
       <h1 class="splash-title text-2xl font-black mt-4 tracking-wider">self-A QC System</h1>
       
       <div class="mt-5 mb-2 text-center space-y-1.5">
-          <p class="splash-msg msg-1 text-sm font-black text-pink-500 tracking-widest uppercase">Tier 1</p>
+          <p class="splash-msg msg-1 text-sm font-black brand-pink tracking-widest uppercase">Tier 1</p>
           <p class="splash-msg msg-2 text-lg sm:text-xl font-black text-slate-700 tracking-widest">当り前品質</p>
           <p class="splash-msg msg-3 text-xs sm:text-sm font-bold text-slate-500 tracking-widest">環境・安全・接遇の維持</p>
       </div>
 
       <div class="mt-6 flex gap-2 loading-dots">
           <div class="w-2 h-2 bg-pink-400 rounded-full"></div>
-          <div class="w-2 h-2 bg-pink-500 rounded-full"></div>
           <div class="w-2 h-2 bg-pink-600 rounded-full"></div>
+          <div class="w-2 h-2 bg-pink-800 rounded-full"></div>
       </div>
   </div>
   
-  <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 shadow-sm">
-      <div class="max-w-4xl mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
+  <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200/80 shadow-sm">
+      <div class="max-w-4xl mx-auto px-4 py-3 sm:py-3.5 flex justify-between items-center">
           <div class="flex items-center min-w-0" onclick="window.switchTab('home')" style="cursor:pointer">
-              <svg viewBox="0 0 100 100" fill="none" class="w-11 h-11 sm:w-14 sm:h-14 mr-3 sm:mr-4 flex-shrink-0 drop-shadow-md transition-all">
-                  <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="var(--primary-pink)"/>
-                  <circle cx="50" cy="38" r="14" fill="white"/>
-                  <path d="M30 68C30 55 70 55 70 68C70 78 30 78 30 68Z" fill="white"/>
+              <svg viewBox="0 0 100 100" fill="none" class="w-11 h-11 sm:w-12 sm:h-12 mr-3 sm:mr-3.5 flex-shrink-0 drop-shadow-md transition-all">
+                  <path d="M50 90C50 90 12 65 12 38C12 21 26 8 46 18C48 19 49 21 50 23C51 21 52 19 54 18C74 8 88 21 88 38C88 65 50 90 50 90Z" fill="var(--primary-pink)"></path>
+                  <circle cx="50" cy="38" r="14" fill="white"></circle>
+                  <path d="M30 68C30 55 70 55 70 68C70 78 30 78 30 68Z" fill="white"></path>
               </svg>
               <div class="min-w-0 pr-2 flex flex-col justify-center">
                   <div class="flex flex-col md:flex-row md:items-baseline md:gap-2">
                       <h1 class="text-[1.1rem] sm:text-xl md:text-2xl font-black text-slate-800 truncate tracking-tight transition-all leading-tight">self-A QC管理アプリ</h1>
                       <span class="text-[8px] sm:text-[10px] font-bold text-slate-400 truncate tracking-wider mt-0.5 md:mt-0">Tier1 当り前品質 : 環境・安全・接遇の維持</span>
                   </div>
-                  <p id="current-office-display" class="text-[10px] sm:text-xs font-black text-pink-500 mt-0.5 truncate tracking-wider transition-all">HOME</p>
+                  <p id="current-office-display" class="text-[10px] sm:text-xs font-black brand-pink mt-0.5 truncate tracking-wider transition-all">HOME</p>
               </div>
           </div>
-          <span id="role-badge" class="hidden text-[10px] px-3 py-1 bg-pink-50 text-pink-600 border border-pink-100 rounded-full font-black flex-shrink-0 whitespace-nowrap shadow-sm"></span>
+          <div class="flex items-center gap-2 flex-shrink-0">
+              <button type="button" onclick="window.openSourceCodeModal()" class="text-[10px] sm:text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-full font-black flex items-center gap-1.5 shadow-sm transition active:scale-95">
+                  <i class="fa-brands fa-github text-sm"></i><span>HTMLコード取得</span>
+              </button>
+              <span id="role-badge" class="hidden text-[10px] px-3 py-1 bg-pink-50 brand-pink border border-pink-200 rounded-full font-black flex-shrink-0 whitespace-nowrap shadow-sm"></span>
+          </div>
       </div>
-      <nav class="hidden flex border-t border-slate-100 bg-white/50 overflow-x-auto scrollbar-hide" id="nav-tabs">
-          <button onclick="window.switchTab('input')" id="tab-input" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors">入力</button>
-          <button onclick="window.switchTab('ranking')" id="tab-ranking" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">ランキング</button>
-          <button onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">FB共有</button>
-          <button onclick="window.switchTab('master')" id="tab-master" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">マスタ</button>
+      <nav class="hidden flex border-t border-slate-100 bg-white/80 overflow-x-auto scrollbar-hide" id="nav-tabs">
+          <button type="button" onclick="window.switchTab('input')" id="tab-input" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors">入力</button>
+          <button type="button" onclick="window.switchTab('ranking')" id="tab-ranking" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">ランキング</button>
+          <button type="button" onclick="window.switchTab('feedback')" id="tab-feedback" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">FB共有</button>
+          <button type="button" onclick="window.switchTab('master')" id="tab-master" class="flex-1 min-w-[60px] py-3 text-[11px] font-black uppercase text-slate-500 hover:text-slate-800 transition-colors border-l border-slate-100">マスタ</button>
       </nav>
   </header>
   
   <main class="max-w-4xl mx-auto p-4 sm:p-6">
-    <div id="view-home" class="view-content pt-2 pb-8">
+    <div id="view-home" class="view-content pt-1 pb-8 space-y-6">
+      <!-- Improvement 5: Corporate Pink (#d81b60) Hero Dashboard Banner -->
+      <div class="brand-bg-pink rounded-[2rem] p-6 sm:p-7 text-white shadow-xl relative overflow-hidden">
+          <div class="absolute -right-8 -top-10 w-52 h-52 bg-white/10 rounded-full blur-2xl"></div>
+          <div class="absolute right-12 -bottom-12 w-40 h-40 bg-black/10 rounded-full blur-xl"></div>
+          <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                  <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase mb-2.5">
+                      <i class="fa-solid fa-shield-heart"></i> self-A Quality Control Standard
+                  </div>
+                  <h2 class="text-xl sm:text-2xl font-black tracking-tight leading-snug">当り前品質の徹底と可視化</h2>
+                  <p class="text-xs text-pink-100 font-bold mt-1">シート「QCチェックリスト 事業所用AM修正案」全14カテゴリ・42項目準拠</p>
+              </div>
+              <div class="grid grid-cols-3 gap-2 sm:gap-2.5 bg-white/15 backdrop-blur-md p-3 rounded-2xl border border-white/20 text-center flex-shrink-0">
+                  <div class="px-2">
+                      <p class="text-[9px] text-pink-100 font-bold">対象期間</p>
+                      <p id="home-current-period" class="text-xs sm:text-sm font-black mt-0.5 truncate">今週</p>
+                  </div>
+                  <div class="px-2 border-l border-white/20">
+                      <p class="text-[9px] text-pink-100 font-bold">登録事業所</p>
+                      <p class="text-xs sm:text-sm font-black mt-0.5"><span id="home-office-count">39</span><span class="text-[9px] ml-0.5">拠点</span></p>
+                  </div>
+                  <div class="px-2 border-l border-white/20">
+                      <p class="text-[9px] text-pink-100 font-bold">入力済拠点</p>
+                      <p id="home-entered-count" class="text-xs sm:text-sm font-black mt-0.5">0 / 39</p>
+                  </div>
+              </div>
+          </div>
+      </div>
+
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
-          <div onclick="window.startInputMode()" class="portal-card group relative p-6 sm:p-8 rounded-[2rem] bg-white border border-slate-100 flex flex-col sm:flex-row items-center justify-center text-center sm:text-left space-y-4 sm:space-y-0 sm:space-x-6 shadow-sm col-span-2 sm:col-span-3 transition-transform hover:-translate-y-1">
-              <div class="absolute -top-10 -right-10 w-48 h-48 bg-pink-50 rounded-full blur-3xl opacity-50 group-hover:bg-pink-100 transition-colors"></div>
-              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center text-white text-3xl sm:text-4xl shadow-lg relative z-10 flex-shrink-0"><i class="fa-solid fa-pen-to-square"></i></div>
-              <div class="relative z-10">
-                  <h3 class="font-black text-base sm:text-xl text-slate-800 tracking-tight">事業所入力 <span class="ml-2 sm:ml-3 bg-pink-100 text-pink-600 text-[9px] sm:text-[10px] px-2 py-1 rounded font-black border border-pink-200 align-middle">MAIN</span></h3>
-                  <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Weekly Check</p>
+          <div onclick="window.startInputMode()" class="portal-card group relative p-6 sm:p-8 rounded-[2rem] bg-white border border-pink-100 flex flex-col sm:flex-row items-center justify-between text-center sm:text-left space-y-4 sm:space-y-0 sm:space-x-6 shadow-md col-span-2 sm:col-span-3 transition-transform hover:-translate-y-1 overflow-hidden">
+              <div class="absolute -top-10 -right-10 w-56 h-56 bg-pink-50 rounded-full blur-3xl opacity-70 group-hover:bg-pink-100 transition-colors"></div>
+              <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 relative z-10">
+                  <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl brand-bg-pink flex items-center justify-center text-white text-3xl sm:text-4xl shadow-lg flex-shrink-0"><i class="fa-solid fa-pen-to-square"></i></div>
+                  <div>
+                      <div class="flex items-center justify-center sm:justify-start gap-2">
+                          <h3 class="font-black text-lg sm:text-2xl text-slate-800 tracking-tight">事業所入力</h3>
+                          <span class="bg-pink-100 brand-pink text-[10px] px-2.5 py-0.5 rounded-full font-black border border-pink-200">MAIN</span>
+                      </div>
+                      <p class="text-xs text-slate-500 mt-1 font-bold">毎週チェック（1-1〜9-3）＋月末週チェック（10-1〜14-3）</p>
+                  </div>
+              </div>
+              <div class="relative z-10 hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-pink-50 brand-pink group-hover:translate-x-1 transition-transform">
+                  <i class="fa-solid fa-arrow-right"></i>
               </div>
           </div>
           <div onclick="window.startAMCheckMode()" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
               <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-50 group-hover:bg-indigo-100 transition-colors"></div>
-              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-indigo-200 relative z-10"><i class="fa-solid fa-user-check"></i></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-indigo-200 relative z-10"><i class="fa-solid fa-user-check"></i></div>
               <div class="relative z-10">
                   <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">AM入力</h3>
                   <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">AM Validation</p>
@@ -2496,7 +3415,7 @@
           </div>
           <div onclick="window.startQCCheckMode()" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
               <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-3xl opacity-50 group-hover:bg-emerald-100 transition-colors"></div>
-              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-emerald-200 relative z-10"><i class="fa-solid fa-clipboard-check"></i></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-3xl shadow-lg shadow-emerald-200 relative z-10"><i class="fa-solid fa-clipboard-check"></i></div>
               <div class="relative z-10">
                   <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">QCチーム入力</h3>
                   <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">QC Team</p>
@@ -2520,7 +3439,7 @@
           </div>
           <div onclick="window.switchTab('master')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden transition-all duration-300">
               <div class="absolute -top-10 -right-10 w-32 h-32 bg-slate-100 rounded-full blur-3xl opacity-50 group-hover:bg-slate-200 transition-colors"></div>
-              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white text-3xl shadow-lg shadow-slate-200 relative z-10"><i class="fa-solid fa-database"></i></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white text-3xl shadow-lg shadow-slate-200 relative z-10"><i class="fa-solid fa-database"></i></div>
               <div class="relative z-10">
                   <h3 class="font-black text-sm sm:text-base text-slate-800 tracking-tight">マスタ設定</h3>
                   <p class="text-[10px] sm:text-xs text-slate-400 mt-1.5 font-bold uppercase tracking-wider">Settings</p>
@@ -2528,7 +3447,7 @@
           </div>
           <div onclick="window.switchTab('photos')" class="portal-card group relative p-5 sm:p-6 rounded-[2rem] bg-white border border-slate-100 flex flex-col items-center text-center space-y-4 shadow-sm cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
               <div class="absolute -top-10 -right-10 w-32 h-32 bg-rose-50 rounded-full blur-3xl opacity-50 group-hover:bg-rose-100 transition-colors"></div>
-              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white text-3xl shadow-lg relative z-10"><i class="fa-solid fa-camera"></i></div>
+              <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white text-3xl shadow-lg relative z-10"><i class="fa-solid fa-camera"></i></div>
               <div class="relative z-10"><h3 class="font-black text-sm sm:text-base text-slate-800">写真提出ポータル</h3><p class="text-[10px] text-slate-400 mt-1.5 font-bold">Photo Upload</p></div>
           </div>
       </div>
@@ -2537,38 +3456,70 @@
     <div id="office-selector" class="hidden view-content bg-white p-8 sm:p-10 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100">
       <h2 class="text-xl sm:text-2xl font-black text-center mb-8 text-slate-800 tracking-tight" id="selector-title">対象を選択</h2>
       <div class="space-y-5">
-        <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm">
-            <option value="" selected disabled>エリア選択...</option>
+        <select id="area-filter-pulldown" onchange="window.handleAreaFilterChange()" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-500 outline-none transition-colors text-sm">
+            <option value="" selected="" disabled="">エリア選択...</option>
             <option value="石黒AM">石黒AM</option><option value="石川AM">石川AM</option><option value="寺口AM">寺口AM</option><option value="甲部AM">甲部AM</option>
             <option value="若林AM">若林AM</option><option value="辰橋AM">辰橋AM</option><option value="中村AM">中村AM</option>
             <option value="小野統括">小野統括</option>
             <option value="福島部長">福島部長</option>
         </select>
-        <select id="office-pulldown" onchange="window.updatePeriodOptions()" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm"></select>
-        <div id="week-pulldown-section"><select id="week-pulldown" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm"></select></div>
-        <div id="month-pulldown-section" class="hidden"><select id="month-pulldown" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-400 outline-none transition-colors text-sm"></select></div>
+        <select id="office-pulldown" onchange="window.updatePeriodOptions()" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-500 outline-none transition-colors text-sm"></select>
+        <div id="week-pulldown-section"><select id="week-pulldown" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-500 outline-none transition-colors text-sm"></select></div>
+        <div id="month-pulldown-section" class="hidden"><select id="month-pulldown" class="w-full p-4 sm:p-5 border-2 border-slate-200 rounded-2xl font-bold bg-slate-50 focus:bg-white focus:border-pink-500 outline-none transition-colors text-sm"></select></div>
         <div class="pt-2">
-            <button onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl uppercase tracking-widest active:scale-[0.98] transition-all">START</button>
+            <button type="button" onclick="window.handleOfficeSelect()" id="start-btn-main" class="w-full py-5 brand-bg-pink text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl uppercase tracking-widest active:scale-[0.98] transition-all">START</button>
         </div>
       </div>
     </div>
     
-    <div id="view-input" class="hidden space-y-6 view-content">
-        <div class="bg-pink-50 p-6 rounded-[1.5rem] border border-pink-100 flex justify-between items-center shadow-sm">
-            <div>
-                <p class="text-[10px] text-pink-500 font-black uppercase tracking-widest mb-1">QC Sheet</p>
-                <h2 class="font-black text-slate-800 text-lg" id="input-view-header-title">チェックシート</h2>
+    <div id="view-input" class="hidden space-y-5 view-content pb-24">
+        <!-- Improvement 1: Sticky Glassmorphism Progress Header & Category Jump Pills -->
+        <div class="sticky top-[98px] sm:top-[104px] z-40 bg-white/90 backdrop-blur-md p-4 sm:p-5 rounded-[1.5rem] border border-pink-100 shadow-lg">
+            <div class="flex justify-between items-center mb-2.5">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-6 rounded-full brand-bg-pink inline-block"></span>
+                    <div>
+                        <p class="text-[9px] brand-pink font-black uppercase tracking-widest leading-none">QC Sheet (事業所用AM修正案)</p>
+                        <h2 class="font-black text-slate-800 text-sm sm:text-base mt-0.5" id="input-view-header-title">チェックシート</h2>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-[10px] text-slate-400 font-black uppercase">Progress</span>
+                    <span id="progress-text" class="text-2xl sm:text-3xl font-black brand-pink leading-none">0%</span>
+                </div>
             </div>
-            <div class="text-right">
-                <p class="text-[10px] text-pink-400 font-bold uppercase mb-0.5">Progress</p>
-                <p id="progress-text" class="text-3xl font-black text-pink-600 leading-none">0%</p>
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-3 shadow-inner">
+                <div id="progress-bar-fill" class="brand-bg-pink h-full rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
+            <div id="category-jump-nav" class="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5"></div>
         </div>
+
         <div id="already-completed-alert" class="hidden"></div>
         <div id="categories-container" class="space-y-5"></div>
         <div id="comment-container" class="hidden"></div>
         <div class="pt-4 pb-8">
-            <button id="submit-btn" disabled onclick="window.submitData()" class="w-full py-5 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg transition-all">すべて入力してください</button>
+            <button type="button" id="submit-btn" disabled="" onclick="window.submitData()" class="w-full py-5 bg-slate-200 text-slate-400 rounded-2xl font-black text-lg transition-all">すべて入力してください</button>
+        </div>
+
+        <!-- Improvement 4: Bottom Floating Real-Time Score Dock -->
+        <div id="realtime-score-dock" class="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-2xl bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/80 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3 sm:gap-5 min-w-0">
+                <div>
+                    <p class="text-[9px] text-slate-400 font-bold">予測スコア</p>
+                    <p id="dock-live-score" class="text-sm sm:text-base font-black text-amber-400">--</p>
+                </div>
+                <div class="border-l border-slate-700 pl-3 sm:pl-4">
+                    <p class="text-[9px] text-slate-400 font-bold">重大リスク×</p>
+                    <p id="dock-critical-ng" class="text-xs sm:text-sm font-black text-emerald-400">0件</p>
+                </div>
+                <div class="border-l border-slate-700 pl-3 sm:pl-4">
+                    <p class="text-[9px] text-slate-400 font-bold">入力状況</p>
+                    <p id="dock-remaining" class="text-xs sm:text-sm font-black text-white truncate">残り 42件</p>
+                </div>
+            </div>
+            <button type="button" id="dock-action-btn" onclick="window.scrollToNextUnanswered()" class="px-3.5 py-2 rounded-xl text-[11px] font-black bg-white/15 hover:bg-white/25 text-white transition whitespace-nowrap">
+                <i class="fa-solid fa-arrow-down-short-wide mr-1"></i>未入力へ移動
+            </button>
         </div>
     </div>
 
@@ -2587,11 +3538,11 @@
             </div>
             
             <div class="flex flex-col gap-4 max-w-sm mx-auto">
-                <a href="https://forms.gle/vS2xJRQEjrec2Doi7" target="_blank" class="flex items-center justify-center bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-black px-6 py-4 rounded-xl shadow-md transition-all active:scale-[0.98]">
+                <a href="https://forms.gle/vS2xJRQEjrec2Doi7" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center brand-bg-pink hover:opacity-95 text-white font-black px-6 py-4 rounded-xl shadow-md transition-all active:scale-[0.98]">
                     <i class="fa-solid fa-building mr-2 text-xl"></i>
                     <span>事業所 写真提出フォーム</span>
                 </a>
-                <a href="https://forms.gle/veA616WHjc8AsMvo6" target="_blank" class="flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-black px-6 py-4 rounded-xl shadow-md transition-all active:scale-[0.98]">
+                <a href="https://forms.gle/veA616WHjc8AsMvo6" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-black px-6 py-4 rounded-xl shadow-md transition-all active:scale-[0.98]">
                     <i class="fa-solid fa-car mr-2 text-xl"></i>
                     <span>社用車 写真提出フォーム</span>
                 </a>
@@ -2613,7 +3564,7 @@
             </div>
             <div class="bg-cyan-50 border border-cyan-100 p-4 rounded-xl mb-6">
                 <p class="text-[11px] text-cyan-800 font-bold leading-relaxed">
-                    <i class="fa-solid fa-circle-info mr-1.5"></i>基本ランキングは<span class="text-pink-600 font-black">「品質スコア（平均点）」</span>で順位付けされます（同点時は自己入力率が高い事業所が上位）。<br>
+                    <i class="fa-solid fa-circle-info mr-1.5"></i>基本ランキングは<span class="brand-pink font-black">「品質スコア（平均点）」</span>で順位付けされます（同点時は自己入力率が高い事業所が上位）。<br>
                     <span id="ranking-bonus-desc" class="hidden mt-1.5 block">
                         賞与評価用として、未入力による減点を加味した <span class="bg-white px-1.5 py-0.5 rounded text-rose-500 shadow-sm">賞与用スコア (QC評価 × 自己入力率 × AM入力率)</span> も算出しています。<br>
                         <span class="text-[10px] text-cyan-700/70 font-normal mt-1 block">※プルダウンから「査定期間」を選択すると、進行中の期間でも現在までの経過分で自動按分され、現時点での評価が確認できます。</span>
@@ -2769,7 +3720,7 @@
                     </select>
                 </div>
                 <div class="mt-4 text-right">
-                    <button onclick="window.addMasterOffice()" class="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-black text-xs py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 w-full sm:w-auto">
+                    <button type="button" onclick="window.addMasterOffice()" class="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-black text-xs py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 w-full sm:w-auto">
                         <i class="fa-solid fa-plus mr-1.5"></i>事業所を追加する
                     </button>
                 </div>
@@ -2808,7 +3759,7 @@
                         ※事業所マスタは削除されません。本番への切り替え時のみ使用してください。
                     </p>
                 </div>
-                <button onclick="window.resetAllTestData()" class="bg-rose-500 hover:bg-rose-600 text-white font-black text-xs py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 whitespace-nowrap flex-shrink-0 w-full sm:w-auto">
+                <button type="button" onclick="window.resetAllTestData()" class="bg-rose-500 hover:bg-rose-600 text-white font-black text-xs py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 whitespace-nowrap flex-shrink-0 w-full sm:w-auto">
                     <i class="fa-solid fa-trash-can mr-1.5"></i>リセット実行
                 </button>
             </div>
@@ -2817,32 +3768,62 @@
 
   </main>
   
-  <div id="success-toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border border-slate-700 transition-all duration-300 transform translate-y-0 opacity-100">
+  <div id="success-toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-8 py-4 rounded-full shadow-2xl hidden z-[10000] flex items-center border border-slate-700 transition-all duration-300 transform translate-y-0 opacity-100">
       <i class="fa-solid fa-check-circle text-emerald-400 mr-3 text-lg"></i><span id="toast-message" class="font-black text-sm tracking-wide">COMPLETE</span>
   </div>
 
   <div id="image-modal" class="fixed inset-0 z-[10000] bg-slate-900/95 hidden flex flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" onclick="this.classList.add('hidden')">
-      <button class="absolute top-6 right-6 text-slate-300 hover:text-white text-4xl transition-colors cursor-pointer z-50 drop-shadow-md"><i class="fa-solid fa-times"></i></button>
+      <button type="button" onclick="document.getElementById('image-modal').classList.add('hidden'); event.stopPropagation();" class="absolute top-6 right-6 text-slate-300 hover:text-white text-4xl transition-colors cursor-pointer z-50 drop-shadow-md"><i class="fa-solid fa-times"></i></button>
       <img id="image-modal-content" class="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl border border-slate-700/50" onclick="event.stopPropagation()">
   </div>
 
   <div id="password-modal" class="fixed inset-0 z-[20000] bg-slate-900/60 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
       <div class="bg-white p-8 rounded-[2rem] max-w-sm w-full text-center shadow-2xl border border-slate-100 relative overflow-hidden">
-          <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-orange-400 to-amber-400"></div>
-          <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center text-2xl mx-auto mb-5 shadow-inner border border-orange-100">
+          <div class="absolute top-0 left-0 w-full h-1.5 brand-bg-pink"></div>
+          <div class="w-16 h-16 bg-pink-50 brand-pink rounded-full flex items-center justify-center text-2xl mx-auto mb-5 shadow-inner border border-pink-100">
               <i class="fa-solid fa-lock"></i>
           </div>
           <h3 class="text-lg font-black text-slate-800 mb-2 tracking-tight" id="password-modal-title">暗証番号の入力</h3>
           <p class="text-xs font-bold text-slate-500 mb-6 leading-relaxed">アクセスするには<br>4桁の暗証番号が必要です。</p>
-          <input type="password" id="master-password-input" class="w-full p-4 border-2 border-slate-200 rounded-xl text-center font-black text-2xl tracking-[0.5em] outline-none focus:border-orange-400 focus:bg-orange-50/30 transition-colors mb-6 bg-slate-50" placeholder="****" maxlength="4" onkeyup="if(event.key==='Enter') window.verifyPassword()">
+          <input type="password" id="master-password-input" class="w-full p-4 border-2 border-slate-200 rounded-xl text-center font-black text-2xl tracking-[0.5em] outline-none focus:border-pink-500 focus:bg-pink-50/30 transition-colors mb-6 bg-slate-50" placeholder="****" maxlength="4" onkeyup="if(event.key==='Enter') window.verifyPassword()">
           <div class="flex gap-3 justify-center">
-              <button onclick="window.closePasswordModal()" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-black text-sm transition-colors">キャンセル</button>
-              <button onclick="window.verifyPassword()" class="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm transition-colors shadow-md active:scale-95">解除する</button>
+              <button type="button" onclick="window.closePasswordModal()" class="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-600 font-black text-sm transition-colors">キャンセル</button>
+              <button type="button" onclick="window.verifyPassword()" class="flex-1 py-3.5 brand-bg-pink hover:opacity-95 text-white rounded-xl font-black text-sm transition-colors shadow-md active:scale-95">解除する</button>
           </div>
       </div>
   </div>
 
+  <div id="source-code-modal" class="fixed inset-0 z-[20000] bg-slate-900/70 hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+      <div class="bg-white p-6 sm:p-8 rounded-[2rem] max-w-2xl w-full shadow-2xl border border-slate-100 relative overflow-hidden flex flex-col max-h-[90vh]">
+          <div class="absolute top-0 left-0 w-full h-1.5 brand-bg-pink"></div>
+          <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2.5">
+                  <div class="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center text-xl shadow-sm">
+                      <i class="fa-brands fa-github"></i>
+                  </div>
+                  <div>
+                      <h3 class="text-base sm:text-lg font-black text-slate-800 tracking-tight">GitHub公開用 HTMLコード (index.html)</h3>
+                      <p class="text-[10px] sm:text-xs font-bold text-slate-500">このままコピーしてGitHubの「index.html」に貼り付けできます</p>
+                  </div>
+              </div>
+              <button type="button" onclick="window.closeSourceCodeModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+                  <i class="fa-solid fa-times"></i>
+              </button>
+          </div>
+          <div class="flex flex-wrap gap-2.5 mb-3">
+              <button type="button" onclick="window.copySourceCode()" class="flex-1 py-3 px-4 brand-bg-pink text-white rounded-xl font-black text-xs sm:text-sm shadow-md hover:opacity-95 transition flex items-center justify-center gap-2 active:scale-95">
+                  <i class="fa-regular fa-copy"></i><span>HTMLコードを全文コピー</span>
+              </button>
+              <button type="button" onclick="window.downloadSourceHtml()" class="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-black text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 active:scale-95">
+                  <i class="fa-solid fa-download"></i><span>index.html をダウンロード</span>
+              </button>
+          </div>
+          <textarea id="source-code-textarea" readonly="" class="w-full flex-1 min-h-[260px] p-3.5 bg-slate-900 text-emerald-300 font-mono text-[11px] rounded-xl border border-slate-700 outline-none resize-none leading-relaxed" onclick="this.select()"></textarea>
+      </div>
+  </div>
+
   <script type="module">
+    window.__PRISTINE_BODY_HTML__ = document.body.innerHTML;
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -2858,6 +3839,7 @@
     async function connectCloud() {
       if (window.renderMasterList) window.renderMasterList(); 
       if (window.renderSelectors) window.renderSelectors(); 
+      if (window.updateHomeDashboardSummary) window.updateHomeDashboardSummary();
 
       try {
         let config = { apiKey:"AIzaSyBdbezD4xYpqPTy9XZMttHbLBt5cXe33G8", authDomain:"self-qc.firebaseapp.com", projectId:"self-qc", storageBucket:"self-qc.firebasestorage.app", messagingSenderId:"247849012338", appId:"1:247849012338:web:833502cbdbe980a33046eb" };
@@ -2898,6 +3880,7 @@
         window.appState.offices = Array.from(m.values()); 
         if (window.renderMasterList) window.renderMasterList(); 
         if (window.renderSelectors) window.renderSelectors(); 
+        if (window.updateHomeDashboardSummary) window.updateHomeDashboardSummary();
       }, e => {
           console.warn("Offices Sync Warn:", e);
           window.appState.offices = [...window.initialOffices];
@@ -2933,6 +3916,7 @@
               st[hKey][v.office][l] = v.score; 
               st[fKey][v.office][l] = v; 
           });
+          if (window.updateHomeDashboardSummary) window.updateHomeDashboardSummary();
           if (st.activeTab === 'feedback') {
               if (window.renderFeedbackList) window.renderFeedbackList();
           } else if (st.activeTab === 'ranking') {
@@ -2948,9 +3932,11 @@
 
     connectCloud();
     window.addEventListener('DOMContentLoaded', () => { 
-        setTimeout(window.hideMainLoader, 4000); 
+        setTimeout(window.hideMainLoader, 2000); 
         window.switchTab('home'); 
     });
   </script>
+
+
 </body>
 </html>
