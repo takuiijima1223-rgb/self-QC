@@ -251,16 +251,25 @@
             return; }
         window.actuallySwitchTab(id); };
     window.updateHomeDashboardSummary = () => {
-        sU('home-office-count', el => el.innerText = window.appState.offices.length);
+        const offices = window.appState.offices || [];
+        sU('home-office-count', el => el.innerText = offices.length);
         const now = new Date();
-        let curWeekLabel = '11月3W';
-        window.appState.weeksData.forEach(w => {
+        let curWeekLabel = '';
+        (window.appState.weeksData || []).forEach(w => {
+            const startOfDay = new Date(w.start);
+            startOfDay.setHours(0, 0, 0, 0);
             const endOfDay = new Date(w.end);
             endOfDay.setHours(23, 59, 59, 999);
-            if (now >= w.start && now <= endOfDay) curWeekLabel = w.label; });
-        sU('home-current-period', el => el.innerText = curWeekLabel);
-        let staffEnteredOffices = Object.keys(window.appState.historyFull || {}).filter(k => Object.keys(window.appState.historyFull[k] || {}).length > 0).length;
-        sU('home-entered-count', el => el.innerText = `${staffEnteredOffices} / ${window.appState.offices.length}`); };
+            if (now >= startOfDay && now <= endOfDay) curWeekLabel = w.label;
+        });
+        sU('home-current-period', el => el.innerText = curWeekLabel || '対象期間外');
+        let staffEnteredOffices = 0;
+        if (curWeekLabel) {
+            const hist = window.appState.historyFull || {};
+            staffEnteredOffices = offices.filter(o => hist[o.name] && hist[o.name][curWeekLabel]).length;
+        }
+        sU('home-entered-count', el => el.innerText = `${staffEnteredOffices} / ${offices.length}`);
+    };
     window.actuallySwitchTab = (id) => {
       window.appState.activeTab = id;
       ['home', 'input', 'master', 'feedback', 'ranking', 'photos'].forEach(v => { 
